@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\GameHelper.ixx.obj",
+            "outputs": [
+                "E:\\DX12\\ZHEngineDX\\ZHEngineDX\\x64\\Debug\\vc143.pdb",
+                "x64\\Debug\\",
+                "E:\\DX12\\ZHEngineDX\\ZHEngineDX\\x64\\Debug\\GameHelper.ixx.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "GameHelper",
+                    "source-path": "e:\\dx12\\zhenginedx\\zhenginedx\\gamehelper\\gamehelper.ixx",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "stdexcept",
+                    "source-path": "D:\\VS\\VC\\Tools\\MSVC\\14.34.31933\\include\\stdexcept",
+                    "lookup-method": "include-angle",
+                    "unique-on-source-path": true
+                },
+                {
+                    "logical-name": "wrl.h",
+                    "source-path": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\winrt\\wrl.h",
+                    "lookup-method": "include-angle",
+                    "unique-on-source-path": true
+                }
+            ]
+        }
+    ]
+}

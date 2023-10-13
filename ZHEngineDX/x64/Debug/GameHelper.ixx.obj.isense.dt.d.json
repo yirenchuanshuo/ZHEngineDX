@@ -1,0 +1,19 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\dx12\\zhenginedx\\zhenginedx\\gamehelper\\gamehelper.ixx",
+        "ProvidedModule": "GameHelper",
+        "Includes": [],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": [
+            {
+                "Header": "d:\\vs\\vc\\tools\\msvc\\14.34.31933\\include\\stdexcept",
+                "BMI": "E:\\DX12\\ZHEngineDX\\ZHEngineDX\\x64\\Debug\\stdexcept_FCDFA4DA7504BF68.ifc.dt"
+            },
+            {
+                "Header": "c:\\program files (x86)\\windows kits\\10\\include\\10.0.22621.0\\winrt\\wrl.h",
+                "BMI": "E:\\DX12\\ZHEngineDX\\ZHEngineDX\\x64\\Debug\\wrl.h_69B178419C12B35A.ifc.dt"
+            }
+        ]
+    }
+}
