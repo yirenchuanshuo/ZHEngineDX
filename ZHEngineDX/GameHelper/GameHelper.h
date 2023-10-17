@@ -1,6 +1,6 @@
 #pragma once
 #include<stdexcept>
-#include<wrl.h>
+#include"../Common/CommonCore.h"
 using Microsoft::WRL::ComPtr;
 
 inline std::string HrToString(HRESULT hr)

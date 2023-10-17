@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "Debug\\HelloGame.obj",
+            "outputs": [
+                "E:\\DX12\\ZHEngineDX\\ZHEngineDX\\Debug\\vc143.pdb",
+                "Debug\\"
+            ],
+            "requires": []
+        }
+    ]
+}

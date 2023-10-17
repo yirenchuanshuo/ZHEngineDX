@@ -1,5 +1,5 @@
 #include "GameWindowApplication.h"
-
+#define DEBUGMESSAGE 0
 HWND GameWindowApplication::g_hwnd = nullptr;
 
 int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
@@ -19,12 +19,14 @@ int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		1280,
-		768,
+		game->GetWidth(),
+		game->GetHeight(),
 		nullptr,
 		nullptr,
 		windowClass.hInstance,
 		nullptr);
+
+	game->OnInit();
 
 	ShowWindow(g_hwnd, nCmdShow);
 
@@ -42,9 +44,19 @@ int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 
 LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	PAINTSTRUCT ps;
+	HDC hdc;
 	switch (message)
 	{
 	case WM_PAINT:
+		if (DEBUGMESSAGE)
+		{
+			hdc = BeginPaint(hWnd, &ps);
+			SetTextColor(hdc, RGB(255, 0, 0)); // 设置文本颜色为红色
+			SetBkMode(hdc, TRANSPARENT); // 设置背景模式为透明
+			TextOut(hdc, 50, 50, DebugToDisplay, wcslen(DebugToDisplay)); // 输出文本
+			EndPaint(hWnd, &ps);
+		}
 		//OnRender();
 		return 0;
 	case WM_DESTROY:

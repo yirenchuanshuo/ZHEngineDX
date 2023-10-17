@@ -21,6 +21,9 @@ public:
 	const WCHAR* GetTitle() const { return g_title.c_str();}
 
 protected:
+	IDXGIAdapter1* GetSupportedAdapter(ComPtr<IDXGIFactory4>& dxgiFactory, const D3D_FEATURE_LEVEL featureLevel);
+
+
 	UINT g_width = 1280;
 	UINT g_height = 768;
 
