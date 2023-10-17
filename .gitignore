@@ -2,4 +2,7 @@
 /x64/*
 /.vs/*
 /out/*
+/Debug/*
 /ZHEngineDX/x64/*
+/ZHEngineDX/Debug/*
+/ZHEngineDX/Release/*
