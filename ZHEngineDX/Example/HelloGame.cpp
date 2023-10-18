@@ -1,5 +1,5 @@
 #include "HelloGame.h"
-#include <iostream>
+
 
 
 
@@ -21,10 +21,20 @@ void HelloGame::OnUpdate()
 
 void HelloGame::OnRender()
 {
+	PopulateCommandList();
+	//将命令列表提交给命令队列
+	ID3D12CommandList* ppCommandLists[] = { g_commandList.Get() };
+	g_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	//显示图像
+	ThrowIfFailed(g_swapChain->Present(1, 0));
+	WaitForPreviousFrame();
 }
 
 void HelloGame::OnDestroy()
 {
+	WaitForPreviousFrame();
+	CloseHandle(g_fenceEvent);
 }
 
 void HelloGame::LoadPipeline()
@@ -41,7 +51,7 @@ void HelloGame::LoadPipeline()
 
 	//建立工厂
 	ComPtr<IDXGIFactory4> gDxgiFactory;
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(gDxgiFactory.GetAddressOf())));
+	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&gDxgiFactory)));
 
 	D3D_FEATURE_LEVEL featureLevels[] =
 	{
@@ -65,7 +75,7 @@ void HelloGame::LoadPipeline()
 	//创建GPU交互对象
 	if (adapter != nullptr)
 	{
-		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(g_device.GetAddressOf()));
+		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&g_device));
 	}
 
 
@@ -144,4 +154,43 @@ void HelloGame::LoadAsset()
 			ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
 		}
 	}
+}
+
+void HelloGame::PopulateCommandList()
+{
+	ThrowIfFailed(g_commandAllocator->Reset());
+	ThrowIfFailed(g_commandList->Reset(g_commandAllocator.Get(), g_pipelineState.Get()));
+
+	//执行资源转换状态(呈现状态转为渲染目标状态，执行绘制操作)
+	D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	g_commandList->ResourceBarrier(1, &resBarrier);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart(), g_frameIndex, g_rtvDescriptorSize);
+
+	const float clearColor[] = {0.0f, 0.2f, 0.4f, 1.0f};
+	g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+	//执行资源转换状态(渲染目标状态转为呈现状态)
+	resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	g_commandList->ResourceBarrier(1, &resBarrier);
+
+	//关闭命令列表，结束命令提交并开始渲染
+	ThrowIfFailed(g_commandList->Close());
+}
+
+void HelloGame::WaitForPreviousFrame()
+{
+	//储存围栏值，移交GPU
+	const UINT64 fence = g_fenceValue;
+	ThrowIfFailed(g_commandQueue->Signal(g_fence.Get(), fence));
+	//更新围栏值，用于下一帧渲染
+	g_fenceValue++;
+
+	//等待渲染完成
+	if (g_fence->GetCompletedValue() < fence)
+	{
+		ThrowIfFailed(g_fence->SetEventOnCompletion(fence, g_fenceEvent));
+		WaitForSingleObject(g_fenceEvent, INFINITE);
+	}
+
+	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
 }

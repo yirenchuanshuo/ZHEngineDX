@@ -24,7 +24,7 @@ int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 		nullptr,
 		nullptr,
 		windowClass.hInstance,
-		nullptr);
+		game);
 
 	game->OnInit();
 
@@ -39,6 +39,9 @@ int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 			DispatchMessage(&msg);
 		}
 	}
+
+	game->OnDestroy();
+
 	return static_cast<char>(msg.wParam);
 }
 
@@ -46,9 +49,17 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
+	Game* game = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 	switch (message)
 	{
+	case WM_CREATE:
+		{	//传递指针到窗口，导入自定义用户数据
+			LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
+		}
+		return 0;
 	case WM_PAINT:
+	{
 		if (DEBUGMESSAGE)
 		{
 			hdc = BeginPaint(hWnd, &ps);
@@ -57,8 +68,12 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 			TextOut(hdc, 50, 50, DebugToDisplay, wcslen(DebugToDisplay)); // 输出文本
 			EndPaint(hWnd, &ps);
 		}
-		//OnRender();
+		if (game)
+		{
+			game->OnRender();
+		}
 		return 0;
+	}
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
