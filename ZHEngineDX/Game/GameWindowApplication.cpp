@@ -68,9 +68,13 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 			TextOut(hdc, 50, 50, DebugToDisplay, wcslen(DebugToDisplay)); // Êä³öÎÄ±¾
 			EndPaint(hWnd, &ps);
 		}
-		if (game)
+		else
 		{
-			game->OnRender();
+			if (game)
+			{
+				game->OnUpdate();
+				game->OnRender();
+			}
 		}
 		return 0;
 	}

@@ -19,8 +19,10 @@ public:
 	UINT GetWidth() const { return g_width; }
 	UINT GetHeight() const { return g_height; }
 	const WCHAR* GetTitle() const { return g_title.c_str();}
+	std::wstring GetGameAssetPath();
 
 protected:
+	std::wstring GetAssetFullPath(LPCWSTR assetName);
 	IDXGIAdapter1* GetSupportedAdapter(ComPtr<IDXGIFactory4>& dxgiFactory, const D3D_FEATURE_LEVEL featureLevel);
 
 
@@ -28,6 +30,7 @@ protected:
 	UINT g_height = 768;
 
 private:
+	std::wstring g_assetsPath;
 	std::wstring g_title;
 };
 

@@ -1,4 +1,5 @@
 #pragma once
 #include <DirectXMath.h>
 using namespace DirectX;
-using FVector4f = XMVECTOR;
+using FVector3 = XMFLOAT3;
+using FLinearColor = XMFLOAT4;

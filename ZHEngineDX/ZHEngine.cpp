@@ -1,6 +1,5 @@
-
 #include "Common/CommonCore.h"
-#include "Example/HelloGame.h";
+#include "Example/HelloGame.h"
 
 
 _Use_decl_annotations_

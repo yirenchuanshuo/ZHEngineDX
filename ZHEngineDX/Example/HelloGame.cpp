@@ -1,10 +1,17 @@
 #include "HelloGame.h"
 
-
+void DebugMessage(std::wstring strToDisplay)
+{
+	wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), sizeof(DebugToDisplay) / sizeof(DebugToDisplay[0]));
+}
 
 
 HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
-	Game(width, height, name)
+	Game(width, height, name),
+	g_frameIndex(0),
+	g_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
+	g_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)),
+	g_rtvDescriptorSize(0)
 {
 
 }
@@ -17,6 +24,43 @@ void HelloGame::OnInit()
 
 void HelloGame::OnUpdate()
 {
+	if (clearColor[0] <= 1.0f && isRAdd)
+	{
+		clearColor[0] += 0.001f;
+		isRAdd = true;
+	}
+	else
+	{
+		clearColor[0] -= 0.002f;
+		clearColor[0] <= 0 ? isRAdd = true : isRAdd = false;
+
+	}
+
+	if (clearColor[1] <= 1.0f && isGAdd)
+	{
+		clearColor[1] += 0.002f;
+		isGAdd = true;
+	}
+	else
+	{
+		clearColor[1] -= 0.001f;
+		clearColor[1] <= 0 ? isGAdd = true : isGAdd = false;
+
+	}
+
+	if (clearColor[2] <= 1.0f && isBAdd)
+	{
+		clearColor[2] += 0.001f;
+		isBAdd = true;
+	}
+	else
+	{
+		clearColor[2] -= 0.001f;
+		clearColor[2] <= 0 ? isBAdd = true : isBAdd = false;
+
+	}
+
+	clearColor[3] = 1.0f;
 }
 
 void HelloGame::OnRender()
@@ -137,23 +181,109 @@ void HelloGame::LoadPipeline()
 
 void HelloGame::LoadAsset()
 {
-	//创建命令列表，用命令分配器给命令列表分配对象
-	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&g_commandList)));
+	//创建根签名描述符
+	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	//创建根签名
+	ComPtr<ID3DBlob> signature;
+	ComPtr<ID3DBlob> error;
+	ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+	ThrowIfFailed(g_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&g_rootSignature)));
+
 	
+	//创建着色器资源
+	ComPtr<ID3DBlob> vertexShader;
+	ComPtr<ID3DBlob> pixelShader;
+
+#if defined(_DEBUG)
+	UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+	UINT compileFlags = 0;
+#endif
+	
+	ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"Triangles.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"Triangles.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	
+	//创建管线状态对象PSO，绑定渲染资源
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+
+	//PSO描述
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+	psoDesc.pRootSignature = g_rootSignature.Get();
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
+	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	psoDesc.DepthStencilState.DepthEnable = FALSE;
+	psoDesc.DepthStencilState.StencilEnable = FALSE;
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.NumRenderTargets = 1;
+	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.SampleDesc.Count = 1;
+	//创建PSO
+	ThrowIfFailed(g_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pipelineState)));
+
+
+	//创建命令列表，用命令分配器给命令列表分配对象
+	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocator.Get(), g_pipelineState.Get(), IID_PPV_ARGS(&g_commandList)));
+
 	//关闭命令列表准备渲染
 	ThrowIfFailed(g_commandList->Close());
 
+	//创建顶点Buffer
+	Vertex triangleVertices[] =
 	{
-		//创建一个围栏同步CPU与GPU
-		ThrowIfFailed(g_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
-		g_fenceValue = 1;
+		{ { 0.0f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ { 0.25f, -0.5f , 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ { -0.25f, -0.5f , 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
+	};
+	const UINT vertexBufferSize = sizeof(triangleVertices);
 
-		g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		if (g_fenceEvent == nullptr)
-		{
-			ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
-		}
+	//数据上传堆
+	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+	//资源描述符
+	CD3DX12_RESOURCE_DESC resourceDes = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+
+	//提交资源创建
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDes,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&g_vertexBuffer)));
+
+	//复制资源数据到Buffer
+	UINT8* pVertexDataBegin;
+	CD3DX12_RANGE readRange(0, 0);
+	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+	g_vertexBuffer->Unmap(0, nullptr);
+
+	//初始化资源缓冲区视图
+	g_vertexBufferView.BufferLocation = g_vertexBuffer->GetGPUVirtualAddress();
+	g_vertexBufferView.StrideInBytes = sizeof(Vertex);
+	g_vertexBufferView.SizeInBytes = vertexBufferSize;
+
+	
+
+	//创建一个围栏同步CPU与GPU
+	ThrowIfFailed(g_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
+	g_fenceValue = 1;
+	g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (g_fenceEvent == nullptr)
+	{
+		ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
 	}
+	WaitForPreviousFrame();
 }
 
 void HelloGame::PopulateCommandList()
@@ -161,13 +291,26 @@ void HelloGame::PopulateCommandList()
 	ThrowIfFailed(g_commandAllocator->Reset());
 	ThrowIfFailed(g_commandList->Reset(g_commandAllocator.Get(), g_pipelineState.Get()));
 
+	//设置必要状态
+	g_commandList->SetGraphicsRootSignature(g_rootSignature.Get());
+	g_commandList->RSSetViewports(1, &g_viewport);
+	g_commandList->RSSetScissorRects(1, &g_scissorRect);
+
 	//执行资源转换状态(呈现状态转为渲染目标状态，执行绘制操作)
 	D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	g_commandList->ResourceBarrier(1, &resBarrier);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart(), g_frameIndex, g_rtvDescriptorSize);
 
-	const float clearColor[] = {0.0f, 0.2f, 0.4f, 1.0f};
+	//设置渲染目标
+	g_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
 	g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	//顶点装配
+	g_commandList->IASetVertexBuffers(0, 1, &g_vertexBufferView);
+	//图元拓扑
+	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//画图
+	g_commandList->DrawInstanced(3, 1, 0, 0);
 
 	//执行资源转换状态(渲染目标状态转为呈现状态)
 	resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
