@@ -154,15 +154,26 @@ void HelloGame::LoadPipeline()
 	ThrowIfFailed(swapChain.As(&g_swapChain));
 	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
 
-	//创建渲染目标视图描述
+	//创建渲染目标视图描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
 	rtvHeapDesc.NumDescriptors = FrameCount;
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	//创建渲染目标视图
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&g_rtvHeap)));
 	g_rtvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	//std::wstring strToDisplay = std::to_wstring(g_rtvDescriptorSize);
 	//wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), sizeof(DebugToDisplay) / sizeof(DebugToDisplay[0]));
+
+	//创建深度模板描述堆描述
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	//创建深度模板描述符堆
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&g_dsvHeap)));
 
 
 	//创建渲染目标视图
@@ -202,9 +213,12 @@ void HelloGame::LoadAsset()
 	UINT compileFlags = 0;
 #endif
 	
-	ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"Triangles.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"Triangles.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 	
+
+
+
 	//创建管线状态对象PSO，绑定渲染资源
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 	{
@@ -220,8 +234,7 @@ void HelloGame::LoadAsset()
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState.DepthEnable = FALSE;
-	psoDesc.DepthStencilState.StencilEnable = FALSE;
+	psoDesc.DepthStencilState= CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
@@ -240,39 +253,95 @@ void HelloGame::LoadAsset()
 	//创建顶点Buffer
 	Vertex triangleVertices[] =
 	{
-		{ { 0.0f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-		{ { 0.25f, -0.5f , 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ { -0.25f, -0.5f , 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
+		{ { -0.5f, 0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ {  0.5f,-0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ { -0.5f,-0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ {  0.5f, 0.5f, 0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
+
+		{ { -0.75f, 0.75f, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }},
+		{ { 0.0f, 0.0f, 0.7f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
+		{ { -0.75f, 0.0f, 0.7f }, { 0.0f, 1.0f, 1.0f, 1.0f }},
+		{ { 0.0f, 0.75f, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }}
 	};
+
+	//索引Buffer
+	DWORD triangleIndex[]
+	{
+		0,1,2,
+		0,3,1
+	};
+
 	const UINT vertexBufferSize = sizeof(triangleVertices);
+	const UINT indexBufferSize = sizeof(triangleIndex);
 
 	//数据上传堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
 	//资源描述符
 	CD3DX12_RESOURCE_DESC resourceDes = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+	
+	
 
 	//提交资源创建
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&resourceDes,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&g_vertexBuffer)));
+	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties,D3D12_HEAP_FLAG_NONE,&resourceDes,
+		D3D12_RESOURCE_STATE_GENERIC_READ,nullptr,IID_PPV_ARGS(&g_vertexBuffer)));
 
-	//复制资源数据到Buffer
-	UINT8* pVertexDataBegin;
+	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDes,
+		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&g_indexBuffer)));
+
+	//复制资源数据到GPUBuffer
+	UINT8* pDataBegin;
 	CD3DX12_RANGE readRange(0, 0);
-	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pDataBegin)));
+	memcpy(pDataBegin, triangleVertices, sizeof(triangleVertices));
 	g_vertexBuffer->Unmap(0, nullptr);
+
+	ThrowIfFailed(g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pDataBegin)));
+	memcpy(pDataBegin, triangleIndex, sizeof(triangleIndex));
+	g_indexBuffer->Unmap(0, nullptr);
 
 	//初始化资源缓冲区视图
 	g_vertexBufferView.BufferLocation = g_vertexBuffer->GetGPUVirtualAddress();
 	g_vertexBufferView.StrideInBytes = sizeof(Vertex);
 	g_vertexBufferView.SizeInBytes = vertexBufferSize;
 
+	g_indexBufferView.BufferLocation = g_indexBuffer->GetGPUVirtualAddress();
+	g_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	g_indexBufferView.SizeInBytes = indexBufferSize;
+
+	//创建深度模板缓冲区描述符
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	//创建清除深度模板缓冲区描述符
+	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+	/*D3D12_HEAP_TYPE_DEFAULT：用于存储 GPU 访问频繁的资源。
+	D3D12_HEAP_TYPE_UPLOAD：用于存储 CPU 向 GPU 上传数据的资源。
+	D3D12_HEAP_TYPE_READBACK：用于存储 GPU 向 CPU 读回数据的资源。*/
+
+	//创建GPU频繁访问的堆，将深度缓冲区视图放入该堆
+	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+	//创建资源描述，描述其用于深度模板视图
+	CD3DX12_RESOURCE_DESC depthtex2D = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, g_width, g_height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+	//提交深度模板缓冲区资源
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties2,
+		D3D12_HEAP_FLAG_NONE,
+		&depthtex2D,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&depthOptimizedClearValue,
+		IID_PPV_ARGS(&g_depthStencilBuffer)));
+
+	//创建深度模板缓冲区
+	g_device->CreateDepthStencilView(g_depthStencilBuffer.Get(), &depthStencilDesc, g_dsvHeap->GetCPUDescriptorHandleForHeapStart());
 	
 
 	//创建一个围栏同步CPU与GPU
@@ -283,7 +352,7 @@ void HelloGame::LoadAsset()
 	{
 		ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
 	}
-	WaitForPreviousFrame();
+	
 }
 
 void HelloGame::PopulateCommandList()
@@ -300,17 +369,22 @@ void HelloGame::PopulateCommandList()
 	D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	g_commandList->ResourceBarrier(1, &resBarrier);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart(), g_frameIndex, g_rtvDescriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(g_dsvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	//设置渲染目标
-	g_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	g_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
+	//清除渲染目标
 	g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	g_commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	//图元拓扑模式
+	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//顶点装配
 	g_commandList->IASetVertexBuffers(0, 1, &g_vertexBufferView);
-	//图元拓扑
-	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	g_commandList->IASetIndexBuffer(&g_indexBufferView);
 	//画图
-	g_commandList->DrawInstanced(3, 1, 0, 0);
+	g_commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	g_commandList->DrawIndexedInstanced(6, 1, 0, 4, 0);
 
 	//执行资源转换状态(渲染目标状态转为呈现状态)
 	resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
