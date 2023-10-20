@@ -5,13 +5,21 @@ void DebugMessage(std::wstring strToDisplay)
 	wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), sizeof(DebugToDisplay) / sizeof(DebugToDisplay[0]));
 }
 
+template<typename T>
+constexpr UINT CalcConstantBufferByteSize()
+{
+	UINT byteSize = sizeof(T);
+	return (byteSize + 255) & ~255;
+}
+
 
 HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
 	Game(width, height, name),
 	g_frameIndex(0),
 	g_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
 	g_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)),
-	g_rtvDescriptorSize(0)
+	g_rtvDescriptorSize(0),
+	g_constantBufferData{}
 {
 
 }
@@ -24,43 +32,8 @@ void HelloGame::OnInit()
 
 void HelloGame::OnUpdate()
 {
-	if (clearColor[0] <= 1.0f && isRAdd)
-	{
-		clearColor[0] += 0.001f;
-		isRAdd = true;
-	}
-	else
-	{
-		clearColor[0] -= 0.002f;
-		clearColor[0] <= 0 ? isRAdd = true : isRAdd = false;
-
-	}
-
-	if (clearColor[1] <= 1.0f && isGAdd)
-	{
-		clearColor[1] += 0.002f;
-		isGAdd = true;
-	}
-	else
-	{
-		clearColor[1] -= 0.001f;
-		clearColor[1] <= 0 ? isGAdd = true : isGAdd = false;
-
-	}
-
-	if (clearColor[2] <= 1.0f && isBAdd)
-	{
-		clearColor[2] += 0.001f;
-		isBAdd = true;
-	}
-	else
-	{
-		clearColor[2] -= 0.001f;
-		clearColor[2] <= 0 ? isBAdd = true : isBAdd = false;
-
-	}
-
-	clearColor[3] = 1.0f;
+	UpdateBackGround();
+	UpdateConstantBuffer();
 }
 
 void HelloGame::OnRender()
@@ -94,7 +67,7 @@ void HelloGame::LoadPipeline()
 #endif 
 
 	//建立工厂
-	ComPtr<IDXGIFactory4> gDxgiFactory;
+	ComPtr<IDXGIFactory6> gDxgiFactory;
 	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&gDxgiFactory)));
 
 	D3D_FEATURE_LEVEL featureLevels[] =
@@ -175,8 +148,15 @@ void HelloGame::LoadPipeline()
 	//创建深度模板描述符堆
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&g_dsvHeap)));
 
+	//创建常量缓冲描述符堆描述
+	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
+	cbvHeapDesc.NumDescriptors = 1;
+	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	//创建常量缓存描述符堆
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&g_cbvHeap)));
 
-	//创建渲染目标视图
+	//获取渲染视图的起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	for (UINT n = 0; n < FrameCount; n++)
@@ -192,14 +172,40 @@ void HelloGame::LoadPipeline()
 
 void HelloGame::LoadAsset()
 {
+	//创建根签名，选择合适的版本
+	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+
+	featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+	if (FAILED(g_device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+	{
+		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+	}
+
+	//创建对根参数的描述和根参数
+	CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+	CD3DX12_ROOT_PARAMETER1 rootParameters[1];
+
+	//指定该根参数为常量缓冲区视图
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
+
+	//定义根签名属性
+	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+
 	//创建根签名描述符
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
 
 	//创建根签名
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
-	ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
 	ThrowIfFailed(g_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&g_rootSignature)));
 
 	
@@ -240,6 +246,7 @@ void HelloGame::LoadAsset()
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psoDesc.SampleDesc.Count = 1;
+	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	//创建PSO
 	ThrowIfFailed(g_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pipelineState)));
 
@@ -253,15 +260,15 @@ void HelloGame::LoadAsset()
 	//创建顶点Buffer
 	Vertex triangleVertices[] =
 	{
-		{ { -0.5f, 0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-		{ {  0.5f,-0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ { -0.5f,-0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ {  0.5f, 0.5f, 0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
+		{ { -0.25f, 0.25f * g_aspectRatio, 0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ {  0.25f,-0.25f * g_aspectRatio, 0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ { -0.25f,-0.25f * g_aspectRatio, 0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ {  0.25f, 0.25f * g_aspectRatio, 0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
 
-		{ { -0.75f, 0.75f, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }},
-		{ { 0.0f, 0.0f, 0.7f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
-		{ { -0.75f, 0.0f, 0.7f }, { 0.0f, 1.0f, 1.0f, 1.0f }},
-		{ { 0.0f, 0.75f, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }}
+		{ { -0.5f, 0.5f * g_aspectRatio, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }},
+		{ { 0.0f, 0.0f * g_aspectRatio, 0.7f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
+		{ { -0.5f, 0.0f * g_aspectRatio, 0.7f }, { 0.0f, 1.0f, 1.0f, 1.0f }},
+		{ { 0.0f, 0.5f * g_aspectRatio, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }}
 	};
 
 	//索引Buffer
@@ -282,22 +289,22 @@ void HelloGame::LoadAsset()
 	
 	
 
-	//提交资源创建
+	//资源创建
 	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties,D3D12_HEAP_FLAG_NONE,&resourceDes,
 		D3D12_RESOURCE_STATE_GENERIC_READ,nullptr,IID_PPV_ARGS(&g_vertexBuffer)));
 
 	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDes,
 		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&g_indexBuffer)));
 
-	//复制资源数据到GPUBuffer
-	UINT8* pDataBegin;
+	//复制顶点资源数据到GPUBuffer
+	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);
-	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pDataBegin)));
-	memcpy(pDataBegin, triangleVertices, sizeof(triangleVertices));
+	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
 	g_vertexBuffer->Unmap(0, nullptr);
 
-	ThrowIfFailed(g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pDataBegin)));
-	memcpy(pDataBegin, triangleIndex, sizeof(triangleIndex));
+	ThrowIfFailed(g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	memcpy(pVertexDataBegin, triangleIndex, sizeof(triangleIndex));
 	g_indexBuffer->Unmap(0, nullptr);
 
 	//初始化资源缓冲区视图
@@ -308,6 +315,24 @@ void HelloGame::LoadAsset()
 	g_indexBufferView.BufferLocation = g_indexBuffer->GetGPUVirtualAddress();
 	g_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	g_indexBufferView.SizeInBytes = indexBufferSize;
+
+	//创建常量缓冲区资源描述符
+	constexpr UINT constantBufferSize = CalcConstantBufferByteSize<SceneConstantBuffer>();
+	CD3DX12_RESOURCE_DESC constantResourceDes = CD3DX12_RESOURCE_DESC::Buffer(constantBufferSize);
+	//创建常量缓冲区资源
+	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties,D3D12_HEAP_FLAG_NONE,&constantResourceDes,
+		D3D12_RESOURCE_STATE_GENERIC_READ,nullptr,IID_PPV_ARGS(&g_constantBuffer)));
+
+	//创建常量缓冲区视图描述符
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = g_constantBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = constantBufferSize;
+
+	//创建常量缓冲区视图
+	g_device->CreateConstantBufferView(&cbvDesc, g_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	//复制常量缓冲区数据到GPU
+	ThrowIfFailed(g_constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
+	memcpy(g_pCbvDataBegin, &g_constantBufferData, sizeof(g_constantBufferData));
 
 	//创建深度模板缓冲区描述符
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -362,6 +387,12 @@ void HelloGame::PopulateCommandList()
 
 	//设置必要状态
 	g_commandList->SetGraphicsRootSignature(g_rootSignature.Get());
+
+	//设置常量缓冲区描述堆，提交到渲染命令
+	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvHeap.Get() };
+	g_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	//设置根描述符表，上传参数
+	g_commandList->SetGraphicsRootDescriptorTable(0, g_cbvHeap->GetGPUDescriptorHandleForHeapStart());
 	g_commandList->RSSetViewports(1, &g_viewport);
 	g_commandList->RSSetScissorRects(1, &g_scissorRect);
 
@@ -410,4 +441,58 @@ void HelloGame::WaitForPreviousFrame()
 	}
 
 	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
+}
+
+void HelloGame::UpdateBackGround()
+{
+	if (clearColor[0] <= 1.0f && isRAdd)
+	{
+		clearColor[0] += 0.001f;
+		isRAdd = true;
+	}
+	else
+	{
+		clearColor[0] -= 0.002f;
+		clearColor[0] <= 0 ? isRAdd = true : isRAdd = false;
+
+	}
+
+	if (clearColor[1] <= 1.0f && isGAdd)
+	{
+		clearColor[1] += 0.002f;
+		isGAdd = true;
+	}
+	else
+	{
+		clearColor[1] -= 0.001f;
+		clearColor[1] <= 0 ? isGAdd = true : isGAdd = false;
+
+	}
+
+	if (clearColor[2] <= 1.0f && isBAdd)
+	{
+		clearColor[2] += 0.001f;
+		isBAdd = true;
+	}
+	else
+	{
+		clearColor[2] -= 0.001f;
+		clearColor[2] <= 0 ? isBAdd = true : isBAdd = false;
+
+	}
+
+	clearColor[3] = 1.0f;
+}
+
+void HelloGame::UpdateConstantBuffer()
+{
+	const float translationSpeed = 0.005f;
+	const float offsetBounds = 1.75f;
+	g_constantBufferData.offset.x += translationSpeed;
+	if (g_constantBufferData.offset.x > offsetBounds)
+	{
+		g_constantBufferData.offset.x = -offsetBounds;
+	}
+	//GPU复制数据
+	memcpy(g_pCbvDataBegin, &g_constantBufferData, sizeof(g_constantBufferData));
 }

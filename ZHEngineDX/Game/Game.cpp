@@ -9,6 +9,9 @@ Game::Game(UINT width, UINT height, std::wstring name):
 	WCHAR assetsPath[512];
 	GetAssetsPath(assetsPath, _countof(assetsPath));
 	g_assetsPath = assetsPath;
+
+
+	g_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 }
 
 Game::~Game()
@@ -25,7 +28,7 @@ std::wstring Game::GetAssetFullPath(LPCWSTR assetName)
 	return g_assetsPath + assetName;
 }
 
-IDXGIAdapter1* Game::GetSupportedAdapter(ComPtr<IDXGIFactory4>& dxgiFactory, const D3D_FEATURE_LEVEL featureLevel)
+IDXGIAdapter1* Game::GetSupportedAdapter(ComPtr<IDXGIFactory6>& dxgiFactory, const D3D_FEATURE_LEVEL featureLevel)
 {
 	IDXGIAdapter1* adapter = nullptr;
 	for (std::uint32_t adapterIndex = 0U; ; ++adapterIndex)

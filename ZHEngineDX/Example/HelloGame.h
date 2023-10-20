@@ -13,6 +13,9 @@ public:
     virtual void OnDestroy();
 
 
+    virtual void UpdateBackGround();
+    virtual void UpdateConstantBuffer();
+
 public:
     //BackGround
     float clearColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -28,6 +31,14 @@ public:
         FLinearColor color;
     };
 
+    //ConstantBuffer
+    struct SceneConstantBuffer
+    {
+        //ÄÚ´æ¶ÔÆë256;
+        XMFLOAT4 offset;
+        XMFLOAT4 offset2;
+    };
+
 private:
     static const UINT FrameCount = 2;
 
@@ -40,8 +51,12 @@ private:
     ComPtr<ID3D12CommandAllocator> g_commandAllocator;
     ComPtr<ID3D12CommandQueue> g_commandQueue;
     ComPtr<ID3D12RootSignature> g_rootSignature;
+
     ComPtr<ID3D12DescriptorHeap> g_rtvHeap;
     ComPtr<ID3D12DescriptorHeap> g_dsvHeap;
+    ComPtr<ID3D12DescriptorHeap> g_cbvHeap;
+
+
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12GraphicsCommandList> g_commandList;
     UINT g_rtvDescriptorSize;
@@ -53,6 +68,9 @@ private:
     ComPtr<ID3D12Resource> g_indexBuffer;
     D3D12_INDEX_BUFFER_VIEW g_indexBufferView;
 
+    ComPtr<ID3D12Resource> g_constantBuffer;
+    SceneConstantBuffer g_constantBufferData;
+    UINT8* g_pCbvDataBegin;
     ComPtr<ID3D12Resource> g_depthStencilBuffer;
     
 
