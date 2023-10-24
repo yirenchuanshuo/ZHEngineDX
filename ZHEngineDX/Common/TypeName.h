@@ -9,3 +9,7 @@ using Float4x4 = XMFLOAT4X4;
 
 using FVector4 = XMVECTOR;
 using FMatrix4x4 = XMMATRIX;
+
+
+constexpr float PI = 3.141592654f;
+constexpr float PIDIV4 = 0.785398163f;

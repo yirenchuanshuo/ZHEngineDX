@@ -27,6 +27,9 @@
     <ClCompile Include="Example\HelloGame.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Game\Camera.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h">
@@ -51,6 +54,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Common\ZHEngineMath.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Camera.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

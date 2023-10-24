@@ -1,4 +1,5 @@
 #include "GameWindowApplication.h"
+
 #define DEBUGMESSAGE 0
 HWND GameWindowApplication::g_hwnd = nullptr;
 
@@ -45,6 +46,9 @@ int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 	return static_cast<char>(msg.wParam);
 }
 
+
+
+
 LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;
@@ -80,6 +84,15 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 	}
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		return 0;
+	case WM_RBUTTONDOWN:
+		game->OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		return 0;
+	case WM_RBUTTONUP:
+		game->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		return 0;
+	case WM_MOUSEMOVE:
+		game->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);

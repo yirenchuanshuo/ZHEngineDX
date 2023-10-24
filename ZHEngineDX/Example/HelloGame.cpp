@@ -264,10 +264,10 @@ void HelloGame::LoadAsset()
 		{ { -1.0f, +1.0f , -1.0f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
 		{ { +1.0f, +1.0f , -1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
 		{ { +1.0f, -1.0f , -1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ { -1.0f, -1.0f , +1.0f }, { 0.0f, 0.5f, 0.5f, 1.0f } },
-		{ { -1.0f, +1.0f , +1.0f }, { 0.5f, 0.0f, 0.0f, 1.0f } },
-		{ { +1.0f, +1.0f , +1.0f }, { 0.5f, 0.5f, 0.0f, 1.0f } },
-		{ { +1.0f, -1.0f , +1.0f }, { 0.5f, 0.5f, 0.5f, 1.0f } }
+		{ { -1.0f, -1.0f , +1.0f }, { 1.0f, 0.811f, 0.917f, 1.0f } },
+		{ { -1.0f, +1.0f , +1.0f }, { 0.99f, 1.0f, 0.745f, 1.0f } },
+		{ { +1.0f, +1.0f , +1.0f }, { 0.796f, 1.0f, 0.9f, 1.0f } },
+		{ { +1.0f, -1.0f , +1.0f }, { 0.686f, 0.913f, 1.0f, 1.0f } }
 	};
 
 	//Ë÷ÒýBuffer
@@ -514,17 +514,21 @@ void HelloGame::UpdateConstantBuffer()
 
 void HelloGame::UpdateMVP()
 {
-	FVector4 pos = MakeFvector4(0.0f, 5.0f, -5.0f, 1.0f);
-	FVector4 target = MakeFvector4(0.0f, 0.0f, 0.0f, 1.0f);
-	FVector4 up = MakeFvector4(0.0f, 1.0f, 0.0f, 0.0f);
+	float x = g_camera.g_Radius * sinf(g_camera.g_Phi) * cosf(g_camera.g_Theta);
+	float z = g_camera.g_Radius * sinf(g_camera.g_Phi) * sinf(g_camera.g_Theta);
+	float y = g_camera.g_Radius * cosf(g_camera.g_Phi);
 
-	FMatrix4x4 v = LookAt(pos, target, up);
+	FVector4 pos = ZHEngineMath::MakeFvector4(x, y, z, 1.0f);
+	FVector4 target = ZHEngineMath::MakeFvector4(0.0f, 0.0f, 0.0f, 1.0f);
+	FVector4 up = ZHEngineMath::MakeFvector4(0.0f, 1.0f, 0.0f, 0.0f);
 
-	FMatrix4x4 m = MatrixIdentity();
-	FMatrix4x4 p = MatrixFov(XM_PIDIV4, g_width / g_height, 1.0f, 1000.0f);
+	FMatrix4x4 v = ZHEngineMath::LookAt(pos, target, up);
+
+	FMatrix4x4 m = ZHEngineMath::MatrixIdentity();
+	FMatrix4x4 p = ZHEngineMath::MatrixFov(PIDIV4, AspectRatio(), 1.0f, 1000.0f);
 	FMatrix4x4 MVP = m * v * p;
 
 	SceneConstantBuffer objConstants;
-	MaterixToFloat4x4(&objConstants.MVP, MVP);
+	ZHEngineMath::MaterixToFloat4x4(&objConstants.MVP, MVP);
 	memcpy(g_pCbvDataBegin, &objConstants, sizeof(objConstants));
 }
