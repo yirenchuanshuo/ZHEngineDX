@@ -33,7 +33,7 @@ void HelloGame::OnInit()
 void HelloGame::OnUpdate()
 {
 	UpdateBackGround();
-	UpdateConstantBuffer();
+	UpdateMVP();
 }
 
 void HelloGame::OnRender()
@@ -260,22 +260,37 @@ void HelloGame::LoadAsset()
 	//创建顶点Buffer
 	Vertex triangleVertices[] =
 	{
-		{ { -0.25f, 0.25f * g_aspectRatio, 0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-		{ {  0.25f,-0.25f * g_aspectRatio, 0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ { -0.25f,-0.25f * g_aspectRatio, 0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ {  0.25f, 0.25f * g_aspectRatio, 0.5f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
-
-		{ { -0.5f, 0.5f * g_aspectRatio, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }},
-		{ { 0.0f, 0.0f * g_aspectRatio, 0.7f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
-		{ { -0.5f, 0.0f * g_aspectRatio, 0.7f }, { 0.0f, 1.0f, 1.0f, 1.0f }},
-		{ { 0.0f, 0.5f * g_aspectRatio, 0.7f }, { 1.0f, 1.0f, 1.0f, 1.0f }}
+		{ { -1.0f, -1.0f , -1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+		{ { -1.0f, +1.0f , -1.0f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
+		{ { +1.0f, +1.0f , -1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
+		{ { +1.0f, -1.0f , -1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ { -1.0f, -1.0f , +1.0f }, { 0.0f, 0.5f, 0.5f, 1.0f } },
+		{ { -1.0f, +1.0f , +1.0f }, { 0.5f, 0.0f, 0.0f, 1.0f } },
+		{ { +1.0f, +1.0f , +1.0f }, { 0.5f, 0.5f, 0.0f, 1.0f } },
+		{ { +1.0f, -1.0f , +1.0f }, { 0.5f, 0.5f, 0.5f, 1.0f } }
 	};
 
 	//索引Buffer
 	DWORD triangleIndex[]
 	{
-		0,1,2,
-		0,3,1
+		0, 1, 2,
+		0, 2, 3,
+
+
+		4, 6, 5,
+		4, 7, 6,
+
+		4, 5, 1,
+		4, 1, 0,
+
+		3, 2, 6,
+		3, 6, 7,
+
+		1, 5, 6,
+		1, 6, 2,
+
+		4, 0, 3,
+		4, 3, 7
 	};
 
 	const UINT vertexBufferSize = sizeof(triangleVertices);
@@ -285,15 +300,15 @@ void HelloGame::LoadAsset()
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
 	//资源描述符
-	CD3DX12_RESOURCE_DESC resourceDes = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
-	
+	CD3DX12_RESOURCE_DESC vertexResourceDes = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+	CD3DX12_RESOURCE_DESC indexResourceDes = CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize);
 	
 
 	//资源创建
-	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties,D3D12_HEAP_FLAG_NONE,&resourceDes,
+	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties,D3D12_HEAP_FLAG_NONE,&vertexResourceDes,
 		D3D12_RESOURCE_STATE_GENERIC_READ,nullptr,IID_PPV_ARGS(&g_vertexBuffer)));
 
-	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDes,
+	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &indexResourceDes,
 		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&g_indexBuffer)));
 
 	//复制顶点资源数据到GPUBuffer
@@ -316,23 +331,6 @@ void HelloGame::LoadAsset()
 	g_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 	g_indexBufferView.SizeInBytes = indexBufferSize;
 
-	//创建常量缓冲区资源描述符
-	constexpr UINT constantBufferSize = CalcConstantBufferByteSize<SceneConstantBuffer>();
-	CD3DX12_RESOURCE_DESC constantResourceDes = CD3DX12_RESOURCE_DESC::Buffer(constantBufferSize);
-	//创建常量缓冲区资源
-	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties,D3D12_HEAP_FLAG_NONE,&constantResourceDes,
-		D3D12_RESOURCE_STATE_GENERIC_READ,nullptr,IID_PPV_ARGS(&g_constantBuffer)));
-
-	//创建常量缓冲区视图描述符
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation = g_constantBuffer->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = constantBufferSize;
-
-	//创建常量缓冲区视图
-	g_device->CreateConstantBufferView(&cbvDesc, g_cbvHeap->GetCPUDescriptorHandleForHeapStart());
-	//复制常量缓冲区数据到GPU
-	ThrowIfFailed(g_constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
-	memcpy(g_pCbvDataBegin, &g_constantBufferData, sizeof(g_constantBufferData));
 
 	//创建深度模板缓冲区描述符
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -368,6 +366,23 @@ void HelloGame::LoadAsset()
 	//创建深度模板缓冲区
 	g_device->CreateDepthStencilView(g_depthStencilBuffer.Get(), &depthStencilDesc, g_dsvHeap->GetCPUDescriptorHandleForHeapStart());
 	
+	//创建常量缓冲区资源描述符
+	constexpr UINT constantBufferSize = CalcConstantBufferByteSize<SceneConstantBuffer>();
+	CD3DX12_RESOURCE_DESC constantResourceDes = CD3DX12_RESOURCE_DESC::Buffer(constantBufferSize);
+	//创建常量缓冲区资源
+	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &constantResourceDes,
+		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&g_constantBuffer)));
+
+	//创建常量缓冲区视图描述符
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = g_constantBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = constantBufferSize;
+
+	//创建常量缓冲区视图
+	g_device->CreateConstantBufferView(&cbvDesc, g_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	//复制常量缓冲区数据到GPU
+	ThrowIfFailed(g_constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
+	memcpy(g_pCbvDataBegin, &g_constantBufferData, sizeof(g_constantBufferData));
 
 	//创建一个围栏同步CPU与GPU
 	ThrowIfFailed(g_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
@@ -407,15 +422,14 @@ void HelloGame::PopulateCommandList()
 
 	//清除渲染目标
 	g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	g_commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	g_commandList->ClearDepthStencilView(g_dsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	//图元拓扑模式
 	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//顶点装配
 	g_commandList->IASetVertexBuffers(0, 1, &g_vertexBufferView);
 	g_commandList->IASetIndexBuffer(&g_indexBufferView);
 	//画图
-	g_commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-	g_commandList->DrawIndexedInstanced(6, 1, 0, 4, 0);
+	g_commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 
 	//执行资源转换状态(渲染目标状态转为呈现状态)
 	resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
@@ -486,13 +500,31 @@ void HelloGame::UpdateBackGround()
 
 void HelloGame::UpdateConstantBuffer()
 {
-	const float translationSpeed = 0.005f;
+	UpdateMVP();
+	/*const float translationSpeed = 0.005f;
 	const float offsetBounds = 1.75f;
 	g_constantBufferData.offset.x += translationSpeed;
 	if (g_constantBufferData.offset.x > offsetBounds)
 	{
 		g_constantBufferData.offset.x = -offsetBounds;
-	}
+	}*/
 	//GPU复制数据
 	memcpy(g_pCbvDataBegin, &g_constantBufferData, sizeof(g_constantBufferData));
+}
+
+void HelloGame::UpdateMVP()
+{
+	FVector4 pos = MakeFvector4(0.0f, 5.0f, -5.0f, 1.0f);
+	FVector4 target = MakeFvector4(0.0f, 0.0f, 0.0f, 1.0f);
+	FVector4 up = MakeFvector4(0.0f, 1.0f, 0.0f, 0.0f);
+
+	FMatrix4x4 v = LookAt(pos, target, up);
+
+	FMatrix4x4 m = MatrixIdentity();
+	FMatrix4x4 p = MatrixFov(XM_PIDIV4, g_width / g_height, 1.0f, 1000.0f);
+	FMatrix4x4 MVP = m * v * p;
+
+	SceneConstantBuffer objConstants;
+	MaterixToFloat4x4(&objConstants.MVP, MVP);
+	memcpy(g_pCbvDataBegin, &objConstants, sizeof(objConstants));
 }

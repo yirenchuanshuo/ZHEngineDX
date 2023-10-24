@@ -50,6 +50,9 @@
     <ClInclude Include="Example\HelloGame.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Common\ZHEngineMath.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Triangles.hlsl">

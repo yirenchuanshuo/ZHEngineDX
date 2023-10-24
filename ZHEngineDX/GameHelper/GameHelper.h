@@ -1,7 +1,7 @@
 #pragma once
 #include<stdexcept>
 #include"../Common/CommonCore.h"
-#include"../Common/TypeName.h"
+#include"../Common/ZHEngineMath.h"
 using Microsoft::WRL::ComPtr;
 
 inline std::string HrToString(HRESULT hr)

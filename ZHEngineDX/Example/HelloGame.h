@@ -16,6 +16,9 @@ public:
     virtual void UpdateBackGround();
     virtual void UpdateConstantBuffer();
 
+protected:
+    virtual void UpdateMVP();
+
 public:
     //BackGround
     float clearColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -27,7 +30,7 @@ public:
     //Data
     struct Vertex
     {
-        FVector3 position;
+        Float3 position;
         FLinearColor color;
     };
 
@@ -35,8 +38,8 @@ public:
     struct SceneConstantBuffer
     {
         //ÄÚ´æ¶ÔÆë256;
-        XMFLOAT4 offset;
-        XMFLOAT4 offset2;
+       Float4x4 MVP;
+       //Float4 offset;
     };
 
 private:
@@ -85,4 +88,6 @@ private:
     void LoadAsset();
     void PopulateCommandList();
     void WaitForPreviousFrame();
+
+
 };
