@@ -1,6 +1,6 @@
 #pragma once
-#include"../Game/Game.h"
-
+#include "../Game/Game.h"
+#include "../Mesh/OBJ.h"
 
 class HelloGame :public Game
 {
@@ -28,11 +28,7 @@ public:
     bool isBAdd = true;
 
     //Data
-    struct Vertex
-    {
-        Float3 position;
-        FLinearColor color;
-    };
+    OBJ Mode;
 
     //ConstantBuffer
     struct SceneConstantBuffer

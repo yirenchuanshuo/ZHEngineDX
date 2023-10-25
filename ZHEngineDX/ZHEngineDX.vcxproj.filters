@@ -30,6 +30,9 @@
     <ClCompile Include="Game\Camera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Mesh\OBJ.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h">
@@ -59,10 +62,19 @@
     <ClInclude Include="Game\Camera.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Mesh\MeshBaseData.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh\OBJ.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Triangles.hlsl">
       <Filter>资源文件</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="Asset\Monkey.obj" />
   </ItemGroup>
 </Project>

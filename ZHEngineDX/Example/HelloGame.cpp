@@ -1,5 +1,6 @@
 #include "HelloGame.h"
 
+
 void DebugMessage(std::wstring strToDisplay)
 {
 	wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), sizeof(DebugToDisplay) / sizeof(DebugToDisplay[0]));
@@ -258,6 +259,7 @@ void HelloGame::LoadAsset()
 	ThrowIfFailed(g_commandList->Close());
 
 	//创建顶点Buffer
+	Mode.Load("Asset/Monkey.obj");
 	Vertex triangleVertices[] =
 	{
 		{ { -1.0f, -1.0f , -1.0f }, { 0.99f, 0.5f, 0.99f, 1.0f } },
@@ -293,8 +295,12 @@ void HelloGame::LoadAsset()
 		4, 3, 7
 	};
 
-	const UINT vertexBufferSize = sizeof(triangleVertices);
-	const UINT indexBufferSize = sizeof(triangleIndex);
+
+	UINT ModeVertexSize = Mode.vertices.size() * sizeof(Mode.vertices[0]);
+	UINT ModeIndexSize = Mode.indices.size() * sizeof(Mode.indices[0]);
+	
+	const UINT vertexBufferSize = ModeVertexSize;
+	const UINT indexBufferSize = ModeIndexSize;
 
 	//数据上传堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -315,11 +321,11 @@ void HelloGame::LoadAsset()
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);
 	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+	memcpy(pVertexDataBegin, Mode.vertices.data(), ModeVertexSize);
 	g_vertexBuffer->Unmap(0, nullptr);
 
 	ThrowIfFailed(g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, triangleIndex, sizeof(triangleIndex));
+	memcpy(pVertexDataBegin, Mode.indices.data(), ModeIndexSize);
 	g_indexBuffer->Unmap(0, nullptr);
 
 	//初始化资源缓冲区视图
@@ -429,7 +435,7 @@ void HelloGame::PopulateCommandList()
 	g_commandList->IASetVertexBuffers(0, 1, &g_vertexBufferView);
 	g_commandList->IASetIndexBuffer(&g_indexBufferView);
 	//画图
-	g_commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+	g_commandList->DrawIndexedInstanced(Mode.indices.size(), 1, 0, 0, 0);
 
 	//执行资源转换状态(渲染目标状态转为呈现状态)
 	resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
