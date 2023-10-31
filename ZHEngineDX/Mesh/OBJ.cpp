@@ -39,10 +39,16 @@ void OBJ::Load(std::string path)
 			{
 				UINT index;
 				UINT vtindex;
-				std::istringstream(splitted) >> index;
-				std::istringstream(splitted) >> vtindex;
-				Triangleindex.push_back(index - 1);
-				Trianglevtindex.push_back(vtindex-1);
+				char separator;
+				std::istringstream ss(splitted);
+				if (ss >> index)
+				{
+					if (ss >> separator >> vtindex)
+					{
+						Triangleindex.push_back(index - 1);
+						Trianglevtindex.push_back(vtindex - 1);
+					}
+				}
 			}
 			int n = Triangleindex.size();
 			std::vector<int> vertexindex;

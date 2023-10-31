@@ -439,7 +439,7 @@ void HelloGame::LoadAsset()
 	//加载纹理数据
 	D3D12_RESOURCE_DESC textureDesc;
 	int texBytesPerRow;
-	int texSize = LoadImageDataFromFile(&g_texData, textureDesc, L"Asset/Grass.jpg", texBytesPerRow);
+	int texSize = LoadImageDataFromFile(&g_texData, textureDesc, L"Asset/BaseColor.jpg", texBytesPerRow);
 
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties3 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);

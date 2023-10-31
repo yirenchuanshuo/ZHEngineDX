@@ -25,6 +25,7 @@ PSInput VSMain(float4 position : POSITION, float2 texCoord : TEXCOORD,float4 col
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    float4 basecolor = t1.Sample(s1, input.texCoord);
+    float2 texCoord = float2(input.texCoord.x, 1-input.texCoord.y);
+    float4 basecolor = t1.Sample(s1, texCoord);
     return basecolor;
 }
