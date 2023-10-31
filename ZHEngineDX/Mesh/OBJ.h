@@ -13,5 +13,10 @@ public:
     void Load(std::string path);
     FLinearColor randomColor();
     //void draw_obj(bool isFlat);
+    
+    
+private:
+    std::vector<Float3> positionlut;
+    std::vector<Float2> uvlut;
 };
 

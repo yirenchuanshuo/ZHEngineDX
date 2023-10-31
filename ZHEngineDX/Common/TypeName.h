@@ -1,6 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
 using namespace DirectX;
+using Float2 = XMFLOAT2;
 using Float3 = XMFLOAT3;
 using Float4 = XMFLOAT4;
 using FLinearColor = XMFLOAT4;

@@ -6,6 +6,7 @@
 struct Vertex
 {
     Float3 position;
+    Float2 texcoord;
     FLinearColor color;
 };
 

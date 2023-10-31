@@ -230,7 +230,8 @@ void HelloGame::LoadAsset()
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
 	//PSO描述
@@ -260,16 +261,40 @@ void HelloGame::LoadAsset()
 
 	//创建顶点Buffer
 	Mode.Load("Asset/Monkey.obj");
-	Vertex triangleVertices[] =
+	/*Vertex triangleVertices[] =
 	{
-		{ { -1.0f, -1.0f , -1.0f }, { 0.99f, 0.5f, 0.99f, 1.0f } },
-		{ { -1.0f, +1.0f , -1.0f }, { 0.01f, 0.8f, 1.0f, 1.0f } },
-		{ { +1.0f, +1.0f , -1.0f }, { 0.98f, 0.75f, 0.667f, 1.0f } },
-		{ { +1.0f, -1.0f , -1.0f }, { 0.99f, 0.99f, 0.4f, 1.0f } },
-		{ { -1.0f, -1.0f , +1.0f }, { 1.0f, 0.811f, 0.917f, 1.0f } },
-		{ { -1.0f, +1.0f , +1.0f }, { 0.99f, 1.0f, 0.745f, 1.0f } },
-		{ { +1.0f, +1.0f , +1.0f }, { 0.796f, 1.0f, 0.9f, 1.0f } },
-		{ { +1.0f, -1.0f , +1.0f }, { 0.686f, 0.913f, 1.0f, 1.0f } }
+		{ { -1.0f, -1.0f , -1.0f }, {0.0f, 1.0f}, { 0.99f, 0.5f, 0.99f, 1.0f } },
+		{ { -1.0f, +1.0f , -1.0f }, {0.0f, 0.0f},{ 0.01f, 0.8f, 1.0f, 1.0f } },
+		{ { +1.0f, +1.0f , -1.0f }, {1.0f, 0.0f},{ 0.98f, 0.75f, 0.667f, 1.0f } },
+		{ { +1.0f, -1.0f , -1.0f }, {1.0f, 1.0f},{ 0.99f, 0.99f, 0.4f, 1.0f } },
+
+
+		{ { -1.0f, -1.0f , +1.0f }, {1.0f, 1.0f},{ 1.0f, 0.811f, 0.917f, 1.0f } },
+		{ { +1.0f, -1.0f , +1.0f }, {0.0f, 1.0f},{ 0.796f, 1.0f, 0.9f, 1.0f } },
+		{ { +1.0f, +1.0f , +1.0f }, {0.0f, 0.0f},{ 0.686f, 0.913f, 1.0f, 1.0f } },
+		{ { -1.0f, +1.0f , +1.0f }, {1.0f, 0.0f},{ 0.99f, 1.0f, 0.745f, 1.0f } },
+
+
+		{ { -1.0f, +1.0f , -1.0f }, {0.0f, 1.0f},{ 0.01f, 0.8f, 1.0f, 1.0f } },
+		{ { -1.0f, +1.0f , +1.0f }, {0.0f, 0.0f},{ 0.99f, 1.0f, 0.745f, 1.0f } },
+		{ { +1.0f, +1.0f , +1.0f }, {1.0f, 0.0f},{ 0.686f, 0.913f, 1.0f, 1.0f } },
+		{ { +1.0f, +1.0f , -1.0f }, {1.0f, 1.0f},{ 0.98f, 0.75f, 0.667f, 1.0f } },
+
+
+		{ { -1.0f, -1.0f , -1.0f }, {1.0f, 1.0f}, { 0.99f, 0.5f, 0.99f, 1.0f } },
+		{ { +1.0f, -1.0f , -1.0f }, {0.0f, 1.0f},{ 0.99f, 0.99f, 0.4f, 1.0f } },
+		{ { +1.0f, -1.0f , +1.0f }, {0.0f, 0.0f},{ 0.796f, 1.0f, 0.9f, 1.0f } },
+		{ { -1.0f, -1.0f , +1.0f }, {1.0f, 0.0f},{ 1.0f, 0.811f, 0.917f, 1.0f } },
+
+		{ { -1.0f, -1.0f , +1.0f }, {0.0f, 1.0f},{ 1.0f, 0.811f, 0.917f, 1.0f } },
+		{ { -1.0f, +1.0f , +1.0f }, {0.0f, 0.0f},{ 0.99f, 1.0f, 0.745f, 1.0f } },
+		{ { -1.0f, +1.0f , -1.0f }, {1.0f, 0.0f},{ 0.01f, 0.8f, 1.0f, 1.0f } },
+		{ { -1.0f, -1.0f , -1.0f }, {1.0f, 1.0f}, { 0.99f, 0.5f, 0.99f, 1.0f } },
+
+		{ { +1.0f, -1.0f , -1.0f }, {0.0f, 1.0f},{ 0.99f, 0.99f, 0.4f, 1.0f } },
+		{ { +1.0f, +1.0f , -1.0f }, {0.0f, 0.0f},{ 0.98f, 0.75f, 0.667f, 1.0f } },
+		{ { +1.0f, +1.0f , +1.0f }, {1.0f, 0.0f},{ 0.686f, 0.913f, 1.0f, 1.0f } },
+		{ { +1.0f, -1.0f , +1.0f }, {1.0f, 1.0f},{ 0.796f, 1.0f, 0.9f, 1.0f } }
 	};
 
 	//索引Buffer
@@ -279,25 +304,29 @@ void HelloGame::LoadAsset()
 		0, 2, 3,
 
 
-		4, 6, 5,
-		4, 7, 6,
+		4, 5, 6,
+		4, 6, 7,
 
-		4, 5, 1,
-		4, 1, 0,
+		8, 9, 10,
+		8, 10, 11,
 
-		3, 2, 6,
-		3, 6, 7,
+		12, 13, 14,
+		12, 14, 15,
 
-		1, 5, 6,
-		1, 6, 2,
+		16, 17, 18,
+		16, 18, 19,
 
-		4, 0, 3,
-		4, 3, 7
+		20, 21, 22,
+		20, 22, 23
 	};
 
+	UINT TriangleVertexSize = sizeof(triangleVertices);
+	UINT TriangleIndexSize = sizeof(triangleIndex);*/
 
 	UINT ModeVertexSize = Mode.vertices.size() * sizeof(Mode.vertices[0]);
 	UINT ModeIndexSize = Mode.indices.size() * sizeof(Mode.indices[0]);
+
+	
 	
 	const UINT vertexBufferSize = ModeVertexSize;
 	const UINT indexBufferSize = ModeIndexSize;
@@ -429,11 +458,14 @@ void HelloGame::PopulateCommandList()
 	//清除渲染目标
 	g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	g_commandList->ClearDepthStencilView(g_dsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-	//图元拓扑模式
-	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	
 	//顶点装配
 	g_commandList->IASetVertexBuffers(0, 1, &g_vertexBufferView);
 	g_commandList->IASetIndexBuffer(&g_indexBufferView);
+
+	//图元拓扑模式
+	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	//画图
 	g_commandList->DrawIndexedInstanced(Mode.indices.size(), 1, 0, 0, 0);
 
