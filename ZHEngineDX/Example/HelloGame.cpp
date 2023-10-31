@@ -441,6 +441,7 @@ void HelloGame::LoadAsset()
 	int texBytesPerRow;
 	int texSize = LoadImageDataFromFile(&g_texData, textureDesc, L"Asset/Grass.jpg", texBytesPerRow);
 
+	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties3 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	ThrowIfFailed(g_device->CreateCommittedResource(
 		&heapProperties3,
@@ -450,9 +451,10 @@ void HelloGame::LoadAsset()
 		nullptr,
 		IID_PPV_ARGS(&g_textureBuffer)));
 
+	//记录纹理资源堆大小
 	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textureBuffer.Get(), 0, 1);
 
-
+	//创建数据上传堆 CPUGPU都可访问
 	CD3DX12_HEAP_PROPERTIES heapProperties4 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	ThrowIfFailed(g_device->CreateCommittedResource(
@@ -463,21 +465,25 @@ void HelloGame::LoadAsset()
 		nullptr,
 		IID_PPV_ARGS(&g_textureBufferUploadHeap)));
 
+	//创建纹理数据
 	D3D12_SUBRESOURCE_DATA textureData = {};
 	textureData.pData = &g_texData[0];
 	textureData.RowPitch = texBytesPerRow;
 	textureData.SlicePitch = texBytesPerRow * textureDesc.Height;
 
+	//把资源从上传堆拷贝到默认堆，描述该堆作用
 	UpdateSubresources(g_commandList.Get(), g_textureBuffer.Get(), g_textureBufferUploadHeap.Get(), 0, 0, 1, &textureData);
 	CD3DX12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textureBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	g_commandList->ResourceBarrier(1, &resBarrier);
 
+	//创建着色器资源视图描述
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = textureDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
+	//创建着色器资源视图
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
 	g_device->CreateShaderResourceView(g_textureBuffer.Get(), &srvDesc, cbvsrvHandle);
