@@ -134,7 +134,7 @@ void HelloGame::LoadPipeline()
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	//创建渲染目标视图
+	//创建渲染目标视图描述堆
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&g_rtvHeap)));
 	g_rtvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	//std::wstring strToDisplay = std::to_wstring(g_rtvDescriptorSize);
@@ -150,13 +150,14 @@ void HelloGame::LoadPipeline()
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&g_dsvHeap)));
 
 	//创建常量缓冲描述符堆描述
-	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-	cbvHeapDesc.NumDescriptors = 1;
-	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	//创建常量缓存描述符堆
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&g_cbvHeap)));
+	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
+	cbvsrvHeapDesc.NumDescriptors = 2;
+	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
+	//创建常量缓存描述符堆
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_cbvsrvHeap)));
+	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	//获取渲染视图的起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -184,24 +185,40 @@ void HelloGame::LoadAsset()
 	}
 
 	//创建对根参数的描述和根参数
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+	CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
 	CD3DX12_ROOT_PARAMETER1 rootParameters[1];
 
 	//指定该根参数为常量缓冲区视图
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	rootParameters[0].InitAsDescriptorTable(2, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 
 	//定义根签名属性
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+
+	//创建静态采样器
+	D3D12_STATIC_SAMPLER_DESC sampler = {};
+	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	sampler.MipLODBias = 0;
+	sampler.MaxAnisotropy = 0;
+	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	sampler.MinLOD = 0.0f;
+	sampler.MaxLOD = D3D12_FLOAT32_MAX;
+	sampler.ShaderRegister = 0;
+	sampler.RegisterSpace = 0;
+	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	//创建根签名描述符
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
+	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, rootSignatureFlags);
 
 	//创建根签名
 	ComPtr<ID3DBlob> signature;
@@ -256,8 +273,8 @@ void HelloGame::LoadAsset()
 	//创建命令列表，用命令分配器给命令列表分配对象
 	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocator.Get(), g_pipelineState.Get(), IID_PPV_ARGS(&g_commandList)));
 
-	//关闭命令列表准备渲染
-	ThrowIfFailed(g_commandList->Close());
+	
+	//ThrowIfFailed(g_commandList->Close());
 
 	//创建顶点Buffer
 	Mode.Load("Asset/Monkey.obj");
@@ -414,10 +431,61 @@ void HelloGame::LoadAsset()
 	cbvDesc.SizeInBytes = constantBufferSize;
 
 	//创建常量缓冲区视图
-	g_device->CreateConstantBufferView(&cbvDesc, g_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	g_device->CreateConstantBufferView(&cbvDesc, g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
 	memcpy(g_pCbvDataBegin, &g_constantBufferData, sizeof(g_constantBufferData));
+
+	//加载纹理数据
+	D3D12_RESOURCE_DESC textureDesc;
+	int texBytesPerRow;
+	int texSize = LoadImageDataFromFile(&g_texData, textureDesc, L"Asset/Grass.jpg", texBytesPerRow);
+
+	CD3DX12_HEAP_PROPERTIES heapProperties3 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties3,
+		D3D12_HEAP_FLAG_NONE,
+		&textureDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&g_textureBuffer)));
+
+	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textureBuffer.Get(), 0, 1);
+
+
+	CD3DX12_HEAP_PROPERTIES heapProperties4 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties4,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&g_textureBufferUploadHeap)));
+
+	D3D12_SUBRESOURCE_DATA textureData = {};
+	textureData.pData = &g_texData[0];
+	textureData.RowPitch = texBytesPerRow;
+	textureData.SlicePitch = texBytesPerRow * textureDesc.Height;
+
+	UpdateSubresources(g_commandList.Get(), g_textureBuffer.Get(), g_textureBufferUploadHeap.Get(), 0, 0, 1, &textureData);
+	CD3DX12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textureBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	g_commandList->ResourceBarrier(1, &resBarrier);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+	g_device->CreateShaderResourceView(g_textureBuffer.Get(), &srvDesc, cbvsrvHandle);
+
+	//关闭命令列表准备渲染
+	ThrowIfFailed(g_commandList->Close());
+	ID3D12CommandList* ppCommandLists[] = { g_commandList.Get() };
+	g_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 	//创建一个围栏同步CPU与GPU
 	ThrowIfFailed(g_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
@@ -439,10 +507,10 @@ void HelloGame::PopulateCommandList()
 	g_commandList->SetGraphicsRootSignature(g_rootSignature.Get());
 
 	//设置常量缓冲区描述堆，提交到渲染命令
-	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvHeap.Get() };
+	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvsrvHeap.Get() };
 	g_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	//设置根描述符表，上传参数
-	g_commandList->SetGraphicsRootDescriptorTable(0, g_cbvHeap->GetGPUDescriptorHandleForHeapStart());
+	g_commandList->SetGraphicsRootDescriptorTable(0, g_cbvsrvHeap->GetGPUDescriptorHandleForHeapStart());
 	g_commandList->RSSetViewports(1, &g_viewport);
 	g_commandList->RSSetScissorRects(1, &g_scissorRect);
 
@@ -459,12 +527,12 @@ void HelloGame::PopulateCommandList()
 	g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	g_commandList->ClearDepthStencilView(g_dsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	
+	//图元拓扑模式
+	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	//顶点装配
 	g_commandList->IASetVertexBuffers(0, 1, &g_vertexBufferView);
 	g_commandList->IASetIndexBuffer(&g_indexBufferView);
-
-	//图元拓扑模式
-	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//画图
 	g_commandList->DrawIndexedInstanced(Mode.indices.size(), 1, 0, 0, 0);

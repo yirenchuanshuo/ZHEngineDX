@@ -53,12 +53,13 @@ private:
 
     ComPtr<ID3D12DescriptorHeap> g_rtvHeap;
     ComPtr<ID3D12DescriptorHeap> g_dsvHeap;
-    ComPtr<ID3D12DescriptorHeap> g_cbvHeap;
+    ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
 
 
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12GraphicsCommandList> g_commandList;
     UINT g_rtvDescriptorSize;
+    UINT g_cbvsrvDescriptorSize;
 
     //资源Buffer
     ComPtr<ID3D12Resource> g_vertexBuffer;
@@ -69,8 +70,15 @@ private:
 
     ComPtr<ID3D12Resource> g_constantBuffer;
     SceneConstantBuffer g_constantBufferData;
+
+    ComPtr<ID3D12Resource> g_textureBuffer;
+    ComPtr<ID3D12Resource> g_textureBufferUploadHeap;
+    BYTE* g_texData;
+
     UINT8* g_pCbvDataBegin;
     ComPtr<ID3D12Resource> g_depthStencilBuffer;
+
+    
     
 
     // 同步对象

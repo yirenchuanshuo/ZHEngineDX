@@ -23,6 +23,7 @@ public:
 	virtual void OnMouseMove(WPARAM btnState, int x, int y);
 
 	float AspectRatio()const;
+	int LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow);
 	
 	UINT GetWidth() const { return g_width; }
 	UINT GetHeight() const { return g_height; }
@@ -42,5 +43,9 @@ protected:
 private:
 	std::wstring g_assetsPath;
 	std::wstring g_title;
+
+	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
+	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
+	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 };
 

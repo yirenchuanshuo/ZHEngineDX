@@ -44,8 +44,9 @@ void OBJ::Load(std::string path)
 				Triangleindex.push_back(index - 1);
 				Trianglevtindex.push_back(vtindex-1);
 			}
+			int n = Triangleindex.size();
 			std::vector<int> vertexindex;
-			for (size_t i = 0; i < Triangleindex.size(); i++)
+			for (size_t i = 0; i < n; i++)
 			{
 				vertexindex.push_back(indexcount+i);
 				Vertex vertex;
@@ -54,8 +55,8 @@ void OBJ::Load(std::string path)
 				vertex.color = randomColor();
 				vertices.push_back(vertex);
 			}
-			indexcount += Triangleindex.size();
-			for (size_t i = 2; i < Triangleindex.size(); i++)
+			indexcount += n;
+			for (size_t i = 2; i < n; i++)
 			{
 				indices.push_back(vertexindex[0]);
 				indices.push_back(vertexindex[i-1]);
