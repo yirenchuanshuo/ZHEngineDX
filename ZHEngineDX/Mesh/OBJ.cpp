@@ -11,7 +11,6 @@ void OBJ::Load(std::string path)
 		return;
 	}
 	std::string line;
-	FLinearColor Color = { 0.1,0.1,0.1,1.0 };
 	srand(time(NULL));
 	int indexcount = 0;
 	while (std::getline(file, line)) {
@@ -29,40 +28,48 @@ void OBJ::Load(std::string path)
 			s >> UV.x >> UV.y;
 			uvlut.push_back(UV);
 		}
+		else if (line.substr(0, 3) == "vn ")
+		{
+			std::istringstream s(line.substr(3));
+			Float3 Normal;
+			s >> Normal.x >> Normal.y>>Normal.z;
+			normallut.push_back(Normal);
+		}
 		else if (line.substr(0, 2) == "f ")
 		{
 			std::istringstream s(line.substr(2));
 			std::string splitted;
 			std::vector<DWORD>Triangleindex;
+			std::vector<DWORD>Trianglenormalindex;
 			std::vector<DWORD>Trianglevtindex;
 			while (std::getline(s, splitted, ' '))
 			{
 				UINT index;
 				UINT vtindex;
+				UINT normalindex;
 				char separator;
 				std::istringstream ss(splitted);
-				if (ss >> index)
+				if (ss >> index >> separator >> vtindex >> separator>> normalindex)
 				{
-					if (ss >> separator >> vtindex)
-					{
 						Triangleindex.push_back(index - 1);
+						Trianglenormalindex.push_back(normalindex-1);
 						Trianglevtindex.push_back(vtindex - 1);
-					}
 				}
 			}
-			int n = Triangleindex.size();
+			UINT n = (UINT)Triangleindex.size();
 			std::vector<int> vertexindex;
-			for (size_t i = 0; i < n; i++)
+			for (UINT i = 0; i < n; i++)
 			{
 				vertexindex.push_back(indexcount+i);
 				Vertex vertex;
 				vertex.position = positionlut[Triangleindex[i]];
+				vertex.normal = normallut[Trianglenormalindex[i]];
 				vertex.texcoord = uvlut[Trianglevtindex[i]];
-				vertex.color = randomColor();
+				//vertex.color = randomColor();
 				vertices.push_back(vertex);
 			}
 			indexcount += n;
-			for (size_t i = 2; i < n; i++)
+			for (UINT i = 2; i < n; i++)
 			{
 				indices.push_back(vertexindex[0]);
 				indices.push_back(vertexindex[i-1]);

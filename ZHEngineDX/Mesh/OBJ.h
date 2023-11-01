@@ -18,5 +18,6 @@ public:
 private:
     std::vector<Float3> positionlut;
     std::vector<Float2> uvlut;
+    std::vector<Float3> normallut;
 };
 

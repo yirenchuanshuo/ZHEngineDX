@@ -6,8 +6,9 @@
 struct Vertex
 {
     Float3 position;
+    Float3 normal;
     Float2 texcoord;
-    FLinearColor color;
+    FLinearColor color = {1.0f,1.0f,1.0f,1.0f};
 };
 
 struct Face

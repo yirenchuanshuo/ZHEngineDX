@@ -15,11 +15,11 @@ int main()
 	OBJ Mode;
 	Mode.Load("Asset/Cube.obj");
 	std::cout << std::endl;
-	int n = Mode.indices.size();
+	/*UINT n = Mode.indices.size();
 	for (int i = 0; i < n -2; i+=3)
 	{
 		std::cout << Mode.indices[i]<<" " << Mode.indices[i + 1]<<" " << Mode.indices[i + 2];
 		std::cout << std::endl;
-	}
+	}*/
 	return 0;
 }
