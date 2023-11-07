@@ -1,6 +1,7 @@
 #pragma once
 #include "../Game/Game.h"
 #include "../Mesh/OBJ.h"
+#include "../Mesh/Light.h"
 
 class HelloGame :public Game
 {
@@ -14,6 +15,7 @@ public:
 
 
     virtual void UpdateBackGround();
+    virtual void UpdateLight();
     virtual void UpdateConstantBuffer();
 
 protected:
@@ -29,12 +31,20 @@ public:
 
     //Data
     OBJ Mode;
+    DirectionLight light;
+    float lightangle=0.0f;
 
     //ConstantBuffer
     struct SceneConstantBuffer
     {
         //ÄÚ´æ¶ÔÆë256;
-       Float4x4 MVP;
+        Float4x4 ObjectToWorld;
+        Float4x4 MVP;
+        FLinearColor lightColor;
+        Float3 lightDirection;
+        float pad;
+        Float3 viewPosition;
+        float pad2;
        //Float4 offset;
     };
 

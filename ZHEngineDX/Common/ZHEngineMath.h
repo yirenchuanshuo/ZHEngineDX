@@ -10,6 +10,13 @@ namespace ZHEngineMath
 		return XMVectorSet(std::forward<X>(x), std::forward<Y>(y), std::forward<Z>(z), std::forward<W>(w));
 	}
 
+	static Float4 FVector4ToFloat4(FVector4& V)
+	{
+		Float4 Temp;
+		XMStoreFloat4(&Temp, V);
+		return Temp;
+	}
+
 	static FMatrix4x4 LookAt(FVector4 &pos,FVector4& target,FVector4 &up)
 	{
 		return XMMatrixLookAtLH(pos, target, up);
@@ -30,9 +37,21 @@ namespace ZHEngineMath
 		XMStoreFloat4x4(f, XMMatrixTranspose(m));
 	}
 
+
 	template<typename T>
 	static T Clamp(const T& x, const T& low, const T& high)
 	{
 		return x < low ? low : (x > high ? high : x);
+	}
+
+	template<typename T>
+	static T Normalize(T& vector)
+	{
+		return normalize(T);
+	}
+
+	static float AngleToRadians(float Angle)
+	{
+		return XMConvertToRadians(Angle);
 	}
 }

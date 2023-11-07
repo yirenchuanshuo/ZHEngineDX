@@ -20,7 +20,8 @@ HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
 	g_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
 	g_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)),
 	g_rtvDescriptorSize(0),
-	g_constantBufferData{}
+	g_constantBufferData{},
+	light{Float3(1,1,1),FLinearColor(1,1,1,1)}
 {
 
 }
@@ -34,7 +35,7 @@ void HelloGame::OnInit()
 void HelloGame::OnUpdate()
 {
 	UpdateBackGround();
-	UpdateMVP();
+	UpdateConstantBuffer();
 }
 
 void HelloGame::OnRender()
@@ -53,6 +54,7 @@ void HelloGame::OnDestroy()
 {
 	WaitForPreviousFrame();
 	CloseHandle(g_fenceEvent);
+	delete g_texData;
 }
 
 void HelloGame::LoadPipeline()
@@ -278,7 +280,7 @@ void HelloGame::LoadAsset()
 	//ThrowIfFailed(g_commandList->Close());
 
 	//创建顶点Buffer
-	Mode.Load("Asset/Monkey.obj");
+	Mode.Load("Asset/Monkey2.obj");
 	/*Vertex triangleVertices[] =
 	{
 		{ { -1.0f, -1.0f , -1.0f }, {0.0f, 1.0f}, { 0.99f, 0.5f, 0.99f, 1.0f } },
@@ -440,7 +442,7 @@ void HelloGame::LoadAsset()
 	//加载纹理数据
 	D3D12_RESOURCE_DESC textureDesc;
 	int texBytesPerRow;
-	int texSize = LoadImageDataFromFile(&g_texData, textureDesc, L"Asset/BaseColor.jpg", texBytesPerRow);
+	int texSize = LoadImageDataFromFile(&g_texData, textureDesc, L"Asset/BaseColor2.jpg", texBytesPerRow);
 
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties3 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -611,9 +613,26 @@ void HelloGame::UpdateBackGround()
 	clearColor[3] = 1.0f;
 }
 
+void HelloGame::UpdateLight()
+{
+	//FVector3 RotationAxis {0,0,1};
+
+	//float angle = 2.0f;
+	//lightangle += angle;
+	//float angleInRadians = ZHEngineMath::AngleToRadians(lightangle);
+	//FVector4 rotationAxisVector = XMQuaternionRotationAxis(RotationAxis, angleInRadians);
+	//Float4 lightDir = ZHEngineMath::FVector4ToFloat4(rotationAxisVector);
+	//light.direction = {lightDir.x,lightDir.y,lightDir.z};
+	g_constantBufferData.lightColor = light.color;
+	g_constantBufferData.lightDirection = light.direction;
+	
+}
+
 void HelloGame::UpdateConstantBuffer()
 {
+
 	UpdateMVP();
+	UpdateLight();
 	/*const float translationSpeed = 0.005f;
 	const float offsetBounds = 1.75f;
 	g_constantBufferData.offset.x += translationSpeed;
@@ -641,7 +660,8 @@ void HelloGame::UpdateMVP()
 	FMatrix4x4 p = ZHEngineMath::MatrixFov(PIDIV4, AspectRatio(), 1.0f, 1000.0f);
 	FMatrix4x4 MVP = m * v * p;
 
-	SceneConstantBuffer objConstants;
-	ZHEngineMath::MaterixToFloat4x4(&objConstants.MVP, MVP);
-	memcpy(g_pCbvDataBegin, &objConstants, sizeof(objConstants));
+	ZHEngineMath::MaterixToFloat4x4(&g_constantBufferData.ObjectToWorld, m);
+	ZHEngineMath::MaterixToFloat4x4(&g_constantBufferData.MVP, MVP);
+	g_constantBufferData.viewPosition = { x,y,z };
+	
 }

@@ -4,7 +4,15 @@
     <projectFile>ZHEngineDX/ZHEngineDX.vcxproj</projectFile>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cae8fea0-8770-4418-9f57-fca688cd7ad7" name="Changes" comment="" />
+    <list default="true" id="cae8fea0-8770-4418-9f57-fca688cd7ad7" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.ZHEngineDX/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ZHEngineDX/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ZHEngineDX/Asset/Triangles.hlsl" beforeDir="false" afterPath="$PROJECT_DIR$/ZHEngineDX/Asset/Triangles.hlsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ZHEngineDX/Common/ZHEngineMath.h" beforeDir="false" afterPath="$PROJECT_DIR$/ZHEngineDX/Common/ZHEngineMath.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ZHEngineDX/Example/HelloGame.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/ZHEngineDX/Example/HelloGame.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ZHEngineDX/Example/HelloGame.h" beforeDir="false" afterPath="$PROJECT_DIR$/ZHEngineDX/Example/HelloGame.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ZHEngineDX/ZHEngineDX.vcxproj" beforeDir="false" afterPath="$PROJECT_DIR$/ZHEngineDX/ZHEngineDX.vcxproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ZHEngineDX/ZHEngineDX.vcxproj.filters" beforeDir="false" afterPath="$PROJECT_DIR$/ZHEngineDX/ZHEngineDX.vcxproj.filters" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -100,6 +108,8 @@
       <updated>1698064307611</updated>
       <workItem from="1698064309073" duration="47000" />
       <workItem from="1698848064284" duration="175000" />
+      <workItem from="1698904068452" duration="151000" />
+      <workItem from="1698917292567" duration="2000" />
     </task>
     <servers />
   </component>

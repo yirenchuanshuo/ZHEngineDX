@@ -68,6 +68,9 @@
     <ClInclude Include="Mesh\OBJ.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Mesh\Light.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Triangles.hlsl">
