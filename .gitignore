@@ -3,6 +3,7 @@
 /.vs/*
 /out/*
 /Debug/*
+/.idea/*
 /ZHEngineDX/x64/*
 /ZHEngineDX/Debug/*
 /ZHEngineDX/Release/*

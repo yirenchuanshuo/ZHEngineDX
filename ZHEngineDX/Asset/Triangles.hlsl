@@ -34,13 +34,23 @@ float4 PSMain(PSInput input) : SV_TARGET
 {
     float2 texCoord = float2(input.texCoord.x, 1-input.texCoord.y);
     float4 basecolor = t1.Sample(s1, texCoord);
-    float ambientStrength = 0.1;
-    float3 ambient = ambientStrength * lightColor.xyz;
+    float ambientStrength = 0.2;
+    float3 ambient = ambientStrength * lightColor.xyz*basecolor.xyz;
     
     float3 normal = normalize(input.normal);
     float lambert = max(dot(normal, normalize(lightDirection)), 0.0);
     float3 diffuse = lambert * lightColor.xyz;
-    diffuse += ambient;
+    diffuse *= basecolor.xyz;
     
-    return float4(diffuse*basecolor.xyz, 1.0);
+    float specularStrength = 0.5;
+    float3 viewDir = normalize(viewPosition - input.worldposition.xyz);
+    float3 halfDir = normalize(lightDirection + viewDir);
+    float spec = pow(max(dot(halfDir, normal), 0.0), 32);
+    float3 specular = specularStrength*spec*lightColor.xyz;
+    //specular *= basecolor.xyz;
+    
+    float4 finalcolor = float4(ambient+diffuse+specular,1.0);
+    
+    return finalcolor;
+
 }

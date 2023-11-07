@@ -615,14 +615,14 @@ void HelloGame::UpdateBackGround()
 
 void HelloGame::UpdateLight()
 {
-	//FVector3 RotationAxis {0,0,1};
+	FVector3 RotationAxis {1,0,0};
 
-	//float angle = 2.0f;
-	//lightangle += angle;
-	//float angleInRadians = ZHEngineMath::AngleToRadians(lightangle);
-	//FVector4 rotationAxisVector = XMQuaternionRotationAxis(RotationAxis, angleInRadians);
-	//Float4 lightDir = ZHEngineMath::FVector4ToFloat4(rotationAxisVector);
-	//light.direction = {lightDir.x,lightDir.y,lightDir.z};
+	float angle = 1.0f;
+	lightangle += angle;
+	float angleInRadians = ZHEngineMath::AngleToRadians(lightangle);
+	FVector4 rotationAxisVector = XMQuaternionRotationAxis(RotationAxis, angleInRadians);
+	Float4 lightDir = ZHEngineMath::FVector4ToFloat4(rotationAxisVector);
+	light.direction = {lightDir.x,lightDir.y,lightDir.z};
 	g_constantBufferData.lightColor = light.color;
 	g_constantBufferData.lightDirection = light.direction;
 	
