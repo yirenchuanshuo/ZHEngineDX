@@ -38,8 +38,9 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 ambient = ambientStrength * lightColor.xyz*basecolor.xyz;
     
     float3 normal = normalize(input.normal);
-    float lambert = max(dot(normal, normalize(lightDirection)), 0.0);
-    float3 diffuse = lambert * lightColor.xyz;
+    float halflambert = dot(normal, normalize(lightDirection)) * 0.5 + 0.5;
+    //float lambert = max(dot(normal, normalize(lightDirection)), 0.0);
+    float3 diffuse = halflambert * lightColor.xyz;
     diffuse *= basecolor.xyz;
     
     float specularStrength = 0.5;

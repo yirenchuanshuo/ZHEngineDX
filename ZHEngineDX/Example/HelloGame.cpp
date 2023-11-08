@@ -68,88 +68,27 @@ void HelloGame::LoadPipeline()
 		}
 	}
 #endif 
+	
 
-	//建立工厂
+	//创建工厂
 	ComPtr<IDXGIFactory6> gDxgiFactory;
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&gDxgiFactory)));
-
-	D3D_FEATURE_LEVEL featureLevels[] =
-	{
-		D3D_FEATURE_LEVEL_12_1,
-		D3D_FEATURE_LEVEL_12_0,
-		D3D_FEATURE_LEVEL_11_1,
-		D3D_FEATURE_LEVEL_11_0,
-	};
-
-	//找到显示设备
-	IDXGIAdapter1* adapter = nullptr;
-	for (std::uint32_t i = 0U; i < _countof(featureLevels); ++i)
-	{
-		adapter = GetSupportedAdapter(gDxgiFactory, featureLevels[i]);
-		if (adapter != nullptr)
-		{
-			break;
-		}
-	}
 
 	//创建GPU交互对象
-	if (adapter != nullptr)
-	{
-		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&g_device));
-	}
-
+	CreateGPUElement(gDxgiFactory);
 
 	//创建命令队列
-	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-	ThrowIfFailed(g_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&g_commandQueue)));
-
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-	swapChainDesc.BufferCount = FrameCount;
-	swapChainDesc.Width = g_width;
-	swapChainDesc.Height = g_height;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapChainDesc.SampleDesc.Count = 1;
+	CreateCommandQueue();
 
 	//创建交换链并指定窗口
 	ComPtr<IDXGISwapChain1> swapChain;
-	ThrowIfFailed(gDxgiFactory->CreateSwapChainForHwnd(
-		g_commandQueue.Get(),    
-		GameWindowApplication::GetHwnd(),
-		&swapChainDesc,
-		nullptr,
-		nullptr,
-		&swapChain
-	));
-
-	//转换交换链信息，获取交换链索引
-	ThrowIfFailed(swapChain.As(&g_swapChain));
-	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
-
-	//创建渲染目标视图描述符堆描述
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.NumDescriptors = FrameCount;
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
+	CreateSwapChain(swapChain,gDxgiFactory);
+	
 	//创建渲染目标视图描述堆
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&g_rtvHeap)));
-	g_rtvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	//std::wstring strToDisplay = std::to_wstring(g_rtvDescriptorSize);
-	//wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), sizeof(DebugToDisplay) / sizeof(DebugToDisplay[0]));
-
-	//创建深度模板描述堆描述
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-	dsvHeapDesc.NumDescriptors = 1;
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
+	CreateRenderTargetViewDesCripHeap();
+	
 	//创建深度模板描述符堆
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&g_dsvHeap)));
+	CreateDepthStencilViewDesCripHeap();
+	
 
 	//创建常量缓冲描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
@@ -280,7 +219,7 @@ void HelloGame::LoadAsset()
 	//ThrowIfFailed(g_commandList->Close());
 
 	//创建顶点Buffer
-	Mode.Load("Asset/Monkey2.obj");
+	Mode.Load("Asset/Monkey.obj");
 	/*Vertex triangleVertices[] =
 	{
 		{ { -1.0f, -1.0f , -1.0f }, {0.0f, 1.0f}, { 0.99f, 0.5f, 0.99f, 1.0f } },
@@ -572,6 +511,101 @@ void HelloGame::WaitForPreviousFrame()
 	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
 }
 
+void HelloGame::CreateGPUElement(ComPtr<IDXGIFactory6>& gDxgiFactory)
+{
+	
+	
+	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&gDxgiFactory)));
+
+	D3D_FEATURE_LEVEL featureLevels[] =
+	{
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0,
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+	};
+
+	//找到显示设备
+	IDXGIAdapter1* adapter = nullptr;
+	for (std::uint32_t i = 0U; i < _countof(featureLevels); ++i)
+	{
+		adapter = GetSupportedAdapter(gDxgiFactory, featureLevels[i]);
+		if (adapter != nullptr)
+		{
+			break;
+		}
+	}
+
+	//创建GPU交互对象
+	if (adapter != nullptr)
+	{
+		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&g_device));
+	}
+}
+
+void HelloGame::CreateCommandQueue()
+{
+	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+	ThrowIfFailed(g_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&g_commandQueue)));
+}
+
+void HelloGame::CreateSwapChain(ComPtr<IDXGISwapChain1>& swapChain, ComPtr<IDXGIFactory6>& gDxgiFactory)
+{
+	//交换链描述
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+	swapChainDesc.BufferCount = FrameCount;
+	swapChainDesc.Width = g_width;
+	swapChainDesc.Height = g_height;
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.SampleDesc.Count = 1;
+
+	//指定窗口
+	ThrowIfFailed(gDxgiFactory->CreateSwapChainForHwnd(
+		g_commandQueue.Get(),
+		GameWindowApplication::GetHwnd(),
+		&swapChainDesc,
+		nullptr,
+		nullptr,
+		&swapChain
+	));
+
+	//转换交换链信息，获取交换链索引
+	ThrowIfFailed(swapChain.As(&g_swapChain));
+	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
+}
+
+void HelloGame::CreateRenderTargetViewDesCripHeap()
+{
+	//创建渲染目标视图描述符堆描述
+	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+	rtvHeapDesc.NumDescriptors = FrameCount;
+	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	//创建渲染目标视图描述堆
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&g_rtvHeap)));
+	g_rtvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	//std::wstring strToDisplay = std::to_wstring(g_rtvDescriptorSize);
+	//wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), sizeof(DebugToDisplay) / sizeof(DebugToDisplay[0]));
+}
+
+void HelloGame::CreateDepthStencilViewDesCripHeap()
+{
+	//创建深度模板描述堆描述
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	//创建深度模板描述符堆
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&g_dsvHeap)));
+}
+
 void HelloGame::UpdateBackGround()
 {
 	if (clearColor[0] <= 1.0f && isRAdd)
@@ -620,7 +654,7 @@ void HelloGame::UpdateLight()
 	float angle = 1.0f;
 	lightangle += angle;
 	float angleInRadians = ZHEngineMath::AngleToRadians(lightangle);
-	FVector4 rotationAxisVector = XMQuaternionRotationAxis(RotationAxis, angleInRadians);
+	FVector4 rotationAxisVector = XMVector4Normalize(XMQuaternionRotationAxis(RotationAxis, angleInRadians));
 	Float4 lightDir = ZHEngineMath::FVector4ToFloat4(rotationAxisVector);
 	light.direction = {lightDir.x,lightDir.y,lightDir.z};
 	g_constantBufferData.lightColor = light.color;

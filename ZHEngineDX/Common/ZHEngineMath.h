@@ -47,7 +47,12 @@ namespace ZHEngineMath
 	template<typename T>
 	static T Normalize(T& vector)
 	{
-		return normalize(T);
+		return XMVector3Normalize(vector);
+	}
+
+	static FVector4 Cross(FVector4 V1,FVector4 V2)
+	{
+		return XMVector3Cross(V1,V2);
 	}
 
 	static float AngleToRadians(float Angle)

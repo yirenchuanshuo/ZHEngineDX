@@ -50,6 +50,7 @@ public:
 
 private:
     static const UINT FrameCount = 2;
+    
 
     //管线对象
     CD3DX12_VIEWPORT g_viewport;
@@ -104,4 +105,9 @@ private:
     void WaitForPreviousFrame();
 
 
+    void CreateGPUElement(ComPtr<IDXGIFactory6>& gDxgiFactory);
+    void CreateCommandQueue();
+    void CreateSwapChain(ComPtr<IDXGISwapChain1>& swapChain, ComPtr<IDXGIFactory6>& gDxgiFactory);
+    void CreateRenderTargetViewDesCripHeap();
+    void CreateDepthStencilViewDesCripHeap();
 };
