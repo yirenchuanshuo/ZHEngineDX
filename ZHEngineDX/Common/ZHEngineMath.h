@@ -44,10 +44,13 @@ namespace ZHEngineMath
 		return x < low ? low : (x > high ? high : x);
 	}
 
-	template<typename T>
-	static T Normalize(T& vector)
+	
+	static Float3 Normalize(Float3& vector)
 	{
-		return XMVector3Normalize(vector);
+		FVector3 Temp = XMLoadFloat3(&vector);
+		Float3 Ret;
+		XMStoreFloat3(&Ret,Temp);
+		return Ret;
 	}
 
 	static FVector4 Cross(FVector4 V1,FVector4 V2)

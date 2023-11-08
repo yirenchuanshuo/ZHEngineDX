@@ -219,7 +219,7 @@ void HelloGame::LoadAsset()
 	//ThrowIfFailed(g_commandList->Close());
 
 	//¥¥Ω®∂•µ„Buffer
-	Mode.Load("Asset/Monkey.obj");
+	Mode.Load("Asset/Monkey2.obj");
 	/*Vertex triangleVertices[] =
 	{
 		{ { -1.0f, -1.0f , -1.0f }, {0.0f, 1.0f}, { 0.99f, 0.5f, 0.99f, 1.0f } },
@@ -514,7 +514,7 @@ void HelloGame::WaitForPreviousFrame()
 void HelloGame::CreateGPUElement(ComPtr<IDXGIFactory6>& gDxgiFactory)
 {
 	
-	
+
 	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&gDxgiFactory)));
 
 	D3D_FEATURE_LEVEL featureLevels[] =
@@ -650,7 +650,6 @@ void HelloGame::UpdateBackGround()
 void HelloGame::UpdateLight()
 {
 	FVector3 RotationAxis {1,0,0};
-
 	float angle = 1.0f;
 	lightangle += angle;
 	float angleInRadians = ZHEngineMath::AngleToRadians(lightangle);
@@ -658,7 +657,7 @@ void HelloGame::UpdateLight()
 	Float4 lightDir = ZHEngineMath::FVector4ToFloat4(rotationAxisVector);
 	light.direction = {lightDir.x,lightDir.y,lightDir.z};
 	g_constantBufferData.lightColor = light.color;
-	g_constantBufferData.lightDirection = light.direction;
+	g_constantBufferData.lightDirection = ZHEngineMath::Normalize(light.direction);
 	
 }
 
