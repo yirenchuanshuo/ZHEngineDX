@@ -1,8 +1,10 @@
 #pragma once
 #include "TypeName.h"
+#include <tuple>
 
 namespace ZHEngineMath
 {
+	constexpr  float PI       = 3.1415926535f;
 
 	template <typename X, typename Y, typename Z, typename W>
 	static FVector4 MakeFvector4(X&& x, Y&& y, Z&& z, W&& w)
@@ -17,9 +19,27 @@ namespace ZHEngineMath
 		return Temp;
 	}
 
+	static Float3 FVector3ToFloat3(FVector3& V)
+	{
+		Float3 Temp;
+		XMStoreFloat3(&Temp, V);
+		return Temp;
+	}
+
 	static FMatrix4x4 LookAt(FVector4 &pos,FVector4& target,FVector4 &up)
 	{
 		return XMMatrixLookAtLH(pos, target, up);
+	}
+
+	static Float4x4 Float4x4Identity()
+	{
+		static Float4x4 I(
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
+
+		return I;
 	}
 
 	static FMatrix4x4 MatrixIdentity()
