@@ -9,10 +9,11 @@ class HelloGame :public Game
 public:
 	HelloGame(UINT width, UINT height, std::wstring name);
 
-    virtual void OnInit();
-    virtual void OnUpdate();
-    virtual void OnRender();
-    virtual void OnDestroy();
+    virtual void OnInit()override;
+    virtual void OnUpdate()override;
+    virtual void OnRender()override;
+    virtual void OnDestroy()override;
+
 
 
     virtual void UpdateBackGround();
@@ -31,7 +32,6 @@ public:
     bool isBAdd = true;
 
     //Data
-    //OBJ Mode;
     StaticMesh Mesh;
     DirectionLight light;
     float lightangle=0.0f;
@@ -54,7 +54,7 @@ private:
     static const UINT FrameCount = 2;
     
 
-    //管线对象
+    //渲染预备资源
     CD3DX12_VIEWPORT g_viewport;
     CD3DX12_RECT g_scissorRect;
     ComPtr<IDXGISwapChain3> g_swapChain;
@@ -94,7 +94,7 @@ private:
     
     
 
-    // 同步对象
+    // 围栏
     UINT g_frameIndex;
     HANDLE g_fenceEvent;
     ComPtr<ID3D12Fence> g_fence;
