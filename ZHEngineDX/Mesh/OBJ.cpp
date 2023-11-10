@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "AssetLoad.h"
 
 void OBJ::Load(std::string path)
 {
@@ -11,7 +12,7 @@ void OBJ::Load(std::string path)
 		return;
 	}
 	std::string line;
-	srand(time(NULL));
+	//srand(time(NULL));
 	int indexcount = 0;
 	while (std::getline(file, line)) {
 		if (line.substr(0, 2) == "v ")
@@ -39,9 +40,9 @@ void OBJ::Load(std::string path)
 		{
 			std::istringstream s(line.substr(2));
 			std::string splitted;
-			std::vector<DWORD>Triangleindex;
-			std::vector<DWORD>Trianglenormalindex;
-			std::vector<DWORD>Trianglevtindex;
+			std::vector<UINT>Triangleindex;
+			std::vector<UINT>Trianglenormalindex;
+			std::vector<UINT>Trianglevtindex;
 			while (std::getline(s, splitted, ' '))
 			{
 				UINT index;
@@ -77,6 +78,11 @@ void OBJ::Load(std::string path)
 			}
 		}
 	}
+	DataDescribe[0] = (UINT)vertices.size();
+	DataDescribe[1] = DataDescribe[0] *sizeof(Vertex);
+	DataDescribe[2] = (UINT)indices.size();
+	DataDescribe[3] = DataDescribe[2]*sizeof(UINT);
+	MeshAssetCreate(*this, "Asset/Mode.uasset");
 	file.close();
 	//std::cout << "Loaded " << vertices.size() << " vertices, " << faces.size() << " faces.\n";
 }
@@ -89,4 +95,9 @@ FLinearColor OBJ::randomColor()
 	float random3 = rand() % (99 + 1) / (float)(99 + 1);
 	RandColor = { random1 ,random2 ,random3 ,1.0f};
 	return RandColor;
+}
+
+std::array<UINT, 4> OBJ::GetDataDescribe()
+{
+	return DataDescribe;
 }

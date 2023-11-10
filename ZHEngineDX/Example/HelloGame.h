@@ -2,6 +2,7 @@
 #include "../Game/Game.h"
 #include "../Mesh/OBJ.h"
 #include "../Mesh/Light.h"
+#include "../Mesh/StaticMesh.h"
 
 class HelloGame :public Game
 {
@@ -30,7 +31,8 @@ public:
     bool isBAdd = true;
 
     //Data
-    OBJ Mode;
+    //OBJ Mode;
+    StaticMesh Mesh;
     DirectionLight light;
     float lightangle=0.0f;
 

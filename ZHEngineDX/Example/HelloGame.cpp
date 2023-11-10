@@ -1,5 +1,8 @@
 #include "HelloGame.h"
 
+#define MODEPATH "Asset/Mode.uasset"
+#define WRITEMODE 0
+
 
 void DebugMessage(std::wstring strToDisplay)
 {
@@ -219,11 +222,15 @@ void HelloGame::LoadAsset()
 	//ThrowIfFailed(g_commandList->Close());
 
 	//创建顶点Buffer
+#if WRITEMODE
+	OBJ Mode;
 	Mode.Load("Asset/Monkey2.obj");
+#endif
 
+	Mesh.Load(MODEPATH);
 
-	UINT ModeVertexSize = (UINT)Mode.vertices.size() * sizeof(Mode.vertices[0]);
-	UINT ModeIndexSize = (UINT)Mode.indices.size() * sizeof(Mode.indices[0]);
+	UINT ModeVertexSize = (UINT)Mesh.vertices.size() * sizeof(Vertex);
+	UINT ModeIndexSize = (UINT)Mesh.indices.size() * sizeof(UINT);
 
 	
 	
@@ -249,11 +256,11 @@ void HelloGame::LoadAsset()
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);
 	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, Mode.vertices.data(), ModeVertexSize);
+	memcpy(pVertexDataBegin, Mesh.vertices.data(), ModeVertexSize);
 	g_vertexBuffer->Unmap(0, nullptr);
 
 	ThrowIfFailed(g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, Mode.indices.data(), ModeIndexSize);
+	memcpy(pVertexDataBegin, Mesh.indices.data(), ModeIndexSize);
 	g_indexBuffer->Unmap(0, nullptr);
 
 	//初始化资源缓冲区视图
@@ -423,7 +430,7 @@ void HelloGame::PopulateCommandList()
 	g_commandList->IASetIndexBuffer(&g_indexBufferView);
 
 	//画图
-	g_commandList->DrawIndexedInstanced((UINT)Mode.indices.size(), 1, 0, 0, 0);
+	g_commandList->DrawIndexedInstanced((UINT)Mesh.indices.size(), 1, 0, 0, 0);
 
 	//执行资源转换状态(渲染目标状态转为呈现状态)
 	resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

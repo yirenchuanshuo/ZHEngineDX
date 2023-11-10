@@ -164,13 +164,17 @@
     <ClCompile Include="Game\Camera.cpp" />
     <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Game\GameWindowApplication.cpp" />
+    <ClInclude Include="Mesh\AssetLoad.h" />
     <ClInclude Include="Mesh\Light.h" />
     <ClInclude Include="Mesh\MeshBaseData.h">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClCompile Include="Mesh\OBJ.cpp" />
+    <ClCompile Include="Mesh\StaticMesh.cpp" />
+    <ClCompile Include="TestMain.cpp" />
     <ClCompile Include="ZHEngine.cpp" />
     <ClInclude Include="Mesh\OBJ.h" />
+    <ClInclude Include="Mesh\StaticMesh.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h" />

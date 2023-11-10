@@ -11,6 +11,9 @@
 #include <D3Dcompiler.h>
 #include "d3dx12.h"
 #include <string>
+#include <array>
+#include <fstream>
+#include <iostream>
 #include <wrl.h>
 #include <shellapi.h>
 #include <wincodec.h>
