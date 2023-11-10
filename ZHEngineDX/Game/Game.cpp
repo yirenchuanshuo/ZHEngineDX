@@ -78,7 +78,7 @@ void Game::OnMouseMove(WPARAM btnState, int x, int y)
 		g_camera.g_Phi += dy;
 
 		// Restrict the angle mPhi.
-		g_camera.g_Phi = ZHEngineMath::Clamp(g_camera.g_Phi, 0.1f, PI - 0.1f);
+		g_camera.g_Phi = ZMath::Clamp(g_camera.g_Phi, 0.1f, PI - 0.1f);
 	}
 	else if ((btnState & MK_RBUTTON) != 0)
 	{
@@ -90,7 +90,7 @@ void Game::OnMouseMove(WPARAM btnState, int x, int y)
 		g_camera.g_Radius += dx - dy;
 
 		// Restrict the radius.
-		g_camera.g_Radius = ZHEngineMath::Clamp(g_camera.g_Radius, 3.0f, 15.0f);
+		g_camera.g_Radius = ZMath::Clamp(g_camera.g_Radius, 3.0f, 15.0f);
 	}
 
 	g_camera.g_LastMousePos.x = x;

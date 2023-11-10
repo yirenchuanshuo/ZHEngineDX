@@ -10,9 +10,23 @@ public:
 	Camera();
 	~Camera();
 
+	void Strafe(float d);
+	void Walk(float d);
+
+	void Pitch(float angle);
+	void RotateY(float angle);
+	
 	void SetLens(float fovY, float aspect, float zn, float zf);
+	void UpdateViewMatrix();
 
 	void LookAt(FVector3 pos, FVector3 target, FVector3 worldUp);
+	void LookAt(const Float3& pos,const Float3& target,const Float3& up);
+
+	FMatrix4x4 GetView()const;
+	FMatrix4x4 GetProj()const;
+
+	Float4x4 GetView4x4f()const;
+	Float4x4 GetProj4x4f()const;
 
 public:
 	float g_Theta = 1.5f * PI;
@@ -25,6 +39,18 @@ public:
 	Float3 g_Right = { 1.0f, 0.0f, 0.0f };
 	Float3 g_Up = { 0.0f, 1.0f, 0.0f };
 	Float3 g_Look = { 0.0f, 0.0f, 1.0f };
+
+	FVector3 GetPosition()const;
+	Float3 GetPosition3f()const;
+	void SetPosition(float x,float y,float z);
+	void SetPosition(const Float3& v);
+
+	FVector3 GetRight()const;
+	Float3 GetRight3f()const;
+	FVector3 GetUp()const;
+	Float3 GetUp3f()const;
+	FVector3 GetLook()const;
+	Float3 GetLook3f()const;
 	
 	float GetNearZ()const;
 	float GetFarZ()const;
@@ -48,6 +74,6 @@ private:
 
 	bool g_ViewDirty = true;
 
-	Float4x4 g_View = ZHEngineMath::Float4x4Identity();
-	Float4x4 g_Proj = ZHEngineMath::Float4x4Identity();
+	Float4x4 g_View = ZMath::Float4x4Identity();
+	Float4x4 g_Proj = ZMath::Float4x4Identity();
 };

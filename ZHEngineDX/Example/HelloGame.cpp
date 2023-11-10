@@ -599,12 +599,12 @@ void HelloGame::UpdateLight()
 	FVector3 RotationAxis {1,0,0};
 	float angle = 1.0f;
 	lightangle += angle;
-	float angleInRadians = ZHEngineMath::AngleToRadians(lightangle);
-	FVector4 rotationAxisVector = XMVector4Normalize(XMQuaternionRotationAxis(RotationAxis, angleInRadians));
-	Float4 lightDir = ZHEngineMath::FVector4ToFloat4(rotationAxisVector);
+	float angleInRadians = ZMath::AngleToRadians(lightangle);
+	FVector4 rotationAxisVector = ZMath::Normalize4(ZMath::QuaternionRotateAboutAxis(RotationAxis, angleInRadians));
+	Float4 lightDir = ZMath::FVector4ToFloat4(rotationAxisVector);
 	light.direction = {lightDir.x,lightDir.y,lightDir.z};
 	g_constantBufferData.lightColor = light.color;
-	g_constantBufferData.lightDirection = ZHEngineMath::Normalize(light.direction);
+	g_constantBufferData.lightDirection = ZMath::Normalize(light.direction);
 	
 }
 
@@ -630,18 +630,18 @@ void HelloGame::UpdateMVP()
 	float z = g_camera.g_Radius * sinf(g_camera.g_Phi) * sinf(g_camera.g_Theta);
 	float y = g_camera.g_Radius * cosf(g_camera.g_Phi);
 
-	FVector4 pos = ZHEngineMath::MakeFvector4(x, y, z, 1.0f);
-	FVector4 target = ZHEngineMath::MakeFvector4(0.0f, 0.0f, 0.0f, 1.0f);
-	FVector4 up = ZHEngineMath::MakeFvector4(0.0f, 1.0f, 0.0f, 0.0f);
+	FVector4 pos = ZMath::MakeFvector4(x, y, z, 1.0f);
+	FVector4 target = ZMath::MakeFvector4(0.0f, 0.0f, 0.0f, 1.0f);
+	FVector4 up = ZMath::MakeFvector4(0.0f, 1.0f, 0.0f, 0.0f);
 
-	FMatrix4x4 v = ZHEngineMath::LookAt(pos, target, up);
+	FMatrix4x4 v = ZMath::LookAt(pos, target, up);
 
-	FMatrix4x4 m = ZHEngineMath::MatrixIdentity();
-	FMatrix4x4 p = ZHEngineMath::MatrixFov(PIDIV4, AspectRatio(), 1.0f, 1000.0f);
+	FMatrix4x4 m = ZMath::MatrixIdentity();
+	FMatrix4x4 p = ZMath::MatrixFov(PIDIV4, AspectRatio(), 1.0f, 1000.0f);
 	FMatrix4x4 MVP = m * v * p;
 
-	ZHEngineMath::MaterixToFloat4x4(&g_constantBufferData.ObjectToWorld, m);
-	ZHEngineMath::MaterixToFloat4x4(&g_constantBufferData.MVP, MVP);
+	ZMath::MaterixToFloat4x4(&g_constantBufferData.ObjectToWorld, m);
+	ZMath::MaterixToFloat4x4(&g_constantBufferData.MVP, MVP);
 	g_constantBufferData.viewPosition = { x,y,z };
 	
 }
