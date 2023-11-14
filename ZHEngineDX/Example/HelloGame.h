@@ -112,4 +112,7 @@ private:
     void CreateSwapChain(ComPtr<IDXGISwapChain1>& swapChain, ComPtr<IDXGIFactory6>& gDxgiFactory);
     void CreateRenderTargetViewDesCripHeap();
     void CreateDepthStencilViewDesCripHeap();
+    void CreateConstantBufferDesCripHeap();
+
+
 };

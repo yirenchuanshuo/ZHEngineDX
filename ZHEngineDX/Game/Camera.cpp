@@ -1,12 +1,19 @@
 #include "Camera.h"
 
-Camera::Camera()
+Camera::Camera():
+	g_Position(g_InitPosition)
 {
 	SetLens(0.25f*ZMath::PI, 1.0f, 1.0f, 1000.0f);
 }
 
 Camera::~Camera()
 {
+}
+
+void Camera::Init(Float3 position)
+{
+	g_InitPosition = position;
+	Reset();
 }
 
 void Camera::Strafe(float d)
@@ -257,4 +264,11 @@ float Camera::GetFarWindowWidth() const
 float Camera::GetFarWindowHeight() const
 {
 	return g_FarWindowHeight;
+}
+
+void Camera::Reset()
+{
+	g_Position = g_InitPosition;
+	g_Theta = 1.5f * PI;
+	g_Look = { 0.0f, 0.0f, -1.0f };
 }

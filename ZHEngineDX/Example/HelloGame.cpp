@@ -92,16 +92,9 @@ void HelloGame::LoadPipeline()
 	//创建深度模板描述符堆
 	CreateDepthStencilViewDesCripHeap();
 	
-
-	//创建常量缓冲描述符堆描述
-	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = 2;
-	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-	//创建常量缓存描述符堆
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_cbvsrvHeap)));
-	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//创建常量缓冲区描述符堆
+	CreateConstantBufferDesCripHeap();
+	
 	//获取渲染视图的起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -551,6 +544,19 @@ void HelloGame::CreateDepthStencilViewDesCripHeap()
 
 	//创建深度模板描述符堆
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&g_dsvHeap)));
+}
+
+void HelloGame::CreateConstantBufferDesCripHeap()
+{
+	//创建常量缓冲描述符堆描述
+	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
+	cbvsrvHeapDesc.NumDescriptors = 2;
+	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	//创建常量缓存描述符堆
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_cbvsrvHeap)));
+	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void HelloGame::UpdateBackGround()

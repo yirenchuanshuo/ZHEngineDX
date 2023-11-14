@@ -10,6 +10,7 @@ public:
 	Camera();
 	~Camera();
 
+	void Init(Float3 position);
 	void Strafe(float d);
 	void Walk(float d);
 
@@ -35,10 +36,11 @@ public:
 
 	POINT g_LastMousePos;
 
-	Float3 g_Position =  { 0.0f, 0.0f, 0.0f };
+	Float3 g_InitPosition = { 0.0f, 0.0f, 0.0f };
+	Float3 g_Position;
 	Float3 g_Right = { 1.0f, 0.0f, 0.0f };
 	Float3 g_Up = { 0.0f, 1.0f, 0.0f };
-	Float3 g_Look = { 0.0f, 0.0f, 1.0f };
+	Float3 g_Look = { 0.0f, 0.0f, -1.0f };
 
 	FVector3 GetPosition()const;
 	Float3 GetPosition3f()const;
@@ -65,6 +67,9 @@ public:
 	float GetFarWindowHeight()const;
 
 private:
+	void Reset();
+
+
 	float g_NearZ = 0.0f;
 	float g_FarZ = 0.0f;
 	float g_Aspect = 0.0f;
