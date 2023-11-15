@@ -110,9 +110,18 @@ private:
     void CreateGPUElement(ComPtr<IDXGIFactory6>& gDxgiFactory);
     void CreateCommandQueue();
     void CreateSwapChain(ComPtr<IDXGISwapChain1>& swapChain, ComPtr<IDXGIFactory6>& gDxgiFactory);
-    void CreateRenderTargetViewDesCripHeap();
-    void CreateDepthStencilViewDesCripHeap();
-    void CreateConstantBufferDesCripHeap();
+    void CreateRenderTargetViewDesCribeHeap();
+    void CreateDepthStencilViewDesCribeHeap();
+    void CreateConstantBufferDesCribeHeap();
+    void RenderPreSent(ComPtr<IDXGISwapChain1>& swapChain,CD3DX12_CPU_DESCRIPTOR_HANDLE& rtvHandle);
 
 
+    void CreateRootSignature();
+    D3D12_STATIC_SAMPLER_DESC CreateSamplerDesCribe();
+    void CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader);
+    void UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange,const UINT vertexBufferSize, const UINT indexBufferSize);
+    void UpLoadDepthStencialBuffer();
+    void UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange);
+    void UpLoadShaderResource();
+    void SetFence();
 };
