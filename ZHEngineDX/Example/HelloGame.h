@@ -60,7 +60,7 @@ private:
     ComPtr<IDXGISwapChain3> g_swapChain;
     ComPtr<ID3D12Device> g_device;
     ComPtr<ID3D12Resource> g_renderTargets[FrameCount];
-    ComPtr<ID3D12CommandAllocator> g_commandAllocator;
+    ComPtr<ID3D12CommandAllocator> g_commandAllocator[FrameCount];
     ComPtr<ID3D12CommandQueue> g_commandQueue;
     ComPtr<ID3D12RootSignature> g_rootSignature;
 
@@ -98,13 +98,14 @@ private:
     UINT g_frameIndex;
     HANDLE g_fenceEvent;
     ComPtr<ID3D12Fence> g_fence;
-    UINT64 g_fenceValue;
+    UINT64 g_fenceValues[FrameCount];
 
 private:
     void LoadPipeline();
     void LoadAsset();
     void PopulateCommandList();
-    void WaitForPreviousFrame();
+    void MoveToNextFrame();
+    void WaitForGPU();
 
 
     void CreateGPUElement(ComPtr<IDXGIFactory6>& gDxgiFactory);
@@ -113,7 +114,7 @@ private:
     void CreateRenderTargetViewDesCribeHeap();
     void CreateDepthStencilViewDesCribeHeap();
     void CreateConstantBufferDesCribeHeap();
-    void RenderPreSent(ComPtr<IDXGISwapChain1>& swapChain,CD3DX12_CPU_DESCRIPTOR_HANDLE& rtvHandle);
+    void CreateFrameResource(ComPtr<IDXGISwapChain1>& swapChain,CD3DX12_CPU_DESCRIPTOR_HANDLE& rtvHandle);
 
 
     void CreateRootSignature();

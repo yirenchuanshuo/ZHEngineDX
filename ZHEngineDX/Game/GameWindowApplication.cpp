@@ -5,6 +5,11 @@ HWND GameWindowApplication::g_hwnd = nullptr;
 
 int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 {
+	int argc;
+	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+	game->ParseCommandLineArgs(argv, argc);
+	LocalFree(argv);
+
 	WNDCLASSEX windowClass = { 0 };
 	windowClass.cbSize = sizeof(WNDCLASSEX);
 	windowClass.style = CS_HREDRAW | CS_VREDRAW;

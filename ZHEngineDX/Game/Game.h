@@ -31,6 +31,8 @@ public:
 	const WCHAR* GetTitle() const { return g_title.c_str();}
 	std::wstring GetGameAssetPath();
 
+	void ParseCommandLineArgs(_In_reads_(argc) WCHAR* argv[], int argc);
+
 protected:
 	std::wstring GetAssetFullPath(LPCWSTR assetName);
 	IDXGIAdapter1* GetSupportedAdapter(ComPtr<IDXGIFactory6>& dxgiFactory, const D3D_FEATURE_LEVEL featureLevel);
@@ -40,6 +42,8 @@ protected:
 	UINT g_height;
 	float g_aspectRatio;
 	Camera g_camera;
+
+	bool g_useWarpDevice;
 
 private:
 	std::wstring g_assetsPath;

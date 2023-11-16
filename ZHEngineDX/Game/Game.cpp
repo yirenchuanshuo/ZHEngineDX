@@ -23,6 +23,20 @@ std::wstring Game::GetGameAssetPath()
 	return g_assetsPath;
 }
 
+_Use_decl_annotations_
+void Game::ParseCommandLineArgs(WCHAR* argv[], int argc)
+{
+	for (int i = 1; i < argc; ++i)
+	{
+		if (_wcsnicmp(argv[i], L"-warp", wcslen(argv[i])) == 0 ||
+			_wcsnicmp(argv[i], L"/warp", wcslen(argv[i])) == 0)
+		{
+			g_useWarpDevice = true;
+			g_title = g_title + L" (WARP)";
+		}
+	}
+}
+
 std::wstring Game::GetAssetFullPath(LPCWSTR assetName)
 {
 	return g_assetsPath + assetName;
