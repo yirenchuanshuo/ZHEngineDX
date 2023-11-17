@@ -589,7 +589,7 @@ void HelloGame::UpLoadShaderResource()
 
 	g_textures["Normal"] = UTexture();
 	g_textures["Normal"].Data = std::make_shared<BYTE>();
-	g_textures["Normal"].Filename = L"Asset/Grass.jpg";
+	g_textures["Normal"].Filename = L"Asset/Grass.png";
 	auto normalData = g_textures["Normal"].Data.get();
 
 	D3D12_RESOURCE_DESC NormaltexDesc;

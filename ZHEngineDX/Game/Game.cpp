@@ -122,15 +122,15 @@ int Game::LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceD
 {
 	HRESULT hr;
 
-	static IWICImagingFactory* wicFactory;
+	static IWICImagingFactory* wicFactory = nullptr;
 
-	IWICBitmapDecoder* wicDecoder = NULL;
-	IWICBitmapFrameDecode* wicFrame = NULL;
-	IWICFormatConverter* wicConverter = NULL;
+	IWICBitmapDecoder* wicDecoder = nullptr;
+	IWICBitmapFrameDecode* wicFrame = nullptr;
+	IWICFormatConverter* wicConverter = nullptr;
 
 	bool imageConverted = false;
 
-	if (wicFactory == NULL)
+	if (wicFactory == nullptr)
 	{
 		CoInitialize(NULL);
 

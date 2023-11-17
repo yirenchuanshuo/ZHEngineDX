@@ -85,9 +85,7 @@ private:
     ComPtr<ID3D12Resource> g_constantBuffer;
     SceneConstantBuffer g_constantBufferData;
 
-    ComPtr<ID3D12Resource> g_textureBuffer;
-    ComPtr<ID3D12Resource> g_textureBufferUploadHeap;
-    BYTE* g_texData;
+    
 
     std::unordered_map<std::string, UTexture> g_textures;
 
