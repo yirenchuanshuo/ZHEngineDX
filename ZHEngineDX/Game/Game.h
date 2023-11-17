@@ -1,7 +1,7 @@
 #pragma once
 #include "../GameHelper/GameHelper.h"
-#include "GameWindowApplication.h"
 #include "Camera.h"
+#include "GameWindowApplication.h"
 
 class Game
 {

@@ -1,8 +1,9 @@
 #pragma once
 #include "../Game/Game.h"
-#include "../Mesh/OBJ.h"
 #include "../Mesh/Light.h"
+#include "../Mesh/OBJ.h"
 #include "../Mesh/StaticMesh.h"
+#include "../Texture/Texture.h"
 
 class HelloGame :public Game
 {
@@ -87,6 +88,8 @@ private:
     ComPtr<ID3D12Resource> g_textureBuffer;
     ComPtr<ID3D12Resource> g_textureBufferUploadHeap;
     BYTE* g_texData;
+
+    std::unordered_map<std::string, UTexture> g_textures;
 
     UINT8* g_pCbvDataBegin;
     ComPtr<ID3D12Resource> g_depthStencilBuffer;

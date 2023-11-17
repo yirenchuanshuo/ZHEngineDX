@@ -175,6 +175,7 @@
     <ClCompile Include="ZHEngine.cpp" />
     <ClInclude Include="Mesh\OBJ.h" />
     <ClInclude Include="Mesh\StaticMesh.h" />
+    <ClInclude Include="Texture\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h" />

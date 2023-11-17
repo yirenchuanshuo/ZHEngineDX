@@ -57,7 +57,7 @@ void HelloGame::OnDestroy()
 {
 	WaitForGPU();
 	CloseHandle(g_fenceEvent);
-	delete g_texData;
+	
 }
 
 void HelloGame::LoadPipeline()
@@ -565,10 +565,14 @@ void HelloGame::UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD
 
 void HelloGame::UpLoadShaderResource()
 {
+	g_textures["BaseColor"] = UTexture();
+	g_textures["BaseColor"].Data = std::make_shared<BYTE>();
+	auto baseColorData = g_textures["BaseColor"].Data.get();
+
 	//加载纹理数据
 	D3D12_RESOURCE_DESC textureDesc;
 	int texBytesPerRow;
-	int texSize = LoadImageDataFromFile(&g_texData, textureDesc, L"Asset/BaseColor2.jpg", texBytesPerRow);
+	int texSize = LoadImageDataFromFile(&baseColorData, textureDesc, L"Asset/BaseColor2.jpg", texBytesPerRow);
 
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -578,10 +582,10 @@ void HelloGame::UpLoadShaderResource()
 		&textureDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
-		IID_PPV_ARGS(&g_textureBuffer)));
+		IID_PPV_ARGS(&g_textures["BaseColor"].Resource)));
 
 	//记录纹理资源堆大小
-	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textureBuffer.Get(), 0, 1);
+	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures["BaseColor"].Resource.Get(), 0, 1);
 
 	//创建数据上传堆 CPUGPU都可访问
 	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -592,17 +596,17 @@ void HelloGame::UpLoadShaderResource()
 		&resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&g_textureBufferUploadHeap)));
+		IID_PPV_ARGS(&g_textures["BaseColor"].UploadHeap)));
 
 	//创建纹理数据
 	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = &g_texData[0];
+	textureData.pData = &baseColorData[0];
 	textureData.RowPitch = texBytesPerRow;
 	textureData.SlicePitch = texBytesPerRow * textureDesc.Height;
 
 	//把资源从上传堆拷贝到默认堆，描述该堆作用
-	UpdateSubresources(g_commandList.Get(), g_textureBuffer.Get(), g_textureBufferUploadHeap.Get(), 0, 0, 1, &textureData);
-	CD3DX12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textureBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	UpdateSubresources(g_commandList.Get(), g_textures["BaseColor"].Resource.Get(), g_textures["BaseColor"].UploadHeap.Get(), 0, 0, 1, &textureData);
+	CD3DX12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures["BaseColor"].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	g_commandList->ResourceBarrier(1, &resBarrier);
 
 	//创建着色器资源视图描述
@@ -615,7 +619,7 @@ void HelloGame::UpLoadShaderResource()
 	//创建着色器资源视图
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-	g_device->CreateShaderResourceView(g_textureBuffer.Get(), &srvDesc, cbvsrvHandle);
+	g_device->CreateShaderResourceView(g_textures["BaseColor"].Resource.Get(), &srvDesc, cbvsrvHandle);
 }
 
 void HelloGame::SetFence()

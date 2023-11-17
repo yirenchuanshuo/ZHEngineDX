@@ -83,6 +83,9 @@
     <ClInclude Include="Mesh\StaticMesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Texture\Texture.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Triangles.hlsl">
