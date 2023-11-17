@@ -87,12 +87,4 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Asset\Triangles.hlsl">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="Asset\Monkey.obj" />
-  </ItemGroup>
 </Project>

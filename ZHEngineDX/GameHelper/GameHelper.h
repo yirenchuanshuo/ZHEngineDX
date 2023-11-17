@@ -1,5 +1,6 @@
 #pragma once
 #include<stdexcept>
+#include <sstream>
 #include"../Common/CommonCore.h"
 #include"../Common/ZHEngineMath.h"
 using Microsoft::WRL::ComPtr;
@@ -14,14 +15,15 @@ inline std::string HrToString(HRESULT hr)
 class HrException : public std::runtime_error
 {
 public:
-	HrException(HRESULT hr) : std::runtime_error(HrToString(hr)), m_hr(hr) {}
+	HrException(HRESULT hr) 
+        : std::runtime_error(HrToString(hr)), m_hr(hr) {}
 	HRESULT Error() const { return m_hr; }
 private:
 	const HRESULT m_hr;
 };
 
 
-inline void ThrowIfFailed(HRESULT hr)
+inline void ThrowIfFailed(HRESULT hr, const char* message = nullptr)
 {
 	if (FAILED(hr))
 	{

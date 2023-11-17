@@ -188,7 +188,10 @@ void HelloGame::PopulateCommandList()
 	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvsrvHeap.Get() };
 	g_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	//设置根描述符表，上传参数
-	g_commandList->SetGraphicsRootDescriptorTable(0, g_cbvsrvHeap->GetGPUDescriptorHandleForHeapStart());
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = g_cbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForSecondDescriptor = { gpuDescriptorHandle .ptr+ g_cbvsrvDescriptorSize };
+	g_commandList->SetGraphicsRootDescriptorTable(0, gpuDescriptorHandle);
+	g_commandList->SetGraphicsRootDescriptorTable(1, gpuDescriptorHandleForSecondDescriptor);
 	g_commandList->RSSetViewports(1, &g_viewport);
 	g_commandList->RSSetScissorRects(1, &g_scissorRect);
 
@@ -357,7 +360,7 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 {
 	//创建常量缓冲描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = 2;
+	cbvsrvHeapDesc.NumDescriptors = 3;
 	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -390,13 +393,17 @@ void HelloGame::CreateRootSignature()
 		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 	}
 	//创建对根参数的描述和根参数
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
-	CD3DX12_ROOT_PARAMETER1 rootParameters[1];
+	CD3DX12_DESCRIPTOR_RANGE1 ranges[3];
+	CD3DX12_ROOT_PARAMETER1 rootParameters[2];
 
 	//指定该根参数为常量缓冲区视图
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	rootParameters[0].InitAsDescriptorTable(2, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	rootParameters[1].InitAsDescriptorTable(2, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+	
+	
 
 	//定义根签名属性
 	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
@@ -406,12 +413,18 @@ void HelloGame::CreateRootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 	//创建静态采样器
-	D3D12_STATIC_SAMPLER_DESC sampler = CreateSamplerDesCribe();
+	
+	D3D12_STATIC_SAMPLER_DESC sampler0 = CreateSamplerDesCribe(0);
+	D3D12_STATIC_SAMPLER_DESC sampler1 = CreateSamplerDesCribe(1);
+	std::vector<D3D12_STATIC_SAMPLER_DESC>samplers;
+	samplers.push_back(sampler0);
+	samplers.push_back(sampler1);
 
 	//创建根签名描述符
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, rootSignatureFlags);
+	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, static_cast<UINT>(samplers.size()), samplers.data(), rootSignatureFlags);
 
+	
 	//创建根签名
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
@@ -420,7 +433,7 @@ void HelloGame::CreateRootSignature()
 	
 }
 
-D3D12_STATIC_SAMPLER_DESC HelloGame::CreateSamplerDesCribe()
+D3D12_STATIC_SAMPLER_DESC HelloGame::CreateSamplerDesCribe(UINT index)
 {
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
 	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -433,7 +446,7 @@ D3D12_STATIC_SAMPLER_DESC HelloGame::CreateSamplerDesCribe()
 	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 	sampler.MinLOD = 0.0f;
 	sampler.MaxLOD = D3D12_FLOAT32_MAX;
-	sampler.ShaderRegister = 0;
+	sampler.ShaderRegister = index;
 	sampler.RegisterSpace = 0;
 	sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
@@ -567,25 +580,41 @@ void HelloGame::UpLoadShaderResource()
 {
 	g_textures["BaseColor"] = UTexture();
 	g_textures["BaseColor"].Data = std::make_shared<BYTE>();
+	g_textures["BaseColor"].Filename = L"Asset/BaseColor2.jpg";
 	auto baseColorData = g_textures["BaseColor"].Data.get();
 
 	//加载纹理数据
-	D3D12_RESOURCE_DESC textureDesc;
-	int texBytesPerRow;
-	int texSize = LoadImageDataFromFile(&baseColorData, textureDesc, L"Asset/BaseColor2.jpg", texBytesPerRow);
+	D3D12_RESOURCE_DESC BaseColortexDesc;
+	g_textures["BaseColor"].texSize = LoadImageDataFromFile(&baseColorData, BaseColortexDesc, g_textures["BaseColor"].Filename, g_textures["BaseColor"].texBytesPerRow);
+
+	g_textures["Normal"] = UTexture();
+	g_textures["Normal"].Data = std::make_shared<BYTE>();
+	g_textures["Normal"].Filename = L"Asset/Grass.jpg";
+	auto normalData = g_textures["Normal"].Data.get();
+
+	D3D12_RESOURCE_DESC NormaltexDesc;
+	g_textures["Normal"].texSize = LoadImageDataFromFile(&normalData, NormaltexDesc, g_textures["Normal"].Filename, g_textures["Normal"].texBytesPerRow);
 
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	ThrowIfFailed(g_device->CreateCommittedResource(
 		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&textureDesc,
+		&BaseColortexDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&g_textures["BaseColor"].Resource)));
 
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&NormaltexDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&g_textures["Normal"].Resource)));
+
 	//记录纹理资源堆大小
-	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures["BaseColor"].Resource.Get(), 0, 1);
+	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures["BaseColor"].Resource.Get(), 0, 1)+ GetRequiredIntermediateSize(g_textures["Normal"].Resource.Get(), 0, 1);
 
 	//创建数据上传堆 CPUGPU都可访问
 	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -599,20 +628,43 @@ void HelloGame::UpLoadShaderResource()
 		IID_PPV_ARGS(&g_textures["BaseColor"].UploadHeap)));
 
 	//创建纹理数据
-	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = &baseColorData[0];
-	textureData.RowPitch = texBytesPerRow;
-	textureData.SlicePitch = texBytesPerRow * textureDesc.Height;
+	D3D12_SUBRESOURCE_DATA BaseColorData = {};
+	BaseColorData.pData = &baseColorData[0];
+	BaseColorData.RowPitch = g_textures["BaseColor"].texBytesPerRow;
+	BaseColorData.SlicePitch = g_textures["BaseColor"].texBytesPerRow * BaseColortexDesc.Height;
 
 	//把资源从上传堆拷贝到默认堆，描述该堆作用
-	UpdateSubresources(g_commandList.Get(), g_textures["BaseColor"].Resource.Get(), g_textures["BaseColor"].UploadHeap.Get(), 0, 0, 1, &textureData);
-	CD3DX12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures["BaseColor"].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	g_commandList->ResourceBarrier(1, &resBarrier);
+	UpdateSubresources(g_commandList.Get(), g_textures["BaseColor"].Resource.Get(), g_textures["BaseColor"].UploadHeap.Get(), 0, 0, 1, &BaseColorData);
+	CD3DX12_RESOURCE_BARRIER baseColorBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures["BaseColor"].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	g_commandList->ResourceBarrier(1, &baseColorBarrier);
+
+
+	
+	//创建数据上传堆 CPUGPU都可访问
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties2,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&g_textures["Normal"].UploadHeap)));
+
+	//创建纹理数据
+	D3D12_SUBRESOURCE_DATA NormalData = {};
+	NormalData.pData = &normalData[0];
+	NormalData.RowPitch = g_textures["Normal"].texBytesPerRow;
+	NormalData.SlicePitch = g_textures["Normal"].texBytesPerRow * NormaltexDesc.Height;
+
+	//把资源从上传堆拷贝到默认堆，描述该堆作用
+	UpdateSubresources(g_commandList.Get(), g_textures["Normal"].Resource.Get(), g_textures["Normal"].UploadHeap.Get(), 0, 0, 1, &NormalData);
+	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures["Normal"].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	g_commandList->ResourceBarrier(1, &normalBarrier);
+	
 
 	//创建着色器资源视图描述
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = textureDesc.Format;
+	srvDesc.Format = BaseColortexDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
@@ -620,6 +672,11 @@ void HelloGame::UpLoadShaderResource()
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
 	g_device->CreateShaderResourceView(g_textures["BaseColor"].Resource.Get(), &srvDesc, cbvsrvHandle);
+
+	srvDesc.Format = NormaltexDesc.Format;
+	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+	g_device->CreateShaderResourceView(g_textures["Normal"].Resource.Get(), &srvDesc, cbvsrvHandle);
+
 }
 
 void HelloGame::SetFence()

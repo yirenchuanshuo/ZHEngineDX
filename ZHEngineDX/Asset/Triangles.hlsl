@@ -1,6 +1,7 @@
 Texture2D t1 : register(t0);
+Texture2D t2 : register(t1);
 SamplerState s1 : register(s0);
-
+SamplerState s2 : register(s1);
 cbuffer SceneConstantBuffer : register(b0)
 {
     float4x4 ObjectToWorld;
@@ -32,8 +33,8 @@ PSInput VSMain(float4 position : POSITION,float3 normal :NORMAL , float2 texCoor
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    float2 texCoord = float2(input.texCoord.x, 1-input.texCoord.y);
-    float4 basecolor = t1.Sample(s1, texCoord);
+    
+    float4 basecolor = t1.Sample(s1, input.texCoord);
     float ambientStrength = 0.2;
     float3 ambient = ambientStrength * lightColor.xyz*basecolor.xyz;
     
@@ -48,10 +49,12 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 halfDir = normalize(lightDirection + viewDir);
     float spec = pow(max(dot(halfDir, normal), 0.0), 32);
     float3 specular = specularStrength*spec*lightColor.xyz;
-    //specular *= basecolor.xyz;
     
+    
+    float4 normalcolor = t2.Sample(s2, input.texCoord);
+    normalcolor = float4(normalcolor.xyz, 1.0);
     float4 finalcolor = float4(ambient+diffuse+specular,1.0);
     
-    return finalcolor;
+    return normalcolor;
 
 }

@@ -27,6 +27,7 @@ void OBJ::Load(std::string path)
 			std::istringstream s(line.substr(3));
 			Float2 UV;
 			s >> UV.x >> UV.y;
+			UV.y = 1 - UV.y;
 			uvlut.push_back(UV);
 		}
 		else if (line.substr(0, 3) == "vn ")

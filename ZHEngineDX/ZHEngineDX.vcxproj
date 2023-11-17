@@ -193,16 +193,6 @@
       <FileType>Document</FileType>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Asset\Triangles.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="Asset\Monkey.obj">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </Object>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
