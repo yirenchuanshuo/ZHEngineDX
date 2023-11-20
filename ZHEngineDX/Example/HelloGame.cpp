@@ -137,7 +137,7 @@ void HelloGame::LoadAsset()
 	//创建顶点Buffer
 #if WRITEMODE
 	OBJ Mode;
-	Mode.Load("Asset/Monkey2.obj");
+	Mode.Load("Asset/Monkey.obj");
 #endif
 
 	Mesh.Load(MODEPATH);
@@ -460,8 +460,9 @@ void HelloGame::CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixe
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
 	//PSO描述
@@ -578,22 +579,22 @@ void HelloGame::UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD
 
 void HelloGame::UpLoadShaderResource()
 {
-	g_textures["BaseColor"] = UTexture();
-	g_textures["BaseColor"].Data = std::make_shared<BYTE>();
-	g_textures["BaseColor"].Filename = L"Asset/BaseColor2.jpg";
-	auto baseColorData = g_textures["BaseColor"].Data.get();
+	g_textures.push_back(UTexture());
+	g_textures[0].Data = std::make_shared<BYTE>();
+	g_textures[0].Filename = L"Asset/BaseColor2.jpg";
+	auto baseColorData = g_textures[0].Data.get();
 
 	//加载纹理数据
 	D3D12_RESOURCE_DESC BaseColortexDesc;
-	g_textures["BaseColor"].texSize = LoadImageDataFromFile(&baseColorData, BaseColortexDesc, g_textures["BaseColor"].Filename, g_textures["BaseColor"].texBytesPerRow);
+	g_textures[0].texSize = LoadImageDataFromFile(&baseColorData, BaseColortexDesc, g_textures[0].Filename, g_textures[0].texBytesPerRow);
 
-	g_textures["Normal"] = UTexture();
-	g_textures["Normal"].Data = std::make_shared<BYTE>();
-	g_textures["Normal"].Filename = L"Asset/Grass.png";
-	auto normalData = g_textures["Normal"].Data.get();
+	g_textures.push_back(UTexture());
+	g_textures[1].Data = std::make_shared<BYTE>();
+	g_textures[1].Filename = L"Asset/Normal.jpg";
+	auto normalData = g_textures[1].Data.get();
 
 	D3D12_RESOURCE_DESC NormaltexDesc;
-	g_textures["Normal"].texSize = LoadImageDataFromFile(&normalData, NormaltexDesc, g_textures["Normal"].Filename, g_textures["Normal"].texBytesPerRow);
+	g_textures[1].texSize = LoadImageDataFromFile(&normalData, NormaltexDesc, g_textures[1].Filename, g_textures[1].texBytesPerRow);
 
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -603,7 +604,7 @@ void HelloGame::UpLoadShaderResource()
 		&BaseColortexDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
-		IID_PPV_ARGS(&g_textures["BaseColor"].Resource)));
+		IID_PPV_ARGS(&g_textures[0].Resource)));
 
 	ThrowIfFailed(g_device->CreateCommittedResource(
 		&heapProperties,
@@ -611,10 +612,10 @@ void HelloGame::UpLoadShaderResource()
 		&NormaltexDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
-		IID_PPV_ARGS(&g_textures["Normal"].Resource)));
+		IID_PPV_ARGS(&g_textures[1].Resource)));
 
 	//记录纹理资源堆大小
-	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures["BaseColor"].Resource.Get(), 0, 1)+ GetRequiredIntermediateSize(g_textures["Normal"].Resource.Get(), 0, 1);
+	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures[0].Resource.Get(), 0, 1)+ GetRequiredIntermediateSize(g_textures[1].Resource.Get(), 0, 1);
 
 	//创建数据上传堆 CPUGPU都可访问
 	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -625,17 +626,17 @@ void HelloGame::UpLoadShaderResource()
 		&resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&g_textures["BaseColor"].UploadHeap)));
+		IID_PPV_ARGS(&g_textures[0].UploadHeap)));
 
 	//创建纹理数据
 	D3D12_SUBRESOURCE_DATA BaseColorData = {};
 	BaseColorData.pData = &baseColorData[0];
-	BaseColorData.RowPitch = g_textures["BaseColor"].texBytesPerRow;
-	BaseColorData.SlicePitch = g_textures["BaseColor"].texBytesPerRow * BaseColortexDesc.Height;
+	BaseColorData.RowPitch = g_textures[0].texBytesPerRow;
+	BaseColorData.SlicePitch = g_textures[0].texBytesPerRow * BaseColortexDesc.Height;
 
 	//把资源从上传堆拷贝到默认堆，描述该堆作用
-	UpdateSubresources(g_commandList.Get(), g_textures["BaseColor"].Resource.Get(), g_textures["BaseColor"].UploadHeap.Get(), 0, 0, 1, &BaseColorData);
-	CD3DX12_RESOURCE_BARRIER baseColorBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures["BaseColor"].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	UpdateSubresources(g_commandList.Get(), g_textures[0].Resource.Get(), g_textures[0].UploadHeap.Get(), 0, 0, 1, &BaseColorData);
+	CD3DX12_RESOURCE_BARRIER baseColorBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures[0].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	g_commandList->ResourceBarrier(1, &baseColorBarrier);
 
 
@@ -647,17 +648,17 @@ void HelloGame::UpLoadShaderResource()
 		&resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&g_textures["Normal"].UploadHeap)));
+		IID_PPV_ARGS(&g_textures[1].UploadHeap)));
 
 	//创建纹理数据
 	D3D12_SUBRESOURCE_DATA NormalData = {};
 	NormalData.pData = &normalData[0];
-	NormalData.RowPitch = g_textures["Normal"].texBytesPerRow;
-	NormalData.SlicePitch = g_textures["Normal"].texBytesPerRow * NormaltexDesc.Height;
+	NormalData.RowPitch = g_textures[1].texBytesPerRow;
+	NormalData.SlicePitch = g_textures[1].texBytesPerRow * NormaltexDesc.Height;
 
 	//把资源从上传堆拷贝到默认堆，描述该堆作用
-	UpdateSubresources(g_commandList.Get(), g_textures["Normal"].Resource.Get(), g_textures["Normal"].UploadHeap.Get(), 0, 0, 1, &NormalData);
-	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures["Normal"].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	UpdateSubresources(g_commandList.Get(), g_textures[1].Resource.Get(), g_textures[1].UploadHeap.Get(), 0, 0, 1, &NormalData);
+	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures[1].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	g_commandList->ResourceBarrier(1, &normalBarrier);
 	
 
@@ -671,11 +672,11 @@ void HelloGame::UpLoadShaderResource()
 	//创建着色器资源视图
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-	g_device->CreateShaderResourceView(g_textures["BaseColor"].Resource.Get(), &srvDesc, cbvsrvHandle);
+	g_device->CreateShaderResourceView(g_textures[0].Resource.Get(), &srvDesc, cbvsrvHandle);
 
 	srvDesc.Format = NormaltexDesc.Format;
 	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-	g_device->CreateShaderResourceView(g_textures["Normal"].Resource.Get(), &srvDesc, cbvsrvHandle);
+	g_device->CreateShaderResourceView(g_textures[1].Resource.Get(), &srvDesc, cbvsrvHandle);
 
 }
 

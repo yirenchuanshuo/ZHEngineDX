@@ -87,7 +87,7 @@ private:
 
     
 
-    std::unordered_map<std::string, UTexture> g_textures;
+    std::vector<UTexture> g_textures;
 
     UINT8* g_pCbvDataBegin;
     ComPtr<ID3D12Resource> g_depthStencilBuffer;

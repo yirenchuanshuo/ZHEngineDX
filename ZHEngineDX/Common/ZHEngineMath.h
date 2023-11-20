@@ -19,6 +19,31 @@ namespace ZMath
 	}
 	
 	//VectorMake
+	template <typename V>
+	static float GetFVectorX(V& v)
+	{
+		return XMVectorGetX(v);
+	}
+
+	template <typename V>
+	static float GetFVectorY(V& v)
+	{
+		return XMVectorGetY(v);
+	}
+
+	template <typename V>
+	static float GetFVectorZ(V& v)
+	{
+		return XMVectorGetZ(v);
+	}
+
+	template <typename V>
+	static float GetFVectorW(V& v)
+	{
+		return XMVectorGetW(v);
+	}
+
+
 	template <typename X, typename Y, typename Z, typename W>
 	static FVector4 MakeFvector4(X&& x, Y&& y, Z&& z, W&& w)
 	{
@@ -57,18 +82,19 @@ namespace ZMath
 	}
 
 	//FloatConvertToVector
+	static FVector2 Float2ToFVector2(const Float2* pSource)
+	{
+		return  XMLoadFloat2(pSource);
+	}
+
 	static FVector3 Float3ToFVector3(const Float3* pSource)
 	{
-		FVector3 Temp{0};
-		XMLoadFloat3(pSource);
-		return Temp;
+		return XMLoadFloat3(pSource);
 	}
 
 	static FVector4 Float4ToFVector4(const Float4* pSource)
 	{
-		FVector4 Temp{0};
-		XMLoadFloat4(pSource);
-		return Temp;
+		return XMLoadFloat4(pSource);
 	}
 
 	static FMatrix4x4 Float4x4ToMatrix4x4(const Float4x4* pSource)
@@ -103,7 +129,7 @@ namespace ZMath
 	
 	static Float3 Normalize(Float3& vector)
 	{
-		FVector3 Temp = XMLoadFloat3(&vector);
+		FVector3 Temp = XMVector3Normalize(XMLoadFloat3(&vector));
 		Float3 Ret;
 		XMStoreFloat3(&Ret,Temp);
 		return Ret;

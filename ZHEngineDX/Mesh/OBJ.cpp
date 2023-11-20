@@ -66,6 +66,7 @@ void OBJ::Load(std::string path)
 				Vertex vertex;
 				vertex.position = positionlut[Triangleindex[i]];
 				vertex.normal = normallut[Trianglenormalindex[i]];
+				vertex.tangent = Float3(0.0f, 0.0f, 0.0f);
 				vertex.texcoord = uvlut[Trianglevtindex[i]];
 				//vertex.color = randomColor();
 				vertices.push_back(vertex);
@@ -79,13 +80,22 @@ void OBJ::Load(std::string path)
 			}
 		}
 	}
+	int n = indices.size();
+	for (int i = 0; i < n; i += 3)
+	{
+		ComputeTangent(indices[i],indices[i+1],indices[i+2]);
+	}
+	for (auto& x : vertices)
+	{
+		x.tangent = ZMath::Normalize(x.tangent);
+	}
 	DataDescribe[0] = (UINT)vertices.size();
 	DataDescribe[1] = DataDescribe[0] *sizeof(Vertex);
 	DataDescribe[2] = (UINT)indices.size();
 	DataDescribe[3] = DataDescribe[2]*sizeof(UINT);
+
 	MeshAssetCreate(*this, "Asset/Mode.uasset");
 	file.close();
-	//std::cout << "Loaded " << vertices.size() << " vertices, " << faces.size() << " faces.\n";
 }
 
 FLinearColor OBJ::randomColor()
@@ -97,6 +107,39 @@ FLinearColor OBJ::randomColor()
 	RandColor = { random1 ,random2 ,random3 ,1.0f};
 	return RandColor;
 }
+
+void OBJ::ComputeTangent(UINT first, UINT second, UINT third)
+{
+	
+
+	FVector3 pos1 = ZMath::Float3ToFVector3(&vertices[first].position);
+	FVector3 pos2 = ZMath::Float3ToFVector3(&vertices[second].position);
+	FVector3 pos3 = ZMath::Float3ToFVector3(&vertices[third].position);
+
+	
+	FVector2 uv1 = ZMath::Float2ToFVector2(&vertices[first].texcoord);
+	FVector2 uv2 = ZMath::Float2ToFVector2(&vertices[second].texcoord);
+	FVector2 uv3 = ZMath::Float2ToFVector2(&vertices[third].texcoord);
+	
+	FVector3 edge1 = pos2 - pos1;
+	FVector3 edge2 = pos3 - pos1;
+	FVector2 deltaUV1 = uv2 - uv1;
+	FVector2 deltaUV2 = uv3 - uv1;
+
+	float f = 1.0f / (ZMath::GetFVectorX(deltaUV1)* ZMath::GetFVectorY(deltaUV2) - ZMath::GetFVectorX(deltaUV2) * ZMath::GetFVectorY(deltaUV1));
+	FVector3 tangent = (edge1 * ZMath::GetFVectorY(deltaUV2) - edge2 * ZMath::GetFVectorY(deltaUV1)) * f;
+	FVector3 tangent1 = ZMath::Float3ToFVector3(&vertices[first].tangent);
+	FVector3 tangent2 = ZMath::Float3ToFVector3(&vertices[second].tangent);
+	FVector3 tangent3 = ZMath::Float3ToFVector3(&vertices[third].tangent);
+
+	
+
+	vertices[first].tangent = ZMath::FVector3ToFloat3(tangent1+tangent);
+	vertices[second].tangent = ZMath::FVector3ToFloat3(tangent2 + tangent);
+	vertices[third].tangent = ZMath::FVector3ToFloat3(tangent3 + tangent);
+}
+
+
 
 std::array<UINT, 4> OBJ::GetDataDescribe()
 {

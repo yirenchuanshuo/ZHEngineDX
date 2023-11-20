@@ -122,7 +122,7 @@ int Game::LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceD
 {
 	HRESULT hr;
 
-	static IWICImagingFactory* wicFactory = nullptr;
+	IWICImagingFactory* wicFactory = nullptr;
 
 	IWICBitmapDecoder* wicDecoder = nullptr;
 	IWICBitmapFrameDecode* wicFrame = nullptr;
@@ -205,7 +205,7 @@ int Game::LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceD
 
 	resourceDescription = {};
 	resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	resourceDescription.Alignment = 0;
+	resourceDescription.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 	resourceDescription.Width = textureWidth;
 	resourceDescription.Height = textureHeight;
 	resourceDescription.DepthOrArraySize = 1;

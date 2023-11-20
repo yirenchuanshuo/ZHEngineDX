@@ -3,6 +3,7 @@
 #include <string>
 #include <array>
 #include "MeshBaseData.h"
+#include "../Common/ZHEngineMath.h"
 
 
 class OBJ {
@@ -13,6 +14,7 @@ public:
 
     void Load(std::string path);
     FLinearColor randomColor();
+    void ComputeTangent(UINT first, UINT second, UINT third);
     //void draw_obj(bool isFlat);
 
     std::array<UINT, 4> GetDataDescribe();

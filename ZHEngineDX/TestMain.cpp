@@ -27,6 +27,7 @@ int main()
 	{
 		cout << A.position.x << " " << A.position.y << " " << A.position.z << endl;
 		cout << A.normal.x << " " << A.normal.y << " " << A.normal.z << endl;
+		cout << A.tangent.x << " " << A.tangent.y << " " << A.tangent.z << endl;
 		cout << A.texcoord.x << " " << A.texcoord.y <<  endl;
 		cout << endl;
 	}
