@@ -49,9 +49,11 @@ float4 PSMain(PSInput input) : SV_TARGET
     float4 basecolor = t1.Sample(s1, input.texCoord);
     float ambientStrength = 0.2;
     float3 ambient = ambientStrength * lightColor.xyz*basecolor.xyz;
-    
+    float3 tangent = normalize(input.tangent);
     float3 normal = normalize(input.normal);
-    float3 tangent = input.tangent;
+    float3 binormal = normalize(cross(normal,tangent));
+    
+    
     float halflambert = dot(normal, lightDirection) * 0.5 + 0.5;
     //float lambert = max(dot(normal, lightDirection), 0.0);
     float3 diffuse = halflambert * lightColor.xyz;
@@ -68,6 +70,6 @@ float4 PSMain(PSInput input) : SV_TARGET
     normalcolor = float4(tangent, 1.0);
     float4 finalcolor = float4(ambient+diffuse+specular,1.0);
     
-    return normalcolor;
-
+    
+    return float4(normal, 1.0f);
 }
