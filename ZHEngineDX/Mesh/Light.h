@@ -3,6 +3,6 @@
 
 struct DirectionLight
 {
-	Float3 direction;
+	Float4 direction;
 	FLinearColor color;
 };

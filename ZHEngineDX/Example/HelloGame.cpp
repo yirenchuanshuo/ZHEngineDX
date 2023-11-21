@@ -24,7 +24,7 @@ HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
 	g_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)),
 	g_rtvDescriptorSize(0),
 	g_constantBufferData{},
-	light{Float3(1,1,1),FLinearColor(1,1,1,1)}
+	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)}
 {
 
 }
@@ -137,7 +137,7 @@ void HelloGame::LoadAsset()
 	//¥¥Ω®∂•µ„Buffer
 #if WRITEMODE
 	OBJ Mode;
-	Mode.Load("Asset/Monkey.obj");
+	Mode.Load("Asset/Monkey2.obj");
 #endif
 
 	Mesh.Load(MODEPATH);
@@ -738,15 +738,16 @@ void HelloGame::UpdateBackGround()
 
 void HelloGame::UpdateLight()
 {
-	FVector3 RotationAxis {1,0,0};
+	FVector4 lightDirV = ZMath::Normalize4(FVector4{1,1,0,0});
 	float angle = 1.0f;
 	lightangle += angle;
 	float angleInRadians = ZMath::AngleToRadians(lightangle);
-	FVector4 rotationAxisVector = ZMath::Normalize4(ZMath::QuaternionRotateAboutAxis(RotationAxis, angleInRadians));
-	Float4 lightDir = ZMath::FVector4ToFloat4(rotationAxisVector);
-	light.direction = {lightDir.x,lightDir.y,lightDir.z};
+	FMatrix4x4 rotationMatrix = ZMath::MatrixRotateY(angleInRadians);
+	lightDirV = ZMath::Normalize4(ZMath::Transform(lightDirV,rotationMatrix));
+	Float4 lightDir = ZMath::FVector4ToFloat4(lightDirV);
+	light.direction = lightDir;
 	g_constantBufferData.lightColor = light.color;
-	g_constantBufferData.lightDirection = ZMath::Normalize(light.direction);
+	g_constantBufferData.lightDirection = light.direction;
 	
 }
 

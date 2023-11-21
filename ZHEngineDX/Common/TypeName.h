@@ -7,9 +7,9 @@ using Float4 = XMFLOAT4;
 using FLinearColor = XMFLOAT4;
 using Float4x4 = XMFLOAT4X4;
 
-using FVector2 = FXMVECTOR;
-using FVector3 = FXMVECTOR;
-using FVector4 = FXMVECTOR;
+using FVector2 = XMVECTOR;
+using FVector3 = XMVECTOR;
+using FVector4 = XMVECTOR;
 using XVector4 = XMVECTOR;
 using FMatrix4x4 = XMMATRIX;
 

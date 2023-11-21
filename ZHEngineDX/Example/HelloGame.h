@@ -44,8 +44,7 @@ public:
         Float4x4 ObjectToWorld;
         Float4x4 MVP;
         FLinearColor lightColor;
-        Float3 lightDirection;
-        float pad;
+        Float4 lightDirection;
         Float3 viewPosition;
         float pad2;
        //Float4 offset;

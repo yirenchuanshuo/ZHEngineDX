@@ -69,7 +69,7 @@ namespace ZMath
 		return Temp;
 	}
 
-	static Float3 FVector3ToFloat3(FVector3& V)
+	static Float3 FVector3ToFloat3(const FVector3& V)
 	{
 		Float3 Temp;
 		XMStoreFloat3(&Temp, V);
@@ -151,12 +151,12 @@ namespace ZMath
 		return XMVector4Normalize(V);
 	}
 
-	static FVector3 TransformNormal(FVector3& pSoure,FMatrix4x4& Matrix)
+	static FVector3 TransformNormal(const FVector3& pSoure,FMatrix4x4& Matrix)
 	{
 		return XMVector3TransformNormal(pSoure,Matrix);
 	}
 
-	static FMatrix4x4 MatrixRotateAboutAxis(FVector3& Axis,float Angle)
+	static FMatrix4x4 MatrixRotateAboutAxis(const FVector3& Axis,float Angle)
 	{
 		return XMMatrixRotationAxis(Axis, Angle);
 	}
@@ -176,7 +176,12 @@ namespace ZMath
 		return XMMatrixRotationZ(Angle);
 	}
 
-	static FVector3 QuaternionRotateAboutAxis(FVector3& Axis,float Angle)
+	static FVector4 Transform(FVector4& V,FMatrix4x4& M)
+	{
+		return XMVector3Transform(V, M);
+	}
+
+	static FVector4 QuaternionRotate(FVector4& Axis,float Angle)
 	{
 		return XMQuaternionRotationAxis(Axis, Angle);
 	}
