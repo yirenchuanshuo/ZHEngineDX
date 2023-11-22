@@ -94,7 +94,7 @@ void OBJ::Load(std::string path)
 	DataDescribe[2] = (UINT)indices.size();
 	DataDescribe[3] = DataDescribe[2]*sizeof(UINT);
 
-	MeshAssetCreate(*this, "Asset/Mode.uasset");
+	MeshAssetCreate(*this, "Content/Mesh/Mode.uasset");
 	file.close();
 }
 

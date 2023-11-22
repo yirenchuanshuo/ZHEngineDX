@@ -1,6 +1,7 @@
 #include "HelloGame.h"
 
-#define MODEPATH "Asset/Mode.uasset"
+#define MODEPATH "Content/Mesh/Mode.uasset"
+#define MODEASSETPATH "Content/Mesh/Cube.obj"
 #define WRITEMODE 0
 
 
@@ -119,8 +120,8 @@ void HelloGame::LoadAsset()
 	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 	
-	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Content/Shader/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Content/Shader/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 	
 
 	//创建PSO
@@ -136,7 +137,7 @@ void HelloGame::LoadAsset()
 	//创建顶点Buffer
 #if WRITEMODE
 	OBJ Mode;
-	Mode.Load("Asset/Monkey2.obj");
+	Mode.Load(MODEASSETPATH);
 #endif
 
 	Mesh.Load(MODEPATH);
@@ -734,8 +735,8 @@ void HelloGame::UpdateMVP()
 void HelloGame::LoadTexture()
 {
 	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Asset/BaseColor2.jpg");
-	TextureFiles.push_back(L"Asset/Normal.jpg");
+	TextureFiles.push_back(L"Content/Tex/Wall_BaseColorAO.png");
+	TextureFiles.push_back(L"Content/Tex/Wall_Normal.png");
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{
