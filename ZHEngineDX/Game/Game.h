@@ -24,7 +24,7 @@ public:
 	
 
 	float AspectRatio()const;
-	int LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow);
+	int LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow);
 	
 	UINT GetWidth() const { return g_width; }
 	UINT GetHeight() const { return g_height; }

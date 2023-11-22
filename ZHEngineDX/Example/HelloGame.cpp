@@ -582,19 +582,19 @@ void HelloGame::UpLoadShaderResource()
 	g_textures.push_back(UTexture());
 	g_textures[0].Data = std::make_shared<BYTE>();
 	g_textures[0].Filename = L"Asset/BaseColor2.jpg";
-	auto baseColorData = g_textures[0].Data.get();
+	//auto baseColorData = g_textures[0].Data.get();
 
 	//加载纹理数据
 	D3D12_RESOURCE_DESC BaseColortexDesc;
-	g_textures[0].texSize = LoadImageDataFromFile(&baseColorData, BaseColortexDesc, g_textures[0].Filename, g_textures[0].texBytesPerRow);
+	g_textures[0].texSize = LoadImageDataFromFile(g_textures[0].Data, BaseColortexDesc, g_textures[0].Filename, g_textures[0].texBytesPerRow);
 
 	g_textures.push_back(UTexture());
 	g_textures[1].Data = std::make_shared<BYTE>();
 	g_textures[1].Filename = L"Asset/Normal.jpg";
-	auto normalData = g_textures[1].Data.get();
+	//auto normalData = g_textures[1].Data.get();
 
 	D3D12_RESOURCE_DESC NormaltexDesc;
-	g_textures[1].texSize = LoadImageDataFromFile(&normalData, NormaltexDesc, g_textures[1].Filename, g_textures[1].texBytesPerRow);
+	g_textures[1].texSize = LoadImageDataFromFile(g_textures[1].Data, NormaltexDesc, g_textures[1].Filename, g_textures[1].texBytesPerRow);
 
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -630,7 +630,7 @@ void HelloGame::UpLoadShaderResource()
 
 	//创建纹理数据
 	D3D12_SUBRESOURCE_DATA BaseColorData = {};
-	BaseColorData.pData = &baseColorData[0];
+	BaseColorData.pData = g_textures[0].Data.get();
 	BaseColorData.RowPitch = g_textures[0].texBytesPerRow;
 	BaseColorData.SlicePitch = g_textures[0].texBytesPerRow * BaseColortexDesc.Height;
 
@@ -652,7 +652,7 @@ void HelloGame::UpLoadShaderResource()
 
 	//创建纹理数据
 	D3D12_SUBRESOURCE_DATA NormalData = {};
-	NormalData.pData = &normalData[0];
+	NormalData.pData = g_textures[1].Data.get();
 	NormalData.RowPitch = g_textures[1].texBytesPerRow;
 	NormalData.SlicePitch = g_textures[1].texBytesPerRow * NormaltexDesc.Height;
 

@@ -118,7 +118,7 @@ float Game::AspectRatio() const
 	
 }
 
-int Game::LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow)
+int Game::LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow)
 {
 	HRESULT hr;
 
@@ -190,16 +190,16 @@ int Game::LoadImageDataFromFile(BYTE** imageData, D3D12_RESOURCE_DESC& resourceD
 	bytesPerRow = (textureWidth * bitsPerPixel) / 8;
 	int imageSize = bytesPerRow * textureHeight;
 
-	*imageData = (BYTE*)malloc(imageSize);
+	imageData = std::shared_ptr<BYTE>((BYTE*)malloc(imageSize),free);
 
 	if (imageConverted)
 	{
-		hr = wicConverter->CopyPixels(0, bytesPerRow, imageSize, *imageData);
+		hr = wicConverter->CopyPixels(0, bytesPerRow, imageSize, imageData.get());
 		if (FAILED(hr)) return 0;
 	}
 	else
 	{
-		hr = wicFrame->CopyPixels(0, bytesPerRow, imageSize, *imageData);
+		hr = wicFrame->CopyPixels(0, bytesPerRow, imageSize, imageData.get());
 		if (FAILED(hr)) return 0;
 	}
 
