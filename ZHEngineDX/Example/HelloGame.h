@@ -23,6 +23,7 @@ public:
 
 protected:
     virtual void UpdateMVP();
+    virtual void LoadTexture();
 
 public:
     //BackGround

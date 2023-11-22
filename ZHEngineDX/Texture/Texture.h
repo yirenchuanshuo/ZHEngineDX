@@ -5,6 +5,7 @@ class UTexture
 {
 public:
 	
+	void GenerateTextureData();
 
 	LPCWSTR Filename;
 
@@ -14,4 +15,8 @@ public:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> Resource ;
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadHeap ;
+
+	D3D12_RESOURCE_DESC texDesc;
+	D3D12_SUBRESOURCE_DATA texData;
+
 };

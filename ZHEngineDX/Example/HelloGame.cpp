@@ -579,105 +579,57 @@ void HelloGame::UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD
 
 void HelloGame::UpLoadShaderResource()
 {
-	g_textures.push_back(UTexture());
-	g_textures[0].Data = std::make_shared<BYTE>();
-	g_textures[0].Filename = L"Asset/BaseColor2.jpg";
-	//auto baseColorData = g_textures[0].Data.get();
-
-	//加载纹理数据
-	D3D12_RESOURCE_DESC BaseColortexDesc;
-	g_textures[0].texSize = LoadImageDataFromFile(g_textures[0].Data, BaseColortexDesc, g_textures[0].Filename, g_textures[0].texBytesPerRow);
-
-	g_textures.push_back(UTexture());
-	g_textures[1].Data = std::make_shared<BYTE>();
-	g_textures[1].Filename = L"Asset/Normal.jpg";
-	//auto normalData = g_textures[1].Data.get();
-
-	D3D12_RESOURCE_DESC NormaltexDesc;
-	g_textures[1].texSize = LoadImageDataFromFile(g_textures[1].Data, NormaltexDesc, g_textures[1].Filename, g_textures[1].texBytesPerRow);
-
+	
+	LoadTexture();
+	
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&BaseColortexDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&g_textures[0].Resource)));
-
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&NormaltexDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&g_textures[1].Resource)));
-
-	//记录纹理资源堆大小
-	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures[0].Resource.Get(), 0, 1)+ GetRequiredIntermediateSize(g_textures[1].Resource.Get(), 0, 1);
-
 	//创建数据上传堆 CPUGPU都可访问
 	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties2,
-		D3D12_HEAP_FLAG_NONE,
-		&resourceDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&g_textures[0].UploadHeap)));
-
-	//创建纹理数据
-	D3D12_SUBRESOURCE_DATA BaseColorData = {};
-	BaseColorData.pData = g_textures[0].Data.get();
-	BaseColorData.RowPitch = g_textures[0].texBytesPerRow;
-	BaseColorData.SlicePitch = g_textures[0].texBytesPerRow * BaseColortexDesc.Height;
-
-	//把资源从上传堆拷贝到默认堆，描述该堆作用
-	UpdateSubresources(g_commandList.Get(), g_textures[0].Resource.Get(), g_textures[0].UploadHeap.Get(), 0, 0, 1, &BaseColorData);
-	CD3DX12_RESOURCE_BARRIER baseColorBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures[0].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	g_commandList->ResourceBarrier(1, &baseColorBarrier);
-
-
-	
-	//创建数据上传堆 CPUGPU都可访问
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties2,
-		D3D12_HEAP_FLAG_NONE,
-		&resourceDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&g_textures[1].UploadHeap)));
-
-	//创建纹理数据
-	D3D12_SUBRESOURCE_DATA NormalData = {};
-	NormalData.pData = g_textures[1].Data.get();
-	NormalData.RowPitch = g_textures[1].texBytesPerRow;
-	NormalData.SlicePitch = g_textures[1].texBytesPerRow * NormaltexDesc.Height;
-
-	//把资源从上传堆拷贝到默认堆，描述该堆作用
-	UpdateSubresources(g_commandList.Get(), g_textures[1].Resource.Get(), g_textures[1].UploadHeap.Get(), 0, 0, 1, &NormalData);
-	CD3DX12_RESOURCE_BARRIER normalBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures[1].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	g_commandList->ResourceBarrier(1, &normalBarrier);
-	
 
 	//创建着色器资源视图描述
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = BaseColortexDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
-	//创建着色器资源视图
+	//获取着色器资源视图起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-	g_device->CreateShaderResourceView(g_textures[0].Resource.Get(), &srvDesc, cbvsrvHandle);
+	
+	for (auto& Texture : g_textures)
+	{
+		ThrowIfFailed(g_device->CreateCommittedResource(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&Texture.texDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&Texture.Resource)));
 
-	srvDesc.Format = NormaltexDesc.Format;
-	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-	g_device->CreateShaderResourceView(g_textures[1].Resource.Get(), &srvDesc, cbvsrvHandle);
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(Texture.Resource.Get(), 0, 1);
+		CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 
+
+		ThrowIfFailed(g_device->CreateCommittedResource(
+			&heapProperties2,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&Texture.UploadHeap)));
+
+
+		//把资源从上传堆拷贝到默认堆，描述该堆作用
+		UpdateSubresources(g_commandList.Get(), Texture.Resource.Get(), Texture.UploadHeap.Get(), 0, 0, 1, &Texture.texData);
+		CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(Texture.Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		g_commandList->ResourceBarrier(1, &Barrier);
+
+
+		srvDesc.Format = Texture.texDesc.Format;
+		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+		g_device->CreateShaderResourceView(Texture.Resource.Get(), &srvDesc, cbvsrvHandle);
+	}
+	
 }
 
 void HelloGame::SetFence()
@@ -787,4 +739,22 @@ void HelloGame::UpdateMVP()
 	ZMath::MaterixToFloat4x4(&g_constantBufferData.MVP, MVP);
 	g_constantBufferData.viewPosition = { x,y,z };
 	
+}
+
+void HelloGame::LoadTexture()
+{
+	std::vector<LPCWSTR> TextureFiles;
+	TextureFiles.push_back(L"Asset/BaseColor2.jpg");
+	TextureFiles.push_back(L"Asset/Normal.jpg");
+	size_t n = TextureFiles.size();
+	for (size_t i = 0; i < n; i++)
+	{
+		UTexture Temptex;
+		Temptex.Data = std::make_shared<BYTE>();
+		Temptex.Filename = TextureFiles[i];
+		Temptex.texSize = LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
+		Temptex.GenerateTextureData();
+		g_textures.push_back(Temptex);
+	}
+
 }

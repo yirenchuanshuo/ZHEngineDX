@@ -39,6 +39,9 @@
     <ClCompile Include="Mesh\StaticMesh.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Texture\Texture.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h">

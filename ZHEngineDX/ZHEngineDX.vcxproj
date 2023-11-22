@@ -172,6 +172,7 @@
     <ClCompile Include="Mesh\OBJ.cpp" />
     <ClCompile Include="Mesh\StaticMesh.cpp" />
     <ClCompile Include="TestMain.cpp" />
+    <ClCompile Include="Texture\Texture.cpp" />
     <ClCompile Include="ZHEngine.cpp" />
     <ClInclude Include="Mesh\OBJ.h" />
     <ClInclude Include="Mesh\StaticMesh.h" />
