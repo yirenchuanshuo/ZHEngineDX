@@ -46,9 +46,7 @@ public:
         Float4x4 MVP;
         FLinearColor lightColor;
         Float4 lightDirection;
-        Float3 viewPosition;
-        float pad2;
-       //Float4 offset;
+        Float4 cameraPosition;
     };
 
 private:

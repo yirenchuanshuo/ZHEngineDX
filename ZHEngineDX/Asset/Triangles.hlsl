@@ -1,3 +1,5 @@
+#include "BRDF.hlsl"
+
 Texture2D t1 : register(t0);
 Texture2D t2 : register(t1);
 SamplerState s1 : register(s0);
@@ -8,7 +10,7 @@ cbuffer SceneConstantBuffer : register(b0)
     float4x4 WorldViewProj;
     float4 lightColor;
     float4 lightDirection;
-    float3 viewPosition;
+    float4 cameraPosition;
 }
 
 struct VertexInput
@@ -56,6 +58,7 @@ PSInput VSMain(VertexInput input)
     return result;
 }
 
+
 float4 PSMain(PSInput input) : SV_TARGET
 {
     
@@ -81,7 +84,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     diffuse *= basecolor.xyz;
     
     float specularStrength = 0.5;
-    float3 viewDir = normalize(viewPosition - input.worldposition.xyz);
+    float3 viewDir = normalize(cameraPosition.xyz - input.worldposition.xyz);
     float3 halfDir = normalize(lightDirection.xyz + viewDir);
     float spec = pow(max(dot(halfDir, normalcolor), 0.0), 32);
     float3 specular = specularStrength*spec*lightColor.xyz;

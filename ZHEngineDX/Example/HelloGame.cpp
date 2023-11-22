@@ -113,15 +113,14 @@ void HelloGame::LoadAsset()
 	//创建着色器资源
 	ComPtr<ID3DBlob> vertexShader;
 	ComPtr<ID3DBlob> pixelShader;
+	UINT compileFlags = 0;
 
 #if defined(_DEBUG)
-	UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-	UINT compileFlags = 0;
+	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 	
-	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Asset/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 	
 
 	//创建PSO
@@ -728,7 +727,7 @@ void HelloGame::UpdateMVP()
 
 	ZMath::MaterixToFloat4x4(&g_constantBufferData.ObjectToWorld, m);
 	ZMath::MaterixToFloat4x4(&g_constantBufferData.MVP, MVP);
-	g_constantBufferData.viewPosition = { x,y,z };
+	g_constantBufferData.cameraPosition = { x,y,z,1 };
 	
 }
 
