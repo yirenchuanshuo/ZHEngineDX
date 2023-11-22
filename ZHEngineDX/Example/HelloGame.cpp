@@ -583,9 +583,9 @@ void HelloGame::UpLoadShaderResource()
 	LoadTexture();
 	
 	//创建纹理资源的堆
-	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	CD3DX12_HEAP_PROPERTIES TexResourceheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	//创建数据上传堆 CPUGPU都可访问
-	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	CD3DX12_HEAP_PROPERTIES DataUpLoadheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
 	//创建着色器资源视图描述
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -599,7 +599,7 @@ void HelloGame::UpLoadShaderResource()
 	for (auto& Texture : g_textures)
 	{
 		ThrowIfFailed(g_device->CreateCommittedResource(
-			&heapProperties,
+			&TexResourceheap,
 			D3D12_HEAP_FLAG_NONE,
 			&Texture.texDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST,
@@ -611,19 +611,17 @@ void HelloGame::UpLoadShaderResource()
 
 
 		ThrowIfFailed(g_device->CreateCommittedResource(
-			&heapProperties2,
+			&DataUpLoadheap,
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&Texture.UploadHeap)));
 
-
 		//把资源从上传堆拷贝到默认堆，描述该堆作用
 		UpdateSubresources(g_commandList.Get(), Texture.Resource.Get(), Texture.UploadHeap.Get(), 0, 0, 1, &Texture.texData);
 		CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(Texture.Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		g_commandList->ResourceBarrier(1, &Barrier);
-
 
 		srvDesc.Format = Texture.texDesc.Format;
 		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
@@ -708,13 +706,6 @@ void HelloGame::UpdateConstantBuffer()
 
 	UpdateMVP();
 	UpdateLight();
-	/*const float translationSpeed = 0.005f;
-	const float offsetBounds = 1.75f;
-	g_constantBufferData.offset.x += translationSpeed;
-	if (g_constantBufferData.offset.x > offsetBounds)
-	{
-		g_constantBufferData.offset.x = -offsetBounds;
-	}*/
 	//GPU复制数据
 	memcpy(g_pCbvDataBegin, &g_constantBufferData, sizeof(g_constantBufferData));
 }
