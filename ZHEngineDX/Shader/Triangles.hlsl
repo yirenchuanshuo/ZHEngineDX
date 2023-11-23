@@ -1,9 +1,11 @@
 #include "BRDF.hlsl"
+#include "Common.hlsl"
 
 Texture2D t1 : register(t0);
 Texture2D t2 : register(t1);
 SamplerState s1 : register(s0);
 SamplerState s2 : register(s1);
+
 cbuffer SceneConstantBuffer : register(b0)
 {
     float4x4 ObjectToWorld;
@@ -12,6 +14,7 @@ cbuffer SceneConstantBuffer : register(b0)
     float4 lightDirection;
     float4 cameraPosition;
 }
+
 
 struct VertexInput
 {
@@ -32,18 +35,6 @@ struct PSInput
     float4 worldposition :POSITION;
 };
 
-float3x3 TBN(float3 normal, float3 tangent, float3 bitangent)
-{
-    
-    float3x3 TBN = float3x3(tangent, bitangent, normal);
-
-    return TBN;
-}
-
-float3 UnpackNormal(float3 normal)
-{
-    return normal * 2 - 1;
-}
 
 PSInput VSMain(VertexInput input)
 {
@@ -63,33 +54,32 @@ float4 PSMain(PSInput input) : SV_TARGET
 {
     float4 BaseColorTex = t1.Sample(s1, input.texCoord);
     float4 NormalTex = t2.Sample(s2, input.texCoord);
-    float3 basecolor = BaseColorTex.rgb;
-    float ambientStrength = BaseColorTex.a;
-    float3 ambient = ambientStrength * lightColor.xyz*basecolor;
-    float3 normalcolor = NormalTex.xyz;
-    normalcolor = UnpackNormal(normalcolor);
     
-    float3 tangent = normalize(input.tangent);
-    float3 normal = normalize(input.normal);
-    float3 binormal = normalize(cross(normal,tangent));
+    float3 tangent = input.tangent;
+    float3 normal = input.normal;
+    float3 bitangent = normalize(cross(normal, tangent));
     
-    float3x3 TBNMatrix = TBN(normal,tangent,binormal);
-    normalcolor = normalize(mul(normalcolor, TBNMatrix));
-    
-    
-    float halflambert = dot(normalcolor, lightDirection.xyz) * 0.5 + 0.5;
-    float3 diffuse = halflambert * lightColor.xyz;
-    diffuse *= basecolor;
-    
-    float specularStrength = 1.0 - NormalTex.a;
-    float3 viewDir = normalize(cameraPosition.xyz - input.worldposition.xyz);
-    float3 halfDir = normalize(lightDirection.xyz + viewDir);
-    float spec = pow(max(dot(halfDir, normalcolor), 0.0), 32);
-    float3 specular = specularStrength*spec*lightColor.xyz;
+    float3 basecolor = pow(BaseColorTex.rgb,2.2);
+    float Metalic = 0.0;
+    float roughness = NormalTex.a;
+    float AO = BaseColorTex.a;
+    //float3 N = input.normal;
+    float3 N = normalize(UnpackNormal(NormalTex.rgb));
+    N = TransformTangentToWorld(normal, tangent, bitangent,N);
     
     
-    float4 finalcolor = float4(ambient+diffuse+specular,1.0);
+    float3 F0 = lerp(0.04, basecolor, Metalic);
+    float3 Radiance = lightColor.rgb*2;
     
     
-    return finalcolor;
+    float3 L = normalize(-lightDirection.xyz);
+    float3 V = normalize(cameraPosition.xyz - input.worldposition.xyz);
+    
+    float3 ambient =0.5*basecolor*AO;
+    
+    
+    float3 color = ComputeBRDF(basecolor,Metalic,roughness,Radiance,L,V,N)+ambient;
+    float3 finalcolor = pow(color,1/2.2);
+    
+    return float4(finalcolor, 1.0);
 }

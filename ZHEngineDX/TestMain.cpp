@@ -8,17 +8,6 @@ using namespace std;
 
 int main()
 {
-	/*OBJ Mode;
-	Mode.Load("Asset/Cube.obj");
-	cout << endl;*/
-	/*UINT n = Mode.indices.size();
-	for (int i = 0; i < n -2; i+=3)
-	{
-		std::cout << Mode.indices[i]<<" " << Mode.indices[i + 1]<<" " << Mode.indices[i + 2];
-		std::cout << std::endl;
-	}*/
-	//OBJ Mode;
-	//Mode.Load("Asset/Cube.obj");
 
 	StaticMesh Mesh;
 
