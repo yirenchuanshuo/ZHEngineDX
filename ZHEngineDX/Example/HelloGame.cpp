@@ -690,11 +690,11 @@ void HelloGame::UpdateBackGround()
 void HelloGame::UpdateLight()
 {
 	FVector4 lightDirV = ZMath::Normalize4(FVector4{1,1,0,0});
-	float angle = 1.0f;
+	float angle = 0.25f;
 	lightangle += angle;
 	float angleInRadians = ZMath::AngleToRadians(lightangle);
 	FMatrix4x4 rotationMatrix = ZMath::MatrixRotateY(angleInRadians);
-	lightDirV = ZMath::Normalize4(ZMath::Transform(lightDirV,rotationMatrix));
+	lightDirV = -ZMath::Normalize4(ZMath::Transform(lightDirV,rotationMatrix));
 	Float4 lightDir = ZMath::FVector4ToFloat4(lightDirV);
 	light.direction = lightDir;
 	g_constantBufferData.lightColor = light.color;

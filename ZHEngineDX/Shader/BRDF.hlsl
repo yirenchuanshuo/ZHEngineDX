@@ -44,32 +44,6 @@ float Geometry_Smith(float3 N, float3 V, float3 L, float Roughness)
     return ggx1 * ggx2;
 }
 
-float3 ComputeBRDF(float3 basecolor,float Metalic,float Roughness,float3 Radiance,float3 L,float3 V,float3 N)
-{
-    float3 F0 = lerp(0.04, basecolor, Metalic);
-    
-    float3 H = normalize(V + L);
-    
-    float NoL = saturate(dot(N, L));
-    float HoV = saturate(dot(H, V));
-    float NoV = saturate(dot(N, V));
-    
-    
-    float NDF = Distribution_GGX(N, H, Roughness);
-    float G = Geometry_Smith(N, V, L, Roughness);
-    float3 F = Fresnel_Schlick(HoV, F0);
-    
-    float3 kS = F;
-    float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
-    kD *= (1 - Metalic);
-    
-    float3 nominator = NDF * G * F;
-    float denominator = max(4.0 * NoV * NoL, 0.001);
-    float3 Specular = nominator / denominator;
-    
-    float3 Diffuse = kD * basecolor / PI;
-    float3 finalcolor = (Diffuse + Specular) * NoL * Radiance;
-    
-    return finalcolor;
 
-}
+
+
