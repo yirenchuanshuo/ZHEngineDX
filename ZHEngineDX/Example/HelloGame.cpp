@@ -736,8 +736,8 @@ void HelloGame::UpdateMVP()
 void HelloGame::LoadTexture()
 {
 	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Content/Tex/Wall_00_BaseColorAO.png");
-	TextureFiles.push_back(L"Content/Tex/Wall_00_NormalR.png");
+	TextureFiles.push_back(L"Content/Tex/Sand_00_BaseColorAO.png");
+	TextureFiles.push_back(L"Content/Tex/Sand_00_NormalR.png");
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{

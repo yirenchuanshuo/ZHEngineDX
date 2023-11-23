@@ -41,3 +41,14 @@ float3 Phong(float3 baseColor,float specularPow, float specularStrength,float3 L
     float3 Diffuse = NoL*baseColor;
     return (Specular + Diffuse);
 }
+
+float3 Blinn_Phong(float3 baseColor, float specularPow, float specularStrength, float3 L, float3 N, float3 V)
+{
+    float3 H = normalize(V + L);
+    float NoH = saturate(dot(N, H));
+    float NoL = saturate(dot(N, L));
+    float3 Diffuse = NoL * baseColor;
+    float3 Specular = pow(NoH, specularPow) * specularStrength;
+    return (Specular + Diffuse);
+
+}

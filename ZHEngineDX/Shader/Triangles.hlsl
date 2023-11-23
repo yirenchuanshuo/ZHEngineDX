@@ -63,7 +63,6 @@ float4 PSMain(PSInput input) : SV_TARGET
     float Metalic = 0.0;
     float roughness = NormalTex.a;
     float AO = BaseColorTex.a;
-    //float3 N = input.normal;
     float3 N = normalize(UnpackNormal(NormalTex.rgb));
     N = TransformTangentToWorld(normal, tangent, bitangent,N);
     
@@ -74,10 +73,10 @@ float4 PSMain(PSInput input) : SV_TARGET
     
     float3 ambient =0.3*basecolor*AO;
     
-    
-    //float3 color = BRDF(basecolor,Metalic,roughness,Radiance,L,V,N)+ambient;
-   
-    float3 color = Phong(basecolor,20,1 - roughness,L,N,V)+ambient;
+    float3 color;
+    color = BRDF(basecolor,Metalic,roughness,Radiance,L,V,N)+ambient;
+    //color = Blinn_Phong(basecolor, 20, 1 - roughness, L, N, V) + ambient;
+    //color = Phong(basecolor,20,1 - roughness,L,N,V)+ambient;
     float3 finalcolor = pow(color,1/2.2);
     
     return float4(finalcolor, 1.0);
