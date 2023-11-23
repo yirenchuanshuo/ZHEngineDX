@@ -62,10 +62,11 @@ PSInput VSMain(VertexInput input)
 float4 PSMain(PSInput input) : SV_TARGET
 {
     float4 BaseColorTex = t1.Sample(s1, input.texCoord);
+    float4 NormalTex = t2.Sample(s2, input.texCoord);
     float3 basecolor = BaseColorTex.rgb;
     float ambientStrength = BaseColorTex.a;
     float3 ambient = ambientStrength * lightColor.xyz*basecolor;
-    float3 normalcolor = t2.Sample(s2, input.texCoord).xyz;
+    float3 normalcolor = NormalTex.xyz;
     normalcolor = UnpackNormal(normalcolor);
     
     float3 tangent = normalize(input.tangent);
@@ -80,7 +81,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 diffuse = halflambert * lightColor.xyz;
     diffuse *= basecolor;
     
-    float specularStrength = 0.5;
+    float specularStrength = 1.0 - NormalTex.a;
     float3 viewDir = normalize(cameraPosition.xyz - input.worldposition.xyz);
     float3 halfDir = normalize(lightDirection.xyz + viewDir);
     float spec = pow(max(dot(halfDir, normalcolor), 0.0), 32);

@@ -205,7 +205,8 @@ void HelloGame::PopulateCommandList()
 	g_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
 	//清除渲染目标
-	g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	float BackGroundColor[4] = {0,0,0,1};
+	g_commandList->ClearRenderTargetView(rtvHandle, BackGroundColor, 0, nullptr);
 	g_commandList->ClearDepthStencilView(g_dsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	
 	//图元拓扑模式
@@ -735,8 +736,8 @@ void HelloGame::UpdateMVP()
 void HelloGame::LoadTexture()
 {
 	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Content/Tex/Wall_BaseColorAO.png");
-	TextureFiles.push_back(L"Content/Tex/Wall_Normal.png");
+	TextureFiles.push_back(L"Content/Tex/Wall_00_BaseColorAO.png");
+	TextureFiles.push_back(L"Content/Tex/Wall_00_NormalR.png");
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{
