@@ -64,6 +64,8 @@ float4 PSMain(PSInput input) : SV_TARGET
     float roughness = NormalTex.a;
     float AO = BaseColorTex.a;
     float3 N = normalize(UnpackNormal(NormalTex.rgb));
+    //N.rg *= 5;
+    //N = normalize(N);
     N = TransformTangentToWorld(normal, tangent, bitangent,N);
     
     float3 Radiance = lightColor.rgb*5;
@@ -71,7 +73,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 L = normalize(lightDirection.xyz);
     float3 V = normalize(cameraPosition.xyz - input.worldposition.xyz);
     
-    float3 ambient =0.3*basecolor*AO;
+    float3 ambient =0.03*basecolor*AO;
     
     float3 color;
     color = BRDF(basecolor,Metalic,roughness,Radiance,L,V,N)+ambient;

@@ -313,6 +313,7 @@ void HelloGame::CreateSwapChain(ComPtr<IDXGISwapChain1>& swapChain, ComPtr<IDXGI
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.SampleDesc.Count = 1;
+	swapChainDesc.SampleDesc.Quality = 0;
 
 	//Ö¸¶¨´°¿Ú
 	ThrowIfFailed(gDxgiFactory->CreateSwapChainForHwnd(
@@ -736,8 +737,8 @@ void HelloGame::UpdateMVP()
 void HelloGame::LoadTexture()
 {
 	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Content/Tex/Sand_00_BaseColorAO.png");
-	TextureFiles.push_back(L"Content/Tex/Sand_00_NormalR.png");
+	TextureFiles.push_back(L"Content/Tex/Wall_00_BaseColorAO.png");
+	TextureFiles.push_back(L"Content/Tex/Wall_00_NormalR.png");
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{
