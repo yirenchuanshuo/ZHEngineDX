@@ -1,5 +1,6 @@
 #pragma once
 #include "../GameHelper/GameHelper.h"
+#include "../Common/ZHEngineTimer.h"
 #include "Camera.h"
 #include "GameWindowApplication.h"
 
@@ -41,7 +42,9 @@ protected:
 	UINT g_width;
 	UINT g_height;
 	float g_aspectRatio;
+
 	Camera g_camera;
+	ZHEngineTimer g_timer;
 
 	bool g_useWarpDevice;
 

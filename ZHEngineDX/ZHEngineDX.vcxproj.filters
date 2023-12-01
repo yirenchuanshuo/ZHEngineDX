@@ -89,5 +89,8 @@
     <ClInclude Include="Texture\Texture.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Common\ZHEngineTimer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

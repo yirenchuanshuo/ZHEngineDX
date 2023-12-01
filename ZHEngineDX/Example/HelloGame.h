@@ -49,6 +49,9 @@ public:
         Float4 cameraPosition;
     };
 
+    //State
+    bool g_MSAA = false;
+
 private:
     static const UINT FrameCount = 2;
     

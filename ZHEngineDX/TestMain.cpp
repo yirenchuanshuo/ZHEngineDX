@@ -3,13 +3,42 @@
 #include "Example/HelloGame.h"
 #include "Mesh/AssetLoad.h"
 #include "Mesh/StaticMesh.h"
+#include <algorithm>
 using namespace std;
 
+struct V3
+{
+	int x;
+	int y;
+	int z;
+};
+
+struct condition
+{
+	bool operator()(const V3& A, const V3& B)
+	{
+		if (A.z > B.z)
+		{
+			return true;
+		}
+		// Z相同则按Y从小到大排序
+		else if (A.y < B.y)
+		{
+			return true;
+		}
+		// Y相同则按X从小到大排序
+		else if (A.x < B.x)
+		{
+			return true;
+		}
+		return false;
+	}
+};
 
 int main()
 {
 
-	StaticMesh Mesh;
+	/*StaticMesh Mesh;
 
 	MeshAssetLoad(Mesh, "Asset/Mode.uasset");
 	for (auto& A : Mesh.vertices)
@@ -24,7 +53,20 @@ int main()
 	for (int i=0;i<n-2;i+=3)
 	{
 		cout << Mesh.indices[i] << " " << Mesh.indices[i + 1] << " " << Mesh.indices[i + 2] << endl;
-	}
+	}*/
+	// { {1, 2, 1}, { 2,5,7 }, { 6,1,3 }, { 4,1,2 }, { 5,5,5 }}
+	vector<V3> F;
+	F.push_back({ 1,2,1 });
+	F.push_back({ 2,5,7 });
+	F.push_back({ 6,1,3 });
+	F.push_back({ 4,1,2 });
+	F.push_back({ 5,5,5 });
+	sort(F.begin(), F.end(), condition());
 
+	for (auto& v : F)
+	{
+		cout << v.x << " " << v.y << " " << v.z << endl;
+	}
+	system("pause");
 	return 0;
 }

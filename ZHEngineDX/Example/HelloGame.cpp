@@ -145,11 +145,6 @@ void HelloGame::LoadAsset()
 	UINT ModeVertexSize = (UINT)Mesh.vertices.size() * sizeof(Vertex);
 	UINT ModeIndexSize = (UINT)Mesh.indices.size() * sizeof(UINT);
 
-	
-	
-	//const UINT vertexBufferSize = ModeVertexSize;
-	//const UINT indexBufferSize = ModeIndexSize;
-
 	//数据上传堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	CD3DX12_RANGE readRange(0, 0);
@@ -373,6 +368,9 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 
 void HelloGame::CreateFrameResource(ComPtr<IDXGISwapChain1>& swapChain, CD3DX12_CPU_DESCRIPTOR_HANDLE& rtvHandle)
 {
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	for (UINT n = 0; n < FrameCount; n++)
 	{
 		ThrowIfFailed(swapChain->GetBuffer(n, IID_PPV_ARGS(&g_renderTargets[n])));
@@ -524,7 +522,7 @@ void HelloGame::UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperti
 void HelloGame::UpLoadDepthStencialBuffer()
 {
 	//创建深度模板缓冲区描述符
-	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc{};
 	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
@@ -543,7 +541,7 @@ void HelloGame::UpLoadDepthStencialBuffer()
 	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
 	//创建资源描述，描述其用于深度模板视图
-	CD3DX12_RESOURCE_DESC depthtex2D = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, g_width, g_height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+	CD3DX12_RESOURCE_DESC depthtex2D = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, g_width, g_height, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
 	//提交深度模板缓冲区资源
 	ThrowIfFailed(g_device->CreateCommittedResource(
