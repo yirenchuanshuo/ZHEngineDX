@@ -15,9 +15,10 @@ public:
 
 
 	virtual void OnInit() = 0;
-	virtual void OnUpdate() = 0;
+	virtual void OnUpdate(ZHEngineTimer const& timer) = 0;
 	virtual void OnRender() = 0;
 	virtual void OnDestroy() = 0;
+	virtual void Tick() = 0;
 
 	virtual void OnMouseDown(WPARAM btnState, int x, int y);
 	virtual void OnMouseUp(WPARAM btnState, int x, int y);

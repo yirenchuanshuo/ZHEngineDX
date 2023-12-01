@@ -11,9 +11,10 @@ public:
 	HelloGame(UINT width, UINT height, std::wstring name);
 
     virtual void OnInit()override;
-    virtual void OnUpdate()override;
+    virtual void OnUpdate(ZHEngineTimer const& timer)override;
     virtual void OnRender()override;
     virtual void OnDestroy()override;
+    virtual void Tick()override;
 
 
 

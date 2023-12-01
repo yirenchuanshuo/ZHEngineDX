@@ -36,7 +36,7 @@ void HelloGame::OnInit()
 	LoadAsset();
 }
 
-void HelloGame::OnUpdate()
+void HelloGame::OnUpdate(ZHEngineTimer const& timer)
 {
 	UpdateBackGround();
 	UpdateConstantBuffer();
@@ -44,6 +44,10 @@ void HelloGame::OnUpdate()
 
 void HelloGame::OnRender()
 {
+	if (g_timer.GetFrameCount() == 0)
+	{
+		return;
+	}
 	PopulateCommandList();
 	//将命令列表提交给命令队列
 	ID3D12CommandList* ppCommandLists[] = { g_commandList.Get() };
@@ -59,6 +63,12 @@ void HelloGame::OnDestroy()
 	WaitForGPU();
 	CloseHandle(g_fenceEvent);
 	
+}
+
+void HelloGame::Tick()
+{
+	g_timer.Tick([&]() {OnUpdate(g_timer); });
+	OnRender();
 }
 
 void HelloGame::LoadPipeline()

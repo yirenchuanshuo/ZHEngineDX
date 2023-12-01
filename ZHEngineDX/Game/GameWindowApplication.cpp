@@ -81,8 +81,7 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 		{
 			if (game)
 			{
-				game->OnUpdate();
-				game->OnRender();
+				game->Tick();
 			}
 		}
 		return 0;
