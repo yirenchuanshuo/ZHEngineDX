@@ -1,5 +1,5 @@
 #pragma once
-#include "../Game/Game.h"
+#include "../GameRHI/GameRHI.h"
 #include "../Mesh/Light.h"
 #include "../Mesh/OBJ.h"
 #include "../Mesh/StaticMesh.h"
@@ -54,27 +54,17 @@ public:
     bool g_MSAA = false;
 
 private:
-    static const UINT FrameCount = 2;
+    
     
 
     //渲染预备资源
-    CD3DX12_VIEWPORT g_viewport;
-    CD3DX12_RECT g_scissorRect;
-    ComPtr<IDXGISwapChain3> g_swapChain;
-    ComPtr<ID3D12Device> g_device;
-    ComPtr<ID3D12Resource> g_renderTargets[FrameCount];
-    ComPtr<ID3D12CommandAllocator> g_commandAllocator[FrameCount];
-    ComPtr<ID3D12CommandQueue> g_commandQueue;
+    
+    
     ComPtr<ID3D12RootSignature> g_rootSignature;
-
-    ComPtr<ID3D12DescriptorHeap> g_rtvHeap;
-    ComPtr<ID3D12DescriptorHeap> g_dsvHeap;
     ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
-
-
     ComPtr<ID3D12PipelineState> g_pipelineState;
-    ComPtr<ID3D12GraphicsCommandList> g_commandList;
-    UINT g_rtvDescriptorSize;
+    
+    
     UINT g_cbvsrvDescriptorSize;
 
     //资源Buffer
@@ -90,32 +80,22 @@ private:
     
 
     std::vector<UTexture> g_textures;
-
     UINT8* g_pCbvDataBegin;
-    ComPtr<ID3D12Resource> g_depthStencilBuffer;
+    
 
     
     
 
-    // 围栏
-    UINT g_frameIndex;
-    HANDLE g_fenceEvent;
-    ComPtr<ID3D12Fence> g_fence;
-    UINT64 g_fenceValues[FrameCount];
+    
 
 private:
     void LoadPipeline();
     void LoadAsset();
     void PopulateCommandList();
-    void MoveToNextFrame();
-    void WaitForGPU();
+    
+    
 
 
-    void CreateGPUElement(ComPtr<IDXGIFactory6>& gDxgiFactory);
-    void CreateCommandQueue();
-    void CreateSwapChain(ComPtr<IDXGISwapChain1>& swapChain, ComPtr<IDXGIFactory6>& gDxgiFactory);
-    void CreateRenderTargetViewDesCribeHeap();
-    void CreateDepthStencilViewDesCribeHeap();
     void CreateConstantBufferDesCribeHeap();
     void CreateFrameResource();
 

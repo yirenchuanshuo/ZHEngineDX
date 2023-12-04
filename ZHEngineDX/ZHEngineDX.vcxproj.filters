@@ -18,16 +18,16 @@
     <ClCompile Include="ZHEngine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Game.cpp">
+    <ClCompile Include="GameRHI\GameRHI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Game\GameWindowApplication.cpp">
+    <ClCompile Include="GameRHI\GameWindowApplication.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Example\HelloGame.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Camera.cpp">
+    <ClCompile Include="GameRHI\Camera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Mesh\OBJ.cpp">
@@ -53,7 +53,7 @@
     <ClInclude Include="Common\TypeName.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Game.h">
+    <ClInclude Include="GameRHI\GameRHI.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Common\CommonCore.h">
@@ -62,7 +62,7 @@
     <ClInclude Include="GameHelper\GameHelper.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Game\GameWindowApplication.h">
+    <ClInclude Include="GameRHI\GameWindowApplication.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Example\HelloGame.h">
@@ -71,7 +71,7 @@
     <ClInclude Include="Common\ZHEngineMath.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Camera.h">
+    <ClInclude Include="GameRHI\Camera.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Mesh\MeshBaseData.h">

@@ -1,5 +1,5 @@
 #pragma once
-#include"Game.h"
+#include"GameRHI.h"
 
 inline wchar_t DebugToDisplay[128] = L"Hello, Windows!";
 

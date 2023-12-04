@@ -168,9 +168,9 @@
     </ClInclude>
     <ClCompile Include="Core\DXRHI.cpp" />
     <ClCompile Include="Example\HelloGame.cpp" />
-    <ClCompile Include="Game\Camera.cpp" />
-    <ClCompile Include="Game\Game.cpp" />
-    <ClCompile Include="Game\GameWindowApplication.cpp" />
+    <ClCompile Include="GameRHI\Camera.cpp" />
+    <ClCompile Include="GameRHI\GameRHI.cpp" />
+    <ClCompile Include="GameRHI\GameWindowApplication.cpp" />
     <ClInclude Include="Common\ZHEngineTimer.h" />
     <ClInclude Include="Core\DXRHI.h" />
     <ClInclude Include="Mesh\AssetLoad.h" />
@@ -195,11 +195,11 @@
     <ClInclude Include="GameHelper\GameHelper.h">
       <FileType>Document</FileType>
     </ClInclude>
-    <ClInclude Include="Game\Camera.h" />
-    <ClInclude Include="Game\Game.h">
+    <ClInclude Include="GameRHI\Camera.h" />
+    <ClInclude Include="GameRHI\GameRHI.h">
       <FileType>Document</FileType>
     </ClInclude>
-    <ClInclude Include="Game\GameWindowApplication.h">
+    <ClInclude Include="GameRHI\GameWindowApplication.h">
       <FileType>Document</FileType>
     </ClInclude>
   </ItemGroup>
