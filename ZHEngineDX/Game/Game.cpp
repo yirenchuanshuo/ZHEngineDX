@@ -1,7 +1,7 @@
 #include"Game.h"
 
 
-Game::Game(UINT width, UINT height, std::wstring name):
+GameRHI::GameRHI(UINT width, UINT height, std::wstring name):
     g_width(width),
     g_height(height),
     g_title(name)
@@ -14,17 +14,17 @@ Game::Game(UINT width, UINT height, std::wstring name):
 	g_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 }
 
-Game::~Game()
+GameRHI::~GameRHI()
 {
 }
 
-std::wstring Game::GetGameAssetPath()
+std::wstring GameRHI::GetGameAssetPath()
 {
 	return g_assetsPath;
 }
 
 _Use_decl_annotations_
-void Game::ParseCommandLineArgs(WCHAR* argv[], int argc)
+void GameRHI::ParseCommandLineArgs(WCHAR* argv[], int argc)
 {
 	for (int i = 1; i < argc; ++i)
 	{
@@ -37,12 +37,12 @@ void Game::ParseCommandLineArgs(WCHAR* argv[], int argc)
 	}
 }
 
-std::wstring Game::GetAssetFullPath(LPCWSTR assetName)
+std::wstring GameRHI::GetAssetFullPath(LPCWSTR assetName)
 {
 	return g_assetsPath + assetName;
 }
 
-IDXGIAdapter1* Game::GetSupportedAdapter(ComPtr<IDXGIFactory6>& dxgiFactory, const D3D_FEATURE_LEVEL featureLevel)
+IDXGIAdapter1* GameRHI::GetSupportedAdapter(ComPtr<IDXGIFactory6>& dxgiFactory, const D3D_FEATURE_LEVEL featureLevel)
 {
 	IDXGIAdapter1* adapter = nullptr;
 	for (std::uint32_t adapterIndex = 0U; ; ++adapterIndex)
@@ -66,7 +66,7 @@ IDXGIAdapter1* Game::GetSupportedAdapter(ComPtr<IDXGIFactory6>& dxgiFactory, con
 	return adapter;
 }
 
-void Game::OnMouseDown(WPARAM btnState, int x, int y)
+void GameRHI::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	g_camera.g_LastMousePos.x = x;
 	g_camera.g_LastMousePos.y = y;
@@ -74,12 +74,12 @@ void Game::OnMouseDown(WPARAM btnState, int x, int y)
 	SetCapture(hwnd);
 }
 
-void Game::OnMouseUp(WPARAM btnState, int x, int y)
+void GameRHI::OnMouseUp(WPARAM btnState, int x, int y)
 {
 	ReleaseCapture();
 }
 
-void Game::OnMouseMove(WPARAM btnState, int x, int y)
+void GameRHI::OnMouseMove(WPARAM btnState, int x, int y)
 {
 	if ((btnState & MK_LBUTTON) != 0)
 	{
@@ -111,14 +111,14 @@ void Game::OnMouseMove(WPARAM btnState, int x, int y)
 	g_camera.g_LastMousePos.y = y;
 }
 
-float Game::AspectRatio() const
+float GameRHI::AspectRatio() const
 {
 	
 	return static_cast<float>(g_width) / g_height;
 	
 }
 
-int Game::LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow)
+int GameRHI::LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow)
 {
 	HRESULT hr;
 
@@ -219,7 +219,7 @@ int Game::LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE
 	return imageSize;
 }
 
-DXGI_FORMAT Game::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
+DXGI_FORMAT GameRHI::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
 {
 	if (wicFormatGUID == GUID_WICPixelFormat128bppRGBAFloat) return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBAHalf) return DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -241,7 +241,7 @@ DXGI_FORMAT Game::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
 	else return DXGI_FORMAT_UNKNOWN;
 }
 
-WICPixelFormatGUID Game::GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID)
+WICPixelFormatGUID GameRHI::GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID)
 {
 	if (wicFormatGUID == GUID_WICPixelFormatBlackWhite) return GUID_WICPixelFormat8bppGray;
 	else if (wicFormatGUID == GUID_WICPixelFormat1bppIndexed) return GUID_WICPixelFormat32bppRGBA;
@@ -289,7 +289,7 @@ WICPixelFormatGUID Game::GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID
 	else return GUID_WICPixelFormatDontCare;
 }
 
-int Game::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
+int GameRHI::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 {
 	if (dxgiFormat == DXGI_FORMAT_R32G32B32A32_FLOAT) return 128;
 	else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) return 64;

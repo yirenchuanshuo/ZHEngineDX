@@ -3,11 +3,11 @@
 #define DEBUGMESSAGE 0
 HWND GameWindowApplication::g_hwnd = nullptr;
 
-int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
+int GameWindowApplication::Run(GameRHI* gameRHI, HINSTANCE hInstance, int nCmdShow)
 {
 	int argc;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	game->ParseCommandLineArgs(argv, argc);
+	gameRHI->ParseCommandLineArgs(argv, argc);
 	LocalFree(argv);
 
 	WNDCLASSEX windowClass = { 0 };
@@ -21,18 +21,18 @@ int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 
 	g_hwnd = CreateWindow(
 		windowClass.lpszClassName,
-		game->GetTitle(),
+		gameRHI->GetTitle(),
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		game->GetWidth(),
-		game->GetHeight(),
+		gameRHI->GetWidth(),
+		gameRHI->GetHeight(),
 		nullptr,
 		nullptr,
 		windowClass.hInstance,
-		game);
+		gameRHI);
 
-	game->OnInit();
+	gameRHI->OnInit();
 
 	ShowWindow(g_hwnd, nCmdShow);
 
@@ -46,7 +46,7 @@ int GameWindowApplication::Run(Game* game, HINSTANCE hInstance, int nCmdShow)
 		}
 	}
 
-	game->OnDestroy();
+	gameRHI->OnDestroy();
 
 	return static_cast<char>(msg.wParam);
 }
@@ -58,7 +58,7 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
-	Game* game = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+	GameRHI* gameRHI = reinterpret_cast<GameRHI*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 	switch (message)
 	{
 	case WM_CREATE:
@@ -79,9 +79,9 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 		}
 		else
 		{
-			if (game)
+			if (gameRHI)
 			{
-				game->Tick();
+				gameRHI->Tick();
 			}
 		}
 		return 0;
@@ -90,13 +90,13 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 		PostQuitMessage(0);
 		return 0;
 	case WM_RBUTTONDOWN:
-		game->OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		gameRHI->OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 	case WM_RBUTTONUP:
-		game->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		gameRHI->OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 	case WM_MOUSEMOVE:
-		game->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		gameRHI->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);

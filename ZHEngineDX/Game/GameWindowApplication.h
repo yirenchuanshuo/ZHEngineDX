@@ -3,11 +3,12 @@
 
 inline wchar_t DebugToDisplay[128] = L"Hello, Windows!";
 
-class Game;
+
+class GameRHI;
 class GameWindowApplication
 {
 public:
-    static int Run(Game* game, HINSTANCE hInstance, int nCmdShow);
+    static int Run(GameRHI* game, HINSTANCE hInstance, int nCmdShow);
     static HWND GetHwnd() { return g_hwnd; }
     
 protected:

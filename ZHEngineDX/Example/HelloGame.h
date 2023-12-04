@@ -5,7 +5,7 @@
 #include "../Mesh/StaticMesh.h"
 #include "../Texture/Texture.h"
 
-class HelloGame :public Game
+class HelloGame :public GameRHI
 {
 public:
 	HelloGame(UINT width, UINT height, std::wstring name);
@@ -117,7 +117,7 @@ private:
     void CreateRenderTargetViewDesCribeHeap();
     void CreateDepthStencilViewDesCribeHeap();
     void CreateConstantBufferDesCribeHeap();
-    void CreateFrameResource(ComPtr<IDXGISwapChain1>& swapChain,CD3DX12_CPU_DESCRIPTOR_HANDLE& rtvHandle);
+    void CreateFrameResource();
 
 
     void CreateRootSignature();

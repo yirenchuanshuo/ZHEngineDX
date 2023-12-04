@@ -4,11 +4,11 @@
 #include "Camera.h"
 #include "GameWindowApplication.h"
 
-class Game
+class GameRHI
 {
 public:
-	Game(UINT width, UINT height, std::wstring name);
-	virtual ~Game();
+	GameRHI(UINT width, UINT height, std::wstring name);
+	virtual ~GameRHI();
 public:
 	HWND hwnd;
 	
@@ -46,12 +46,13 @@ protected:
 
 	Camera g_camera;
 	ZHEngineTimer g_timer;
-
 	bool g_useWarpDevice;
 
 private:
 	std::wstring g_assetsPath;
 	std::wstring g_title;
+
+	
 
 	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);

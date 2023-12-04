@@ -19,7 +19,7 @@ constexpr UINT CalcConstantBufferByteSize()
 
 
 HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
-	Game(width, height, name),
+	GameRHI(width, height, name),
 	g_frameIndex(0),
 	g_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
 	g_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)),
@@ -83,7 +83,7 @@ void HelloGame::LoadPipeline()
 	}
 #endif 
 	
-
+	
 	//创建工厂
 	ComPtr<IDXGIFactory6> gDxgiFactory;
 
@@ -106,12 +106,9 @@ void HelloGame::LoadPipeline()
 	//创建常量缓冲区描述符堆
 	CreateConstantBufferDesCribeHeap();
 	
-	//获取渲染视图的起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart());
-
 	//设置围栏
-	CreateFrameResource(swapChain, rtvHandle);
-	
+	CreateFrameResource();
+    
 	
 }
 
@@ -321,16 +318,17 @@ void HelloGame::CreateSwapChain(ComPtr<IDXGISwapChain1>& swapChain, ComPtr<IDXGI
 	swapChainDesc.SampleDesc.Quality = 0;
 
 	//指定窗口
+	HWND window = GameWindowApplication::GetHwnd();
 	ThrowIfFailed(gDxgiFactory->CreateSwapChainForHwnd(
 		g_commandQueue.Get(),
-		GameWindowApplication::GetHwnd(),
+		window,
 		&swapChainDesc,
 		nullptr,
 		nullptr,
 		&swapChain
 	));
 
-	ThrowIfFailed(gDxgiFactory->MakeWindowAssociation(GameWindowApplication::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
+	ThrowIfFailed(gDxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER));
 	//转换交换链信息，获取交换链索引
 	ThrowIfFailed(swapChain.As(&g_swapChain));
 	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
@@ -376,14 +374,17 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
-void HelloGame::CreateFrameResource(ComPtr<IDXGISwapChain1>& swapChain, CD3DX12_CPU_DESCRIPTOR_HANDLE& rtvHandle)
+void HelloGame::CreateFrameResource()
 {
+	//获取渲染视图的起始地址
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	for (UINT n = 0; n < FrameCount; n++)
 	{
-		ThrowIfFailed(swapChain->GetBuffer(n, IID_PPV_ARGS(&g_renderTargets[n])));
+		ThrowIfFailed(g_swapChain->GetBuffer(n, IID_PPV_ARGS(&g_renderTargets[n])));
 		g_device->CreateRenderTargetView(g_renderTargets[n].Get(), nullptr, rtvHandle);
 		rtvHandle.Offset(1, g_rtvDescriptorSize);
 
