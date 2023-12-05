@@ -83,10 +83,6 @@ private:
     UINT8* g_pCbvDataBegin;
     
 
-    
-    
-
-    
 
 private:
     void LoadPipeline();
@@ -97,7 +93,6 @@ private:
 
 
     void CreateConstantBufferDesCribeHeap();
-    void CreateFrameResource();
 
 
     void CreateRootSignature();

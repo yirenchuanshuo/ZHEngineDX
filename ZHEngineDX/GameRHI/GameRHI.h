@@ -4,6 +4,9 @@
 #include "Camera.h"
 #include "GameWindowApplication.h"
 
+
+
+
 class GameRHI
 {
 public:
@@ -16,8 +19,10 @@ public:
 	//DXRHI
 public:
 	void CreateDeviceResources();
+	void CreateWindowResources();
 	void WaitForGPU();
 	void MoveToNextFrame();
+	void CreateFrameResource();
 
 protected:
 	static const UINT FrameCount = 3;
@@ -35,6 +40,9 @@ protected:
 	ComPtr<ID3D12Resource> g_renderTargets[FrameCount];
 	ComPtr<ID3D12Resource> g_depthStencilBuffer;
 
+	//Window Properties
+	DXGI_FORMAT                  g_backBufferFormat;
+
 	//RenderingOBJ
 	ComPtr<ID3D12DescriptorHeap> g_rtvDescriptorHeap;
 	ComPtr<ID3D12DescriptorHeap> g_dsvDescriptorHeap;
@@ -42,8 +50,11 @@ protected:
 	CD3DX12_VIEWPORT g_viewport;
 	CD3DX12_RECT g_scissorRect;
 
+	
+	
+
 	// Î§À¸
-	HANDLE g_fenceEvent;
+	Microsoft::WRL::Wrappers::Event g_fenceEvent;
 	ComPtr<ID3D12Fence> g_fence;
 	UINT64 g_fenceValues[FrameCount];
 

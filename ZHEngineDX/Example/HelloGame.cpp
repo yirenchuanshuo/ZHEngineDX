@@ -57,8 +57,7 @@ void HelloGame::OnRender()
 void HelloGame::OnDestroy()
 {
 	WaitForGPU();
-	CloseHandle(g_fenceEvent);
-	
+	//CloseHandle(g_fenceEvent.Get());
 }
 
 void HelloGame::Tick()
@@ -225,24 +224,6 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
-void HelloGame::CreateFrameResource()
-{
-	//获取渲染视图的起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-	rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	for (UINT n = 0; n < FrameCount; n++)
-	{
-		ThrowIfFailed(g_swapChain->GetBuffer(n, IID_PPV_ARGS(&g_renderTargets[n])));
-		g_device->CreateRenderTargetView(g_renderTargets[n].Get(), nullptr, rtvHandle);
-		rtvHandle.Offset(1, g_rtvDescriptorSize);
-
-		//创建命令分配器
-		ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_commandAllocator[n])));
-	}
-}
 
 void HelloGame::CreateRootSignature()
 {
@@ -497,8 +478,8 @@ void HelloGame::SetFence()
 	//创建一个围栏同步CPU与GPU
 	ThrowIfFailed(g_device->CreateFence(g_fenceValues[g_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
 	g_fenceValues[g_frameIndex]++;
-	g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-	if (g_fenceEvent == nullptr)
+	//g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (g_fenceEvent.Get() == nullptr)
 	{
 		ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
 	}
