@@ -23,6 +23,7 @@ GameRHI::GameRHI(UINT width, UINT height, std::wstring name):
 	g_fenceValues{},
 	g_rtvDescriptorSize(0),
 	g_backBufferFormat(DXGI_FORMAT_B8G8R8A8_UNORM),
+	g_depthstencilBufferFormat(DXGI_FORMAT_D32_FLOAT),
 	g_useWarpDevice(false),
 	hwnd(nullptr),
 	g_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
@@ -50,18 +51,21 @@ void GameRHI::CreateDeviceResources()
 	CreateCommandQueue();
 
 	//创建交换链并指定窗口
-	CreateSwapChain();
+	//CreateSwapChain();
 
 	//创建渲染目标视图描述堆
 	CreateRenderTargetViewDesCribeHeap();
 
 	//创建深度模板描述符堆
-	CreateDepthStencilViewDesCribeHeap();
-
+	if (g_depthstencilBufferFormat != DXGI_FORMAT_UNKNOWN)
+	{
+		CreateDepthStencilViewDesCribeHeap();
+	}
+	
 	//创建命令分配器
 	for (UINT n = 0; n < FrameCount; n++)
 	{
-		ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_commandAllocator[n])));
+		ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(g_commandAllocator[n].ReleaseAndGetAddressOf())));
 	}
 
 	//创建命令列表，用命令分配器给命令列表分配对象
@@ -86,6 +90,45 @@ void GameRHI::CreateWindowResources()
 	}
 
 	DXGI_FORMAT backBufferFormat = NoSRGB(g_backBufferFormat);
+
+	if (g_swapChain)
+	{
+		HRESULT hr = g_swapChain->ResizeBuffers(
+			FrameCount,
+			g_width,
+			g_height,
+			backBufferFormat,
+			0u
+		);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+		{
+#ifdef _DEBUG
+			char buff[64] = {};
+			sprintf_s(buff, "Device Lost on ResizeBuffers: Reason code 0x%08X\n", (hr == DXGI_ERROR_DEVICE_REMOVED) ? g_device->GetDeviceRemovedReason() : hr);
+			OutputDebugStringA(buff);
+#endif
+			return;
+		}
+		else
+		{
+			ThrowIfFailed(hr);
+		}
+	}
+	else
+	{
+		CreateSwapChain();
+	}
+
+	CreateFrameResource();
+	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
+
+	if (g_depthstencilBufferFormat != DXGI_FORMAT_UNKNOWN)
+	{
+		CreateDepthStencialBuffer();
+	}
+
+	g_viewport.MinDepth = D3D12_MIN_DEPTH;
+	g_viewport.MaxDepth = D3D12_MAX_DEPTH;
 }
 
 void GameRHI::WaitForGPU()
@@ -126,24 +169,27 @@ void GameRHI::MoveToNextFrame()
 
 void GameRHI::CreateFrameResource()
 {
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-	rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-	//获取渲染视图的起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
+	
 	for (UINT n = 0; n < FrameCount; n++)
 	{
-		ThrowIfFailed(g_swapChain->GetBuffer(n, IID_PPV_ARGS(&g_renderTargets[n])));
+		ThrowIfFailed(g_swapChain->GetBuffer(n, IID_PPV_ARGS(g_renderTargets[n].GetAddressOf())));
 
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-		g_device->CreateRenderTargetView(g_renderTargets[n].Get(), nullptr, rtvHandle);
-		rtvHandle.Offset(1, g_rtvDescriptorSize);
+		//获取渲染视图的地址
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(
+			g_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			static_cast<INT>(n), g_rtvDescriptorSize);
+
+		g_device->CreateRenderTargetView(g_renderTargets[n].Get(), &rtvDesc, rtvDescriptor);
 
 		//创建命令分配器
 		//ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_commandAllocator[n])));
 	}
+
+	
 }
 
 std::wstring GameRHI::GetGameAssetPath()
@@ -499,13 +545,13 @@ void GameRHI::CreateSwapChain()
 		&swapChainDesc,
 		nullptr,
 		nullptr,
-		&swapChain
+		swapChain.GetAddressOf()
 	));
 
 	ThrowIfFailed(g_dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER));
 	//转换交换链信息，获取交换链索引
 	ThrowIfFailed(swapChain.As(&g_swapChain));
-	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
+	
 }
 
 void GameRHI::CreateRenderTargetViewDesCribeHeap()
@@ -533,4 +579,44 @@ void GameRHI::CreateDepthStencilViewDesCribeHeap()
 
 	//创建深度模板描述符堆
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(g_dsvDescriptorHeap.ReleaseAndGetAddressOf())));
+}
+
+void GameRHI::CreateDepthStencialBuffer()
+{
+	
+
+	//创建清除深度模板缓冲区描述符
+	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+	depthOptimizedClearValue.Format = g_depthstencilBufferFormat;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+	/*D3D12_HEAP_TYPE_DEFAULT：用于存储 GPU 访问频繁的资源。
+	D3D12_HEAP_TYPE_UPLOAD：用于存储 CPU 向 GPU 上传数据的资源。
+	D3D12_HEAP_TYPE_READBACK：用于存储 GPU 向 CPU 读回数据的资源。*/
+
+	//创建GPU频繁访问的堆，将深度缓冲区视图放入该堆
+	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+	//创建资源描述，描述其用于深度模板视图
+	CD3DX12_RESOURCE_DESC depthtex2D = CD3DX12_RESOURCE_DESC::Tex2D(g_depthstencilBufferFormat, g_width, g_height, 1, 1);
+	depthtex2D.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	//提交深度模板缓冲区资源
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&depthtex2D,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&depthOptimizedClearValue,
+		IID_PPV_ARGS(g_depthStencilBuffer.ReleaseAndGetAddressOf())));
+
+	//创建深度模板缓冲区描述符
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc{};
+	depthStencilDesc.Format = g_depthstencilBufferFormat;
+	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	//创建深度模板缓冲区
+	g_device->CreateDepthStencilView(g_depthStencilBuffer.Get(), &depthStencilDesc, g_dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 }

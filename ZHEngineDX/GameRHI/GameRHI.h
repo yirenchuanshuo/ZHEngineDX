@@ -42,6 +42,7 @@ protected:
 
 	//Window Properties
 	DXGI_FORMAT                  g_backBufferFormat;
+	DXGI_FORMAT                  g_depthstencilBufferFormat;
 
 	//RenderingOBJ
 	ComPtr<ID3D12DescriptorHeap> g_rtvDescriptorHeap;
@@ -64,6 +65,7 @@ private:
 	void CreateSwapChain();
 	void CreateRenderTargetViewDesCribeHeap();
 	void CreateDepthStencilViewDesCribeHeap();
+	void CreateDepthStencialBuffer();
 
 
 	//Windows

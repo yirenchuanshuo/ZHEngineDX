@@ -94,12 +94,10 @@ private:
 
     void CreateConstantBufferDesCribeHeap();
 
-
     void CreateRootSignature();
     D3D12_STATIC_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
     void CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader);
     void UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange,const UINT vertexBufferSize, const UINT indexBufferSize);
-    void UpLoadDepthStencialBuffer();
     void UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange);
     void UpLoadShaderResource();
     void SetFence();

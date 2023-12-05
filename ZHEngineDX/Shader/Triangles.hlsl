@@ -61,7 +61,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     
     float3 basecolor = pow(BaseColorTex.rgb,2.2);
     float Metalic = 0.0;
-    float roughness = NormalTex.a;
+    float roughness = lerp(0.5f, 1.0f, NormalTex.a);
     float AO = BaseColorTex.a;
     float3 N = normalize(UnpackNormal(NormalTex.rgb));
     //N.rg *= 5;

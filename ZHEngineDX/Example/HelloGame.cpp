@@ -80,12 +80,13 @@ void HelloGame::LoadPipeline()
 
 	//创建D3D资源
 	CreateDeviceResources();
+
+	//创建窗口资源
+	CreateWindowResources();
 	
 	//创建常量缓冲区描述符堆
 	CreateConstantBufferDesCribeHeap();
 	
-	//设置围栏
-	CreateFrameResource();
     
 }
 
@@ -135,9 +136,6 @@ void HelloGame::LoadAsset()
 
 	//上传顶点和顶点索引信息
 	UpLoadVertexAndIndexToHeap(heapProperties,readRange,ModeVertexSize, ModeIndexSize);
-
-	//创建深度模板缓冲区
-	UpLoadDepthStencialBuffer();
 	
 	//建立并上传数据到常量缓冲区
 	UpLoadConstantBuffer(heapProperties,readRange);
@@ -152,7 +150,6 @@ void HelloGame::LoadAsset()
 
 	//设置围栏
 	SetFence();
-	
 }
 
 void HelloGame::PopulateCommandList()
@@ -362,42 +359,6 @@ void HelloGame::UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperti
 	g_indexBufferView.SizeInBytes = indexBufferSize;
 }
 
-void HelloGame::UpLoadDepthStencialBuffer()
-{
-	//创建深度模板缓冲区描述符
-	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc{};
-	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-	//创建清除深度模板缓冲区描述符
-	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-	depthOptimizedClearValue.DepthStencil.Stencil = 0;
-
-	/*D3D12_HEAP_TYPE_DEFAULT：用于存储 GPU 访问频繁的资源。
-	D3D12_HEAP_TYPE_UPLOAD：用于存储 CPU 向 GPU 上传数据的资源。
-	D3D12_HEAP_TYPE_READBACK：用于存储 GPU 向 CPU 读回数据的资源。*/
-
-	//创建GPU频繁访问的堆，将深度缓冲区视图放入该堆
-	CD3DX12_HEAP_PROPERTIES heapProperties2 = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-
-	//创建资源描述，描述其用于深度模板视图
-	CD3DX12_RESOURCE_DESC depthtex2D = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, g_width, g_height, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-
-	//提交深度模板缓冲区资源
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties2,
-		D3D12_HEAP_FLAG_NONE,
-		&depthtex2D,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&depthOptimizedClearValue,
-		IID_PPV_ARGS(&g_depthStencilBuffer)));
-
-	//创建深度模板缓冲区
-	g_device->CreateDepthStencilView(g_depthStencilBuffer.Get(), &depthStencilDesc, g_dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-}
 
 void HelloGame::UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange)
 {
