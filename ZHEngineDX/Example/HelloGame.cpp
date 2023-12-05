@@ -493,7 +493,7 @@ void HelloGame::UpdateBackGround()
 void HelloGame::UpdateLight()
 {
 	FVector4 lightDirV = ZMath::Normalize4(FVector4{1,1,0,0});
-	float angle = 0.25f;
+	float angle = 0.5f;
 	lightangle += angle;
 	float angleInRadians = ZMath::AngleToRadians(lightangle);
 	FMatrix4x4 rotationMatrix = ZMath::MatrixRotateY(angleInRadians);

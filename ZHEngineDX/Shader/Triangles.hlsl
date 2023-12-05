@@ -1,5 +1,5 @@
 #include "ShadingModel.hlsl"
-
+#include "PostProcess.hlsl"
 
 Texture2D t1 : register(t0);
 Texture2D t2 : register(t1);
@@ -73,12 +73,13 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 L = normalize(lightDirection.xyz);
     float3 V = normalize(cameraPosition.xyz - input.worldposition.xyz);
     
-    float3 ambient =0.03*basecolor*AO;
+    float3 ambient =0.1*basecolor*AO;
     
     float3 color;
-    color = BRDF(basecolor,Metalic,roughness,Radiance,L,V,N)+ambient;
+    float3 brdfcolor = BRDF(basecolor,Metalic,roughness,Radiance,L,V,N)+ambient;
     //color = Blinn_Phong(basecolor, 20, 1 - roughness, L, N, V) + ambient;
     //color = Phong(basecolor,20,1 - roughness,L,N,V)+ambient;
+    color = ACES_Tonemapping(brdfcolor);
     float3 finalcolor = pow(color,1/2.2);
     
     return float4(finalcolor, 1.0);

@@ -51,7 +51,7 @@ void GameRHI::CreateDeviceResources()
 	CreateCommandQueue();
 
 	//创建交换链并指定窗口
-	//CreateSwapChain();
+	CreateSwapChain();
 
 	//创建渲染目标视图描述堆
 	CreateRenderTargetViewDesCribeHeap();
@@ -116,6 +116,7 @@ void GameRHI::CreateWindowResources()
 	}
 	else
 	{
+		
 		CreateSwapChain();
 	}
 
@@ -541,17 +542,16 @@ void GameRHI::CreateSwapChain()
 	HWND window = GameWindowApplication::GetHwnd();
 	ThrowIfFailed(g_dxgiFactory->CreateSwapChainForHwnd(
 		g_commandQueue.Get(),
-		window,
+		GameWindowApplication::GetHwnd(),
 		&swapChainDesc,
 		nullptr,
 		nullptr,
 		swapChain.GetAddressOf()
 	));
 
-	ThrowIfFailed(g_dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER));
+	ThrowIfFailed(g_dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER));
 	//转换交换链信息，获取交换链索引
 	ThrowIfFailed(swapChain.As(&g_swapChain));
-	
 }
 
 void GameRHI::CreateRenderTargetViewDesCribeHeap()
