@@ -32,9 +32,14 @@ int GameWindowApplication::Run(GameRHI* gameRHI, HINSTANCE hInstance, int nCmdSh
 		windowClass.hInstance,
 		gameRHI);
 
+	if (!g_hwnd)
+		return 1;
+
 	gameRHI->OnInit();
 
 	ShowWindow(g_hwnd, nCmdShow);
+
+	
 
 	MSG msg = {};
 	while (msg.message != WM_QUIT)
@@ -44,9 +49,15 @@ int GameWindowApplication::Run(GameRHI* gameRHI, HINSTANCE hInstance, int nCmdSh
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		else
+		{
+			gameRHI->Tick();
+		}
 	}
 
 	gameRHI->OnDestroy();
+
+	CoUninitialize();
 
 	return static_cast<char>(msg.wParam);
 }

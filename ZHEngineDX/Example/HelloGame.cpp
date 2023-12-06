@@ -28,6 +28,7 @@ HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
 
 void HelloGame::OnInit()
 {
+	SetWindow();
 	LoadPipeline();
 	LoadAsset();
 }
@@ -434,18 +435,7 @@ void HelloGame::UpLoadShaderResource()
 	
 }
 
-void HelloGame::SetFence()
-{
-	//创建一个围栏同步CPU与GPU
-	ThrowIfFailed(g_device->CreateFence(g_fenceValues[g_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
-	g_fenceValues[g_frameIndex]++;
-	//g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-	if (g_fenceEvent.Get() == nullptr)
-	{
-		ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
-	}
-	WaitForGPU();
-}
+
 
 
 

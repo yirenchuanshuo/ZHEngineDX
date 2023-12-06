@@ -22,7 +22,7 @@ GameRHI::GameRHI(UINT width, UINT height, std::wstring name):
 	g_frameIndex(0),
 	g_fenceValues{},
 	g_rtvDescriptorSize(0),
-	g_backBufferFormat(DXGI_FORMAT_B8G8R8A8_UNORM),
+	g_backBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM),
 	g_depthstencilBufferFormat(DXGI_FORMAT_D32_FLOAT),
 	g_useWarpDevice(false),
 	hwnd(nullptr),
@@ -42,6 +42,11 @@ GameRHI::~GameRHI()
 	
 }
 
+void GameRHI::SetWindow()
+{
+	hwnd = GameWindowApplication::GetHwnd();
+}
+
 void GameRHI::CreateDeviceResources()
 {
 	//创建GPU交互对象
@@ -49,9 +54,6 @@ void GameRHI::CreateDeviceResources()
 
 	//创建命令队列
 	CreateCommandQueue();
-
-	//创建交换链并指定窗口
-	CreateSwapChain();
 
 	//创建渲染目标视图描述堆
 	CreateRenderTargetViewDesCribeHeap();
@@ -72,6 +74,7 @@ void GameRHI::CreateDeviceResources()
 	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocator[0].Get(), nullptr, IID_PPV_ARGS(g_commandList.ReleaseAndGetAddressOf())));
 	ThrowIfFailed(g_commandList->Close());
 
+	
 	ThrowIfFailed(g_device->CreateFence(g_fenceValues[g_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(g_fence.ReleaseAndGetAddressOf())));
 	g_fenceValues[g_frameIndex]++;
 
@@ -81,6 +84,11 @@ void GameRHI::CreateDeviceResources()
 
 void GameRHI::CreateWindowResources()
 {
+	if (!hwnd)
+	{
+		throw std::exception("Call SetWindow with a valid Win32 window handle");
+	}
+
 	WaitForGPU();
 
 	for (UINT n = 0; n < FrameCount; n++)
@@ -116,7 +124,6 @@ void GameRHI::CreateWindowResources()
 	}
 	else
 	{
-		
 		CreateSwapChain();
 	}
 
@@ -176,7 +183,7 @@ void GameRHI::CreateFrameResource()
 		ThrowIfFailed(g_swapChain->GetBuffer(n, IID_PPV_ARGS(g_renderTargets[n].GetAddressOf())));
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
 		//获取渲染视图的地址
@@ -191,6 +198,19 @@ void GameRHI::CreateFrameResource()
 	}
 
 	
+}
+
+void GameRHI::SetFence()
+{
+	//创建一个围栏同步CPU与GPU
+	ThrowIfFailed(g_device->CreateFence(g_fenceValues[g_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
+	g_fenceValues[g_frameIndex]++;
+	//g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (g_fenceEvent.Get() == nullptr)
+	{
+		ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+	}
+	WaitForGPU();
 }
 
 std::wstring GameRHI::GetGameAssetPath()
@@ -487,7 +507,7 @@ int GameRHI::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 
 void GameRHI::CreateGPUElement()
 {
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(g_dxgiFactory.ReleaseAndGetAddressOf())));
+	ThrowIfFailed(CreateDXGIFactory2(0,IID_PPV_ARGS(g_dxgiFactory.ReleaseAndGetAddressOf())));
 
 	D3D_FEATURE_LEVEL featureLevels[] =
 	{
@@ -532,17 +552,17 @@ void GameRHI::CreateSwapChain()
 	swapChainDesc.BufferCount = FrameCount;
 	swapChainDesc.Width = g_width;
 	swapChainDesc.Height = g_height;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Format = g_backBufferFormat;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;
 
 	//指定窗口
-	HWND window = GameWindowApplication::GetHwnd();
+	
 	ThrowIfFailed(g_dxgiFactory->CreateSwapChainForHwnd(
 		g_commandQueue.Get(),
-		GameWindowApplication::GetHwnd(),
+		hwnd,
 		&swapChainDesc,
 		nullptr,
 		nullptr,
@@ -583,8 +603,6 @@ void GameRHI::CreateDepthStencilViewDesCribeHeap()
 
 void GameRHI::CreateDepthStencialBuffer()
 {
-	
-
 	//创建清除深度模板缓冲区描述符
 	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
 	depthOptimizedClearValue.Format = g_depthstencilBufferFormat;

@@ -18,11 +18,15 @@ public:
 
 	//DXRHI
 public:
+	void SetWindow();
 	void CreateDeviceResources();
 	void CreateWindowResources();
 	void WaitForGPU();
 	void MoveToNextFrame();
 	void CreateFrameResource();
+
+protected:
+	void SetFence();
 
 protected:
 	static const UINT FrameCount = 3;

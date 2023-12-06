@@ -159,7 +159,7 @@ private:
 	uint32_t g_frameCount;
 	uint32_t g_framesPerSecond;
 	uint32_t g_framesThisSecond;
-	uint32_t g_SecondCounter;
+    uint64_t g_SecondCounter;
 
 	bool g_isFixedTimeStep;
 	uint64_t g_targetElapsedTicks;
