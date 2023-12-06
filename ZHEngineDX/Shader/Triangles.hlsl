@@ -63,8 +63,8 @@ float4 PSMain(PSInput input) : SV_TARGET
     float Metalic = 0.0;
     float roughness = lerp(0.5f, 1.0f, NormalTex.a);
     float AO = BaseColorTex.a;
-    float3 N = NormalTex.rgb;
-    //float3 N = normalize(UnpackNormal(NormalTex.rgb));
+    //float3 N = NormalTex.rgb;
+    float3 N = normalize(UnpackNormal(NormalTex.rgb));
     //N.rg *= 5;
     //N = normalize(N);
     N = TransformTangentToWorld(normal, tangent, bitangent,N);

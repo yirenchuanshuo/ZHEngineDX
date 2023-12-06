@@ -69,6 +69,7 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
+
 	GameRHI* gameRHI = reinterpret_cast<GameRHI*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 	switch (message)
 	{
