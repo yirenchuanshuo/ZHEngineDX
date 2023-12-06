@@ -46,6 +46,9 @@ public:
 	//State
 	bool g_MSAA = true;
 
+	//BackGround
+	float clearColor[4] = { 0,0,0,1 };
+
 public:
 	void SetWindow();
 	void CreateDeviceResources();
@@ -74,6 +77,9 @@ protected:
 	ComPtr<IDXGISwapChain3> g_swapChain;
 	ComPtr<ID3D12Resource> g_renderTargets[FrameCount];
 	ComPtr<ID3D12Resource> g_depthStencilBuffer;
+	//MSAA
+	ComPtr<ID3D12Resource>          g_msaaRenderTarget;
+	ComPtr<ID3D12Resource>          g_msaaDepthStencil;
 
 	//Window Properties
 	DXGI_FORMAT                  g_backBufferFormat;
@@ -82,6 +88,11 @@ protected:
 	//RenderingOBJ
 	ComPtr<ID3D12DescriptorHeap> g_rtvDescriptorHeap;
 	ComPtr<ID3D12DescriptorHeap> g_dsvDescriptorHeap;
+	//MSAA
+	ComPtr<ID3D12DescriptorHeap>    g_msaaRTVDescriptorHeap;
+	ComPtr<ID3D12DescriptorHeap>    g_msaaDSVDescriptorHeap;
+
+
 	UINT g_rtvDescriptorSize;
 	CD3DX12_VIEWPORT g_viewport;
 	CD3DX12_RECT g_scissorRect;
@@ -95,6 +106,11 @@ protected:
 	UINT64 g_fenceValues[FrameCount];
 
 private:
+	//TwoLevel
+	void CreateMSAAResource();
+	void CreateMSAAWindowResource();
+
+
 	void CreateGPUElement();
 	void CreateCommandQueue();
 	void CreateSwapChain();

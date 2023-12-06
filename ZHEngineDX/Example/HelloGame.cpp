@@ -82,12 +82,10 @@ void HelloGame::LoadPipeline()
 
 	//创建D3D资源
 	CreateDeviceResources();
-	CreateMSAAResource();
-
+	
 
 	//创建窗口资源
 	CreateWindowResources();
-	CreateMSAAWindowResource();
 
 	//创建常量缓冲区描述符堆
 	CreateConstantBufferDesCribeHeap();
@@ -246,95 +244,6 @@ void HelloGame::PopulateCommandList()
 	//关闭命令列表，结束命令提交并开始渲染
 	ThrowIfFailed(g_commandList->Close());
 }
-
-void HelloGame::CreateMSAAResource()
-{
-	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
-	rtvDescriptorHeapDesc.NumDescriptors = 1;
-	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&rtvDescriptorHeapDesc,
-		IID_PPV_ARGS(g_msaaRTVDescriptorHeap.ReleaseAndGetAddressOf())));
-
-
-	D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc = {};
-	dsvDescriptorHeapDesc.NumDescriptors = 1;
-	dsvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc,
-		IID_PPV_ARGS(g_msaaDSVDescriptorHeap.ReleaseAndGetAddressOf())));
-
-}
-
-void HelloGame::CreateMSAAWindowResource()
-{
-	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
-
-	D3D12_RESOURCE_DESC msaaRTDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-		g_backBufferFormat,
-		g_width,
-		g_height,
-		1, // This render target view has only one texture.
-		1, // Use a single mipmap level
-		4
-	);
-	msaaRTDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-
-	D3D12_CLEAR_VALUE msaaOptimizedClearValue = {};
-	msaaOptimizedClearValue.Format = g_backBufferFormat;
-	memcpy(msaaOptimizedClearValue.Color, clearColor, sizeof(float) * 4);
-
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&msaaRTDesc,
-		D3D12_RESOURCE_STATE_RESOLVE_SOURCE,
-		&msaaOptimizedClearValue,
-		IID_PPV_ARGS(g_msaaRenderTarget.ReleaseAndGetAddressOf())));
-
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-	rtvDesc.Format = g_backBufferFormat;
-	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
-
-	g_device->CreateRenderTargetView(
-		g_msaaRenderTarget.Get(), &rtvDesc,
-		g_msaaRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-	D3D12_RESOURCE_DESC depthStencilDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-		g_depthstencilBufferFormat,
-		g_width,
-		g_height,
-		1, // This depth stencil view has only one texture.
-		1, // Use a single mipmap level.
-		4
-	);
-	depthStencilDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-	depthOptimizedClearValue.Format = g_depthstencilBufferFormat;
-	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-	depthOptimizedClearValue.DepthStencil.Stencil = 0;
-
-	ThrowIfFailed(g_device->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&depthStencilDesc,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&depthOptimizedClearValue,
-		IID_PPV_ARGS(g_msaaDepthStencil.ReleaseAndGetAddressOf())
-	));
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-	dsvDesc.Format = g_depthstencilBufferFormat;
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
-
-	g_device->CreateDepthStencilView(
-		g_msaaDepthStencil.Get(), &dsvDesc,
-		g_msaaDSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-}
-
-
-
 
 
 
@@ -563,9 +472,6 @@ void HelloGame::UpLoadShaderResource()
 	}
 	
 }
-
-
-
 
 
 void HelloGame::UpdateBackGround()

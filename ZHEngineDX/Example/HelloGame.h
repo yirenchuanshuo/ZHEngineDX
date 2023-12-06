@@ -27,8 +27,7 @@ protected:
     virtual void LoadTexture();
 
 public:
-    //BackGround
-    float clearColor[4] = { 0,0,0,1 };
+    
     //{ 0.0f, 0.2f, 0.4f, 1.0f };
 
     bool isRAdd = true;
@@ -54,14 +53,7 @@ public:
     
 
 private:
-    //MSAA
-    ComPtr<ID3D12Resource>          g_msaaRenderTarget;
-    ComPtr<ID3D12Resource>          g_msaaDepthStencil;
-
-    ComPtr<ID3D12DescriptorHeap>    g_msaaRTVDescriptorHeap;
-    ComPtr<ID3D12DescriptorHeap>    g_msaaDSVDescriptorHeap;
-
-
+    
     //‰÷»æ‘§±∏◊ ‘¥
     ComPtr<ID3D12RootSignature> g_rootSignature;
     ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
@@ -91,8 +83,8 @@ private:
     void PopulateCommandList();
     
     //Two Level
-    void CreateMSAAResource();
-    void CreateMSAAWindowResource();
+    
+    
 
     //Three Level
     void CreateConstantBufferDesCribeHeap();
