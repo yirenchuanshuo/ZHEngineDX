@@ -19,7 +19,7 @@ constexpr UINT CalcConstantBufferByteSize()
 
 
 HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
-	GameRHI(width, height, name),
+	GameRHI(width, height, name, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB),
 	g_constantBufferData{},
 	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)}
 {
@@ -35,7 +35,8 @@ void HelloGame::OnInit()
 
 void HelloGame::OnUpdate(ZHEngineTimer const& timer)
 {
-	UpdateBackGround();
+	float time = float(timer.GetTotalSeconds());
+	//UpdateBackGround();
 	UpdateConstantBuffer();
 }
 
@@ -81,14 +82,15 @@ void HelloGame::LoadPipeline()
 
 	//创建D3D资源
 	CreateDeviceResources();
+	CreateMSAAResource();
+
 
 	//创建窗口资源
 	CreateWindowResources();
-	
+	CreateMSAAWindowResource();
+
 	//创建常量缓冲区描述符堆
 	CreateConstantBufferDesCribeHeap();
-	
-    
 }
 
 void HelloGame::LoadAsset()
@@ -115,7 +117,7 @@ void HelloGame::LoadAsset()
 
 
 	//创建命令列表，用命令分配器给命令列表分配对象
-	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocator[g_frameIndex].Get(), g_pipelineState.Get(), IID_PPV_ARGS(&g_commandList)));
+	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[g_frameIndex].Get(), g_pipelineState.Get(), IID_PPV_ARGS(&g_commandList)));
 
 	
 	//ThrowIfFailed(g_commandList->Close());
@@ -155,37 +157,57 @@ void HelloGame::LoadAsset()
 
 void HelloGame::PopulateCommandList()
 {
-	ThrowIfFailed(g_commandAllocator[g_frameIndex]->Reset());
-	ThrowIfFailed(g_commandList->Reset(g_commandAllocator[g_frameIndex].Get(), g_pipelineState.Get()));
+	ThrowIfFailed(g_commandAllocators[g_frameIndex]->Reset());
+	ThrowIfFailed(g_commandList->Reset(g_commandAllocators[g_frameIndex].Get(), nullptr));
+
+	if (g_MSAA)
+	{
+		//渲染目标转解析状态
+		D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_msaaRenderTarget.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		g_commandList->ResourceBarrier(1, &resBarrier);
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE msaartvHandle(g_msaaRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE msaadsvHandle(g_msaaDSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+		//设置渲染目标
+		g_commandList->OMSetRenderTargets(1, &msaartvHandle, FALSE, &msaadsvHandle);
+		g_commandList->ClearRenderTargetView(msaartvHandle, clearColor, 0, nullptr);
+		g_commandList->ClearDepthStencilView(msaadsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	}
+	else
+	{
+		//执行资源转换状态(呈现状态转为渲染目标状态，执行绘制操作)
+		D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		g_commandList->ResourceBarrier(1, &resBarrier);
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), g_frameIndex, g_rtvDescriptorSize);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(g_dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+		//设置渲染目标
+		g_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+		//清除渲染目标
+		g_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+		g_commandList->ClearDepthStencilView(g_dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	}
+
+	g_commandList->RSSetViewports(1, &g_viewport);
+	g_commandList->RSSetScissorRects(1, &g_scissorRect);
 
 	//设置必要状态
 	g_commandList->SetGraphicsRootSignature(g_rootSignature.Get());
+	g_commandList->SetPipelineState(g_pipelineState.Get());
 
 	//设置常量缓冲区描述堆，提交到渲染命令
 	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvsrvHeap.Get() };
 	g_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	//设置根描述符表，上传参数
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = g_cbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForSecondDescriptor = { gpuDescriptorHandle .ptr+ g_cbvsrvDescriptorSize };
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForSecondDescriptor = { gpuDescriptorHandle.ptr + g_cbvsrvDescriptorSize };
 	g_commandList->SetGraphicsRootDescriptorTable(0, gpuDescriptorHandle);
 	g_commandList->SetGraphicsRootDescriptorTable(1, gpuDescriptorHandleForSecondDescriptor);
-	g_commandList->RSSetViewports(1, &g_viewport);
-	g_commandList->RSSetScissorRects(1, &g_scissorRect);
 
-	//执行资源转换状态(呈现状态转为渲染目标状态，执行绘制操作)
-	D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	g_commandList->ResourceBarrier(1, &resBarrier);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), g_frameIndex, g_rtvDescriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(g_dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-
-	//设置渲染目标
-	g_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-	//清除渲染目标
-	float BackGroundColor[4] = {0,0,0,1};
-	g_commandList->ClearRenderTargetView(rtvHandle, BackGroundColor, 0, nullptr);
-	g_commandList->ClearDepthStencilView(g_dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-	
 	//图元拓扑模式
 	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -196,12 +218,119 @@ void HelloGame::PopulateCommandList()
 	//画图
 	g_commandList->DrawIndexedInstanced((UINT)Mesh.indices.size(), 1, 0, 0, 0);
 
+	if (g_MSAA)
+	{
+		{
+			D3D12_RESOURCE_BARRIER barriers[2] =
+			{
+				CD3DX12_RESOURCE_BARRIER::Transition(
+					g_msaaRenderTarget.Get(),
+					D3D12_RESOURCE_STATE_RENDER_TARGET,
+					D3D12_RESOURCE_STATE_RESOLVE_SOURCE),
+				CD3DX12_RESOURCE_BARRIER::Transition(
+					g_renderTargets[g_frameIndex].Get(),
+					D3D12_RESOURCE_STATE_PRESENT,
+					D3D12_RESOURCE_STATE_RESOLVE_DEST)
+			};
+			g_commandList->ResourceBarrier(2, barriers);
+		}
+		
+		g_commandList->ResolveSubresource(g_renderTargets[g_frameIndex].Get(), 0, g_msaaRenderTarget.Get(), 0, g_backBufferFormat);
+	
+	}
+	
 	//执行资源转换状态(渲染目标状态转为呈现状态)
-	resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 	g_commandList->ResourceBarrier(1, &resBarrier);
 
 	//关闭命令列表，结束命令提交并开始渲染
 	ThrowIfFailed(g_commandList->Close());
+}
+
+void HelloGame::CreateMSAAResource()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
+	rtvDescriptorHeapDesc.NumDescriptors = 1;
+	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&rtvDescriptorHeapDesc,
+		IID_PPV_ARGS(g_msaaRTVDescriptorHeap.ReleaseAndGetAddressOf())));
+
+
+	D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc = {};
+	dsvDescriptorHeapDesc.NumDescriptors = 1;
+	dsvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&dsvDescriptorHeapDesc,
+		IID_PPV_ARGS(g_msaaDSVDescriptorHeap.ReleaseAndGetAddressOf())));
+
+}
+
+void HelloGame::CreateMSAAWindowResource()
+{
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+
+	D3D12_RESOURCE_DESC msaaRTDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+		g_backBufferFormat,
+		g_width,
+		g_height,
+		1, // This render target view has only one texture.
+		1, // Use a single mipmap level
+		4
+	);
+	msaaRTDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+	D3D12_CLEAR_VALUE msaaOptimizedClearValue = {};
+	msaaOptimizedClearValue.Format = g_backBufferFormat;
+	memcpy(msaaOptimizedClearValue.Color, clearColor, sizeof(float) * 4);
+
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&msaaRTDesc,
+		D3D12_RESOURCE_STATE_RESOLVE_SOURCE,
+		&msaaOptimizedClearValue,
+		IID_PPV_ARGS(g_msaaRenderTarget.ReleaseAndGetAddressOf())));
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = g_backBufferFormat;
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+
+	g_device->CreateRenderTargetView(
+		g_msaaRenderTarget.Get(), &rtvDesc,
+		g_msaaRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	D3D12_RESOURCE_DESC depthStencilDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+		g_depthstencilBufferFormat,
+		g_width,
+		g_height,
+		1, // This depth stencil view has only one texture.
+		1, // Use a single mipmap level.
+		4
+	);
+	depthStencilDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+	depthOptimizedClearValue.Format = g_depthstencilBufferFormat;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&depthStencilDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&depthOptimizedClearValue,
+		IID_PPV_ARGS(g_msaaDepthStencil.ReleaseAndGetAddressOf())
+	));
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = g_depthstencilBufferFormat;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+
+	g_device->CreateDepthStencilView(
+		g_msaaDepthStencil.Get(), &dsvDesc,
+		g_msaaDSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
 
@@ -318,8 +447,8 @@ void HelloGame::CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixe
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	psoDesc.SampleDesc.Count = 1;
+	psoDesc.RTVFormats[0] = g_backBufferFormat;
+	psoDesc.SampleDesc.Count = g_MSAA?4:1;
 	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	//创建PSO
 	ThrowIfFailed(g_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pipelineState)));
@@ -537,7 +666,7 @@ void HelloGame::LoadTexture()
 		UTexture Temptex;
 		Temptex.Data = std::make_shared<BYTE>();
 		Temptex.Filename = TextureFiles[i];
-		Temptex.texSize = LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
+		Temptex.texSize = Texture::LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
 		Temptex.GenerateTextureData();
 		g_textures.push_back(Temptex);
 	}

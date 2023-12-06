@@ -15,15 +15,16 @@ namespace
 	}
 };
 
-GameRHI::GameRHI(UINT width, UINT height, std::wstring name):
+GameRHI::GameRHI(UINT width, UINT height, std::wstring name,
+	DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat):
     g_width(width),
     g_height(height),
     g_title(name),
 	g_frameIndex(0),
 	g_fenceValues{},
 	g_rtvDescriptorSize(0),
-	g_backBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM),
-	g_depthstencilBufferFormat(DXGI_FORMAT_D32_FLOAT),
+	g_backBufferFormat(backBufferFormat),
+	g_depthstencilBufferFormat(depthBufferFormat),
 	g_useWarpDevice(false),
 	hwnd(nullptr),
 	g_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
@@ -67,11 +68,11 @@ void GameRHI::CreateDeviceResources()
 	//创建命令分配器
 	for (UINT n = 0; n < FrameCount; n++)
 	{
-		ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(g_commandAllocator[n].ReleaseAndGetAddressOf())));
+		ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(g_commandAllocators[n].ReleaseAndGetAddressOf())));
 	}
 
 	//创建命令列表，用命令分配器给命令列表分配对象
-	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocator[0].Get(), nullptr, IID_PPV_ARGS(g_commandList.ReleaseAndGetAddressOf())));
+	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[0].Get(), nullptr, IID_PPV_ARGS(g_commandList.ReleaseAndGetAddressOf())));
 	ThrowIfFailed(g_commandList->Close());
 
 	
@@ -177,13 +178,12 @@ void GameRHI::MoveToNextFrame()
 
 void GameRHI::CreateFrameResource()
 {
-	
 	for (UINT n = 0; n < FrameCount; n++)
 	{
 		ThrowIfFailed(g_swapChain->GetBuffer(n, IID_PPV_ARGS(g_renderTargets[n].GetAddressOf())));
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		rtvDesc.Format = g_backBufferFormat;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
 		//获取渲染视图的地址
@@ -199,6 +199,20 @@ void GameRHI::CreateFrameResource()
 
 	
 }
+
+void GameRHI::SetMSAA()
+{
+	if (g_MSAA)
+	{
+		g_MSAA = false;
+	}
+	else
+	{
+		g_MSAA = true;
+	}
+}
+
+
 
 void GameRHI::SetFence()
 {
@@ -313,197 +327,7 @@ float GameRHI::AspectRatio() const
 	
 }
 
-int GameRHI::LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow)
-{
-	HRESULT hr;
 
-	IWICImagingFactory* wicFactory = nullptr;
-
-	IWICBitmapDecoder* wicDecoder = nullptr;
-	IWICBitmapFrameDecode* wicFrame = nullptr;
-	IWICFormatConverter* wicConverter = nullptr;
-
-	bool imageConverted = false;
-
-	if (wicFactory == nullptr)
-	{
-		CoInitialize(NULL);
-
-		hr = CoCreateInstance(
-			CLSID_WICImagingFactory,
-			NULL,
-			CLSCTX_INPROC_SERVER,
-			IID_PPV_ARGS(&wicFactory)
-		);
-		if (FAILED(hr)) return 0;
-
-		hr = wicFactory->CreateFormatConverter(&wicConverter);
-		if (FAILED(hr)) return 0;
-	}
-
-	hr = wicFactory->CreateDecoderFromFilename(
-		filename,
-		NULL,
-		GENERIC_READ,
-		WICDecodeMetadataCacheOnLoad,
-		&wicDecoder
-	);
-	if (FAILED(hr)) return 0;
-
-	hr = wicDecoder->GetFrame(0, &wicFrame);
-	if (FAILED(hr)) return 0;
-
-	WICPixelFormatGUID pixelFormat;
-	hr = wicFrame->GetPixelFormat(&pixelFormat);
-	if (FAILED(hr)) return 0;
-
-	UINT textureWidth, textureHeight;
-	hr = wicFrame->GetSize(&textureWidth, &textureHeight);
-	if (FAILED(hr)) return 0;
-
-	DXGI_FORMAT dxgiFormat = GetDXGIFormatFromWICFormat(pixelFormat);
-
-	if (dxgiFormat == DXGI_FORMAT_UNKNOWN)
-	{
-		WICPixelFormatGUID convertToPixelFormat = GetConvertToWICFormat(pixelFormat);
-
-		if (convertToPixelFormat == GUID_WICPixelFormatDontCare) return 0;
-
-		dxgiFormat = GetDXGIFormatFromWICFormat(convertToPixelFormat);
-
-		BOOL canConvert = FALSE;
-		hr = wicConverter->CanConvert(pixelFormat, convertToPixelFormat, &canConvert);
-		if (FAILED(hr) || !canConvert) return 0;
-
-		hr = wicConverter->Initialize(wicFrame, convertToPixelFormat, WICBitmapDitherTypeErrorDiffusion, 0, 0, WICBitmapPaletteTypeCustom);
-		if (FAILED(hr)) return 0;
-
-		imageConverted = true;
-	}
-
-	int bitsPerPixel = GetDXGIFormatBitsPerPixel(dxgiFormat);
-	bytesPerRow = (textureWidth * bitsPerPixel) / 8;
-	int imageSize = bytesPerRow * textureHeight;
-
-	imageData = std::shared_ptr<BYTE>((BYTE*)malloc(imageSize),free);
-
-	if (imageConverted)
-	{
-		hr = wicConverter->CopyPixels(0, bytesPerRow, imageSize, imageData.get());
-		if (FAILED(hr)) return 0;
-	}
-	else
-	{
-		hr = wicFrame->CopyPixels(0, bytesPerRow, imageSize, imageData.get());
-		if (FAILED(hr)) return 0;
-	}
-
-	resourceDescription = {};
-	resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	resourceDescription.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	resourceDescription.Width = textureWidth;
-	resourceDescription.Height = textureHeight;
-	resourceDescription.DepthOrArraySize = 1;
-	resourceDescription.MipLevels = 1;
-	resourceDescription.Format = dxgiFormat;
-	resourceDescription.SampleDesc.Count = 1;
-	resourceDescription.SampleDesc.Quality = 0;
-	resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-	return imageSize;
-}
-
-DXGI_FORMAT GameRHI::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
-{
-	if (wicFormatGUID == GUID_WICPixelFormat128bppRGBAFloat) return DXGI_FORMAT_R32G32B32A32_FLOAT;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBAHalf) return DXGI_FORMAT_R16G16B16A16_FLOAT;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBA) return DXGI_FORMAT_R16G16B16A16_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBA) return DXGI_FORMAT_R8G8B8A8_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppBGRA) return DXGI_FORMAT_B8G8R8A8_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppBGR) return DXGI_FORMAT_B8G8R8X8_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBA1010102XR) return DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
-
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBA1010102) return DXGI_FORMAT_R10G10B10A2_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat16bppBGRA5551) return DXGI_FORMAT_B5G5R5A1_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat16bppBGR565) return DXGI_FORMAT_B5G6R5_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppGrayFloat) return DXGI_FORMAT_R32_FLOAT;
-	else if (wicFormatGUID == GUID_WICPixelFormat16bppGrayHalf) return DXGI_FORMAT_R16_FLOAT;
-	else if (wicFormatGUID == GUID_WICPixelFormat16bppGray) return DXGI_FORMAT_R16_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat8bppGray) return DXGI_FORMAT_R8_UNORM;
-	else if (wicFormatGUID == GUID_WICPixelFormat8bppAlpha) return DXGI_FORMAT_A8_UNORM;
-
-	else return DXGI_FORMAT_UNKNOWN;
-}
-
-WICPixelFormatGUID GameRHI::GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID)
-{
-	if (wicFormatGUID == GUID_WICPixelFormatBlackWhite) return GUID_WICPixelFormat8bppGray;
-	else if (wicFormatGUID == GUID_WICPixelFormat1bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat2bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat4bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat8bppIndexed) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat2bppGray) return GUID_WICPixelFormat8bppGray;
-	else if (wicFormatGUID == GUID_WICPixelFormat4bppGray) return GUID_WICPixelFormat8bppGray;
-	else if (wicFormatGUID == GUID_WICPixelFormat16bppGrayFixedPoint) return GUID_WICPixelFormat16bppGrayHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppGrayFixedPoint) return GUID_WICPixelFormat32bppGrayFloat;
-	else if (wicFormatGUID == GUID_WICPixelFormat16bppBGR555) return GUID_WICPixelFormat16bppBGRA5551;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppBGR101010) return GUID_WICPixelFormat32bppRGBA1010102;
-	else if (wicFormatGUID == GUID_WICPixelFormat24bppBGR) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat24bppRGB) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppPBGRA) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppPRGBA) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat48bppRGB) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat48bppBGR) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppBGRA) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppPRGBA) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppPBGRA) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat48bppRGBFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat48bppBGRFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBAFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppBGRAFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBFixedPoint) return GUID_WICPixelFormat64bppRGBAHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppRGBHalf) return GUID_WICPixelFormat64bppRGBAHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat48bppRGBHalf) return GUID_WICPixelFormat64bppRGBAHalf;
-	else if (wicFormatGUID == GUID_WICPixelFormat128bppPRGBAFloat) return GUID_WICPixelFormat128bppRGBAFloat;
-	else if (wicFormatGUID == GUID_WICPixelFormat128bppRGBFloat) return GUID_WICPixelFormat128bppRGBAFloat;
-	else if (wicFormatGUID == GUID_WICPixelFormat128bppRGBAFixedPoint) return GUID_WICPixelFormat128bppRGBAFloat;
-	else if (wicFormatGUID == GUID_WICPixelFormat128bppRGBFixedPoint) return GUID_WICPixelFormat128bppRGBAFloat;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppRGBE) return GUID_WICPixelFormat128bppRGBAFloat;
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppCMYK) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppCMYK) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat40bppCMYKAlpha) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat80bppCMYKAlpha) return GUID_WICPixelFormat64bppRGBA;
-
-#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8) || defined(_WIN7_PLATFORM_UPDATE)
-	else if (wicFormatGUID == GUID_WICPixelFormat32bppRGB) return GUID_WICPixelFormat32bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppRGB) return GUID_WICPixelFormat64bppRGBA;
-	else if (wicFormatGUID == GUID_WICPixelFormat64bppPRGBAHalf) return GUID_WICPixelFormat64bppRGBAHalf;
-#endif
-
-	else return GUID_WICPixelFormatDontCare;
-}
-
-int GameRHI::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
-{
-	if (dxgiFormat == DXGI_FORMAT_R32G32B32A32_FLOAT) return 128;
-	else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) return 64;
-	else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_UNORM) return 64;
-	else if (dxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_B8G8R8A8_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_B8G8R8X8_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM) return 32;
-
-	else if (dxgiFormat == DXGI_FORMAT_R10G10B10A2_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_B5G5R5A1_UNORM) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_B5G6R5_UNORM) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_R32_FLOAT) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_R16_FLOAT) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_R16_UNORM) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_R8_UNORM) return 8;
-	else if (dxgiFormat == DXGI_FORMAT_A8_UNORM) return 8;
-	return 0;
-}
 
 void GameRHI::CreateGPUElement()
 {
@@ -547,12 +371,13 @@ void GameRHI::CreateCommandQueue()
 void GameRHI::CreateSwapChain()
 {
 	ComPtr<IDXGISwapChain1> swapChain;
+	DXGI_FORMAT backBufferFormat = NoSRGB(g_backBufferFormat);
 	//交换链描述
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 	swapChainDesc.BufferCount = FrameCount;
 	swapChainDesc.Width = g_width;
 	swapChainDesc.Height = g_height;
-	swapChainDesc.Format = g_backBufferFormat;
+	swapChainDesc.Format = backBufferFormat;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.SampleDesc.Count = 1;

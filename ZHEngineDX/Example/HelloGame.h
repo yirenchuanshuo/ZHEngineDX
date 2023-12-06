@@ -28,7 +28,8 @@ protected:
 
 public:
     //BackGround
-    float clearColor[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    float clearColor[4] = { 0,0,0,1 };
+    //{ 0.0f, 0.2f, 0.4f, 1.0f };
 
     bool isRAdd = true;
     bool isGAdd = true;
@@ -50,20 +51,21 @@ public:
         Float4 cameraPosition;
     };
 
-    //State
-    bool g_MSAA = false;
+    
 
 private:
-    
-    
+    //MSAA
+    ComPtr<ID3D12Resource>          g_msaaRenderTarget;
+    ComPtr<ID3D12Resource>          g_msaaDepthStencil;
+
+    ComPtr<ID3D12DescriptorHeap>    g_msaaRTVDescriptorHeap;
+    ComPtr<ID3D12DescriptorHeap>    g_msaaDSVDescriptorHeap;
+
 
     //‰÷»æ‘§±∏◊ ‘¥
-    
-    
     ComPtr<ID3D12RootSignature> g_rootSignature;
     ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
     ComPtr<ID3D12PipelineState> g_pipelineState;
-    
     
     UINT g_cbvsrvDescriptorSize;
 
@@ -77,28 +79,29 @@ private:
     ComPtr<ID3D12Resource> g_constantBuffer;
     SceneConstantBuffer g_constantBufferData;
 
-    
-
     std::vector<UTexture> g_textures;
     UINT8* g_pCbvDataBegin;
     
 
 
 private:
+    //One Level
     void LoadPipeline();
     void LoadAsset();
     void PopulateCommandList();
     
-    
+    //Two Level
+    void CreateMSAAResource();
+    void CreateMSAAWindowResource();
 
-
+    //Three Level
     void CreateConstantBufferDesCribeHeap();
-
     void CreateRootSignature();
     D3D12_STATIC_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
     void CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader);
     void UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange,const UINT vertexBufferSize, const UINT indexBufferSize);
     void UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange);
     void UpLoadShaderResource();
+    
     
 };

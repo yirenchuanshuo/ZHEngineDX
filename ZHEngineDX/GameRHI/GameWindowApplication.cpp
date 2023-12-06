@@ -109,6 +109,13 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 	case WM_MOUSEMOVE:
 		gameRHI->OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case VK_SPACE:
+			gameRHI->SetMSAA();
+			return 0;
+		}
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }

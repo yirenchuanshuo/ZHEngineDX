@@ -10,7 +10,9 @@
 class GameRHI
 {
 public:
-	GameRHI(UINT width, UINT height, std::wstring name);
+	GameRHI(UINT width, UINT height, std::wstring name, 
+		DXGI_FORMAT backBufferFormat= DXGI_FORMAT_R8G8B8A8_UNORM,
+		DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT);
 	virtual ~GameRHI();
 
 	//Windows
@@ -18,12 +20,41 @@ public:
 
 	//DXRHI
 public:
+	ID3D12Device*				GetD3DDevice() const { return g_device.Get(); }
+	IDXGISwapChain3*			GetSwapChain() const { return g_swapChain.Get(); }
+	IDXGIFactory6*				GetDXGIFactory() const { return g_dxgiFactory.Get(); }
+	ID3D12Resource*				GetRenderTarget() const { return g_renderTargets[g_frameIndex].Get(); }
+	ID3D12Resource*				GetDepthStencil() const { return g_depthStencilBuffer.Get(); }
+	ID3D12CommandQueue*			GetCommandQueue() const { return g_commandQueue.Get(); }
+	ID3D12CommandAllocator*		GetCommandAllocator() const { return g_commandAllocators[g_frameIndex].Get(); }
+	ID3D12GraphicsCommandList*	GetCommandList() const { return g_commandList.Get(); }
+	D3D12_VIEWPORT              GetScreenViewport() const { return g_viewport; }
+	D3D12_RECT                  GetScissorRect() const { return g_scissorRect; }
+	UINT                        GetCurrentFrameIndex() const { return g_frameIndex; }
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView() const
+	{
+		return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+			g_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			static_cast<INT>(g_frameIndex), g_rtvDescriptorSize);
+	}
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetDepthStencilView() const
+	{
+		return CD3DX12_CPU_DESCRIPTOR_HANDLE(g_dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	}
+public:
+	//State
+	bool g_MSAA = true;
+
+public:
 	void SetWindow();
 	void CreateDeviceResources();
 	void CreateWindowResources();
 	void WaitForGPU();
 	void MoveToNextFrame();
 	void CreateFrameResource();
+	void SetMSAA();
+	
 
 protected:
 	void SetFence();
@@ -36,7 +67,7 @@ protected:
 	ComPtr<ID3D12Device> g_device;
 	ComPtr<ID3D12CommandQueue> g_commandQueue;
 	ComPtr<ID3D12GraphicsCommandList> g_commandList;
-	ComPtr<ID3D12CommandAllocator> g_commandAllocator[FrameCount];
+	ComPtr<ID3D12CommandAllocator> g_commandAllocators[FrameCount];
 
 	//SwapChain
 	ComPtr<IDXGIFactory6> g_dxgiFactory;
@@ -89,7 +120,6 @@ public:
 
 
 	float AspectRatio()const;
-	int LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow);
 
 	UINT GetWidth() const { return g_width; }
 	UINT GetHeight() const { return g_height; }
@@ -117,9 +147,5 @@ private:
 	std::wstring g_title;
 
 	
-
-	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
-	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
-	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 };
 
