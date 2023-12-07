@@ -4,6 +4,9 @@
 #include "../Mesh/OBJ.h"
 #include "../Mesh/StaticMesh.h"
 #include "../Texture/Texture.h"
+#include "../Rendering/Shader.h"
+
+
 
 class HelloGame :public GameRHI
 {
@@ -58,9 +61,14 @@ private:
     ComPtr<ID3D12RootSignature> g_rootSignature;
     ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
     ComPtr<ID3D12PipelineState> g_pipelineState;
+    ComPtr<ID3D12PipelineState> g_skyPipelineState;
     
     UINT g_cbvsrvDescriptorSize;
 
+
+    //资源堆
+    ComPtr<ID3D12Heap>					g_textureHeap;
+    ComPtr<ID3D12Heap>					g_textureUpLoadHeap;
     //资源Buffer
     ComPtr<ID3D12Resource> g_vertexBuffer;
     D3D12_VERTEX_BUFFER_VIEW g_vertexBufferView;
@@ -70,6 +78,9 @@ private:
 
     ComPtr<ID3D12Resource> g_constantBuffer;
     SceneConstantBuffer g_constantBufferData;
+
+    //渲染资源
+    std::vector<UShader> g_shaders;
 
     std::vector<UTexture> g_textures;
     UINT8* g_pCbvDataBegin;
@@ -83,14 +94,15 @@ private:
     void PopulateCommandList();
     
     //Two Level
-    
+    void PreperShader();
     
 
     //Three Level
     void CreateConstantBufferDesCribeHeap();
     void CreateRootSignature();
     D3D12_STATIC_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
-    void CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader);
+    void CreateShader(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader,std::wstring VSFileName, std::wstring PSFileName);
+    void CreatePSO();
     void UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange,const UINT vertexBufferSize, const UINT indexBufferSize);
     void UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange);
     void UpLoadShaderResource();

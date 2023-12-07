@@ -1,0 +1,19 @@
+#include "Shader.h"
+#include "../GameHelper/GameHelper.h"
+
+UShader::UShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout)
+	:ShaderFileName(shaderfile), VSOutName(vsout),PSOutName(psout)
+{
+}
+
+void UShader::CreateShader()
+{
+	UINT compileFlags = 0;
+
+#if defined(_DEBUG)
+	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, VSOutName, "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, PSOutName, "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+}

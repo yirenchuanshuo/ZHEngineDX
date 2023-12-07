@@ -53,7 +53,7 @@ PSInput VSMain(VertexInput input)
 float4 PSMain(PSInput input) : SV_TARGET
 {
     float4 BaseColorTex = t1.Sample(s1, input.texCoord);
-    float4 NormalTex = t2.Sample(s2, input.texCoord);
+    float4 NormalTex = t2.Sample(s1, input.texCoord);
     
     float3 tangent = input.tangent;
     float3 normal = input.normal;
@@ -81,6 +81,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     //color = Blinn_Phong(basecolor, 20, 1 - roughness, L, N, V) + ambient;
     //color = Phong(basecolor,20,1 - roughness,L,N,V)+ambient;
     color = ACES_Tonemapping(brdfcolor);
+
     float3 finalcolor = pow(color,1/2.2);
     
     return float4(finalcolor, 1.0);

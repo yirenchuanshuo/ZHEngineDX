@@ -42,7 +42,7 @@
     <ClCompile Include="Texture\Texture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Core\DXRHI.cpp">
+    <ClCompile Include="Rendering\Shader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -93,6 +93,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Common\ZHEngineTimer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Shader.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Core\DXRHI.h">

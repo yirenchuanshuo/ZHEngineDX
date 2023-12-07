@@ -77,7 +77,7 @@ WICPixelFormatGUID Texture::GetConvertToWICFormat(WICPixelFormatGUID& wicFormatG
 	else return GUID_WICPixelFormatDontCare;
 }
 
-int Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
+UINT Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 {
 	if (dxgiFormat == DXGI_FORMAT_R32G32B32A32_FLOAT) return 128;
 	else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) return 64;
@@ -98,7 +98,7 @@ int Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	return 0;
 }
 
-int Texture:: LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, int& bytesPerRow)
+UINT Texture:: LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESOURCE_DESC& resourceDescription, LPCWSTR filename, UINT& bytesPerRow)
 {
 	HRESULT hr;
 
@@ -166,9 +166,9 @@ int Texture:: LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RESO
 		imageConverted = true;
 	}
 
-	int bitsPerPixel = GetDXGIFormatBitsPerPixel(dxgiFormat);
+	UINT bitsPerPixel = GetDXGIFormatBitsPerPixel(dxgiFormat);
 	bytesPerRow = (textureWidth * bitsPerPixel) / 8;
-	int imageSize = bytesPerRow * textureHeight;
+	UINT imageSize = bytesPerRow * textureHeight;
 
 	imageData = std::shared_ptr<BYTE>((BYTE*)malloc(imageSize), free);
 

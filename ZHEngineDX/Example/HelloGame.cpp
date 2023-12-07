@@ -19,7 +19,7 @@ constexpr UINT CalcConstantBufferByteSize()
 
 
 HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
-	GameRHI(width, height, name, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB),
+	GameRHI(width, height, name, DXGI_FORMAT_R8G8B8A8_UNORM),
 	g_constantBufferData{},
 	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)}
 {
@@ -98,21 +98,10 @@ void HelloGame::LoadAsset()
 
 	
 	//创建着色器资源
-	ComPtr<ID3DBlob> vertexShader;
-	ComPtr<ID3DBlob> pixelShader;
-	UINT compileFlags = 0;
-
-#if defined(_DEBUG)
-	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-	
-	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Shader/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ThrowIfFailed(D3DCompileFromFile(std::wstring(L"Shader/Triangles.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-	
+	PreperShader();
 
 	//创建PSO
-	CreatePSO(vertexShader,pixelShader);
-
+	CreatePSO();
 
 	//创建命令列表，用命令分配器给命令列表分配对象
 	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[g_frameIndex].Get(), g_pipelineState.Get(), IID_PPV_ARGS(&g_commandList)));
@@ -245,13 +234,20 @@ void HelloGame::PopulateCommandList()
 	ThrowIfFailed(g_commandList->Close());
 }
 
+void HelloGame::PreperShader()
+{
+	UShader NormalMode(L"Shader/Model.hlsl","VSMain","PSMain");
+	NormalMode.CreateShader();
+	g_shaders.push_back(NormalMode);
+}
+
 
 
 void HelloGame::CreateConstantBufferDesCribeHeap()
 {
 	//创建常量缓冲描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = 3;
+	cbvsrvHeapDesc.NumDescriptors = 1+g_textures.size();
 	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -280,7 +276,7 @@ void HelloGame::CreateRootSignature()
 	rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
 	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	rootParameters[1].InitAsDescriptorTable(2, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+	rootParameters[1].InitAsDescriptorTable(2, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
 	
 	
 
@@ -315,12 +311,12 @@ void HelloGame::CreateRootSignature()
 D3D12_STATIC_SAMPLER_DESC HelloGame::CreateSamplerDesCribe(UINT index)
 {
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
-	sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	sampler.Filter = D3D12_FILTER_ANISOTROPIC;
 	sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	sampler.MipLODBias = 0;
-	sampler.MaxAnisotropy = 0;
+	sampler.MaxAnisotropy = 8;
 	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 	sampler.MinLOD = 0.0f;
@@ -331,8 +327,19 @@ D3D12_STATIC_SAMPLER_DESC HelloGame::CreateSamplerDesCribe(UINT index)
 
 	return sampler;
 }
+void HelloGame::CreateShader(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader, std::wstring VSFileName, std::wstring PSFileName)
+{
+	UINT compileFlags = 0;
 
-void HelloGame::CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader)
+#if defined(_DEBUG)
+	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	ThrowIfFailed(D3DCompileFromFile(VSFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ThrowIfFailed(D3DCompileFromFile(PSFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+}
+
+void HelloGame::CreatePSO()
 {
 	//创建管线状态对象PSO，绑定渲染资源
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
@@ -346,21 +353,30 @@ void HelloGame::CreatePSO(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixe
 
 	//PSO描述
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-	psoDesc.pRootSignature = g_rootSignature.Get();
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = g_backBufferFormat;
-	psoDesc.SampleDesc.Count = g_MSAA?4:1;
-	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-	//创建PSO
-	ThrowIfFailed(g_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pipelineState)));
+
+	if (g_shaders[0].blendMode == EBlendMode::Opaque)
+	{
+		psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+		psoDesc.pRootSignature = g_rootSignature.Get();
+		psoDesc.VS = CD3DX12_SHADER_BYTECODE(g_shaders[0].vertexShader.Get());
+		psoDesc.PS = CD3DX12_SHADER_BYTECODE(g_shaders[0].pixelShader.Get());
+		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		psoDesc.SampleMask = UINT_MAX;
+		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		psoDesc.NumRenderTargets = 1;
+		psoDesc.RTVFormats[0] = g_backBufferFormat;
+		psoDesc.SampleDesc.Count = g_MSAA ? 4 : 1;
+		psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+
+		//创建PSO
+		ThrowIfFailed(g_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pipelineState)));
+	}
+	
+	
+	
+	
 }
 
 void HelloGame::UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange,const UINT vertexBufferSize, const UINT indexBufferSize)
@@ -427,6 +443,7 @@ void HelloGame::UpLoadShaderResource()
 	
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES TexResourceheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	
 	//创建数据上传堆 CPUGPU都可访问
 	CD3DX12_HEAP_PROPERTIES DataUpLoadheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
@@ -434,11 +451,11 @@ void HelloGame::UpLoadShaderResource()
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 	//获取着色器资源视图起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	
 	for (auto& Texture : g_textures)
 	{
 		ThrowIfFailed(g_device->CreateCommittedResource(
@@ -467,6 +484,7 @@ void HelloGame::UpLoadShaderResource()
 		g_commandList->ResourceBarrier(1, &Barrier);
 
 		srvDesc.Format = Texture.texDesc.Format;
+		srvDesc.Texture2D.MipLevels = Texture.texDesc.MipLevels;
 		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
 		g_device->CreateShaderResourceView(Texture.Resource.Get(), &srvDesc, cbvsrvHandle);
 	}
@@ -517,7 +535,7 @@ void HelloGame::UpdateBackGround()
 
 void HelloGame::UpdateLight()
 {
-	FVector4 lightDirV = ZMath::Normalize4(FVector4{1,1,0,0});
+	FVector4 lightDirV = ZMath::Normalize4(FVector4{1,0,1,0});
 	float angle = 0.5f;
 	lightangle += angle;
 	float angleInRadians = ZMath::AngleToRadians(lightangle);

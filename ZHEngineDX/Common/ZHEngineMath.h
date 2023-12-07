@@ -2,6 +2,8 @@
 #include "TypeName.h"
 #include <tuple>
 
+#define UPPER(A,B) ((UINT)(((A)+((B)-1))&~(B - 1)))
+
 namespace ZMath
 {
 	constexpr  float PI       = 3.1415926535f;
