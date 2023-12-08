@@ -2,7 +2,7 @@
 #include "../GameRHI/GameRHI.h"
 #include "../Mesh/Light.h"
 #include "../Mesh/OBJ.h"
-#include "../Mesh/StaticMesh.h"
+#include "../Rendering/RenderActor.h"
 #include "../Texture/Texture.h"
 #include "../Rendering/Shader.h"
 
@@ -38,7 +38,8 @@ public:
     bool isBAdd = true;
 
     //Data
-    StaticMesh Mesh;
+    std::unique_ptr<RenderActor> ModeActor;
+    StaticMesh Sky;
     DirectionLight light;
     float lightangle=0.0f;
 
@@ -47,6 +48,7 @@ public:
     {
         //内存对齐256;
         Float4x4 ObjectToWorld;
+        Float4x4 VP;
         Float4x4 MVP;
         FLinearColor lightColor;
         Float4 lightDirection;
@@ -60,6 +62,7 @@ private:
     //渲染预备资源
     ComPtr<ID3D12RootSignature> g_rootSignature;
     ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
+    ComPtr<ID3D12DescriptorHeap> g_skycbvsrvHeap;
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12PipelineState> g_skyPipelineState;
     
@@ -81,6 +84,7 @@ private:
 
     //渲染资源
     std::vector<UShader> g_shaders;
+    UShader g_skyShader;
 
     std::vector<UTexture> g_textures;
     UINT8* g_pCbvDataBegin;
@@ -103,7 +107,7 @@ private:
     D3D12_STATIC_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
     void CreateShader(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader,std::wstring VSFileName, std::wstring PSFileName);
     void CreatePSO();
-    void UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange,const UINT vertexBufferSize, const UINT indexBufferSize);
+    void UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange, std::unique_ptr<RenderActor>& Actor);
     void UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange);
     void UpLoadShaderResource();
     

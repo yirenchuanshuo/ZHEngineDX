@@ -1,8 +1,13 @@
 #include "Shader.h"
 #include "../GameHelper/GameHelper.h"
 
-UShader::UShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout)
-	:ShaderFileName(shaderfile), VSOutName(vsout),PSOutName(psout)
+UShader::UShader()
+	:ShaderFileName(L""), VSOutName(""), PSOutName(""), blendMode(EBlendMode::Opaque)
+{
+}
+
+UShader::UShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend)
+	:ShaderFileName(shaderfile), VSOutName(vsout),PSOutName(psout),blendMode(blend)
 {
 }
 

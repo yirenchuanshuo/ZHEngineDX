@@ -1,7 +1,9 @@
 #include "HelloGame.h"
 
-#define MODEPATH "Content/Mesh/Mode.uasset"
-#define MODEASSETPATH "Content/Mesh/Cube.obj"
+
+
+#define MODEPATH(ModeName) "Content/Mesh/" #ModeName ".uasset"
+#define MODEASSETPATH(ModeName) "Content/Mesh/" #ModeName ".obj"
 #define WRITEMODE 0
 
 
@@ -21,7 +23,8 @@ constexpr UINT CalcConstantBufferByteSize()
 HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
 	GameRHI(width, height, name, DXGI_FORMAT_R8G8B8A8_UNORM),
 	g_constantBufferData{},
-	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)}
+	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)},
+	g_skyShader(L"Shader/Sky.hlsl", "VSMain","PSMain",EBlendMode::SkyBox)
 {
 
 }
@@ -93,10 +96,12 @@ void HelloGame::LoadPipeline()
 
 void HelloGame::LoadAsset()
 {
+	ModeActor = std::make_unique<RenderActor>();
+	ModeActor->Init();
+
 	//创建根签名，选择合适的版本
 	CreateRootSignature();
 
-	
 	//创建着色器资源
 	PreperShader();
 
@@ -104,28 +109,28 @@ void HelloGame::LoadAsset()
 	CreatePSO();
 
 	//创建命令列表，用命令分配器给命令列表分配对象
-	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[g_frameIndex].Get(), g_pipelineState.Get(), IID_PPV_ARGS(&g_commandList)));
-
+	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[g_frameIndex].Get(), nullptr, IID_PPV_ARGS(&g_commandList)));
 	
 	//ThrowIfFailed(g_commandList->Close());
 
 	//创建顶点Buffer
 #if WRITEMODE
 	OBJ Mode;
-	Mode.Load(MODEASSETPATH);
+	Mode.Load(MODEASSETPATH(Cube));
+	OBJ Sky;
+	Sky.Load((MODEASSETPATH(Sky));
 #endif
 
-	Mesh.Load(MODEPATH);
+	ModeActor->Mesh->Load(MODEPATH(Cube));
+	//Sky.Load(MODEPATH(Sky));
 
-	UINT ModeVertexSize = (UINT)Mesh.vertices.size() * sizeof(Vertex);
-	UINT ModeIndexSize = (UINT)Mesh.indices.size() * sizeof(UINT);
-
+	
 	//数据上传堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	CD3DX12_RANGE readRange(0, 0);
 
 	//上传顶点和顶点索引信息
-	UpLoadVertexAndIndexToHeap(heapProperties,readRange,ModeVertexSize, ModeIndexSize);
+	UpLoadVertexAndIndexToHeap(heapProperties,readRange, ModeActor);
 	
 	//建立并上传数据到常量缓冲区
 	UpLoadConstantBuffer(heapProperties,readRange);
@@ -199,11 +204,11 @@ void HelloGame::PopulateCommandList()
 	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//顶点装配
-	g_commandList->IASetVertexBuffers(0, 1, &g_vertexBufferView);
-	g_commandList->IASetIndexBuffer(&g_indexBufferView);
+	g_commandList->IASetVertexBuffers(0, 1, &ModeActor->g_vertexBufferView);
+	g_commandList->IASetIndexBuffer(&ModeActor->g_indexBufferView);
 
 	//画图
-	g_commandList->DrawIndexedInstanced((UINT)Mesh.indices.size(), 1, 0, 0, 0);
+	g_commandList->DrawIndexedInstanced((UINT)ModeActor->Mesh->indices.size(), 1, 0, 0, 0);
 
 	if (g_MSAA)
 	{
@@ -236,9 +241,10 @@ void HelloGame::PopulateCommandList()
 
 void HelloGame::PreperShader()
 {
-	UShader NormalMode(L"Shader/Model.hlsl","VSMain","PSMain");
+	UShader NormalMode(L"Shader/Model.hlsl","VSMain","PSMain",EBlendMode::Opaque);
 	NormalMode.CreateShader();
 	g_shaders.push_back(NormalMode);
+	g_skyShader.CreateShader();
 }
 
 
@@ -254,6 +260,10 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	//创建常量缓存描述符堆
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_cbvsrvHeap)));
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	//天空球cbvsrv描述符堆
+	cbvsrvHeapDesc.NumDescriptors = 2;
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_skycbvsrvHeap)));
 }
 
 
@@ -374,14 +384,20 @@ void HelloGame::CreatePSO()
 		ThrowIfFailed(g_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pipelineState)));
 	}
 	
-	
-	
-	
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC SkypsoDesc = psoDesc;
+	SkypsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	SkypsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	SkypsoDesc.pRootSignature = g_rootSignature.Get();
+	SkypsoDesc.VS = CD3DX12_SHADER_BYTECODE(g_skyShader.vertexShader.Get());
+	SkypsoDesc.PS = CD3DX12_SHADER_BYTECODE(g_skyShader.pixelShader.Get());
+	ThrowIfFailed(g_device->CreateGraphicsPipelineState(&SkypsoDesc, IID_PPV_ARGS(&g_skyPipelineState)));
 }
 
-void HelloGame::UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange,const UINT vertexBufferSize, const UINT indexBufferSize)
+void HelloGame::UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange, std::unique_ptr<RenderActor>& Actor)
 {
-	
+	UINT vertexBufferSize = (UINT)Actor->Mesh->vertices.size() * sizeof(Vertex);
+	UINT indexBufferSize = (UINT)Actor->Mesh->indices.size() * sizeof(UINT);
+
 	//资源描述符
 	CD3DX12_RESOURCE_DESC vertexResourceDes = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
 	CD3DX12_RESOURCE_DESC indexResourceDes = CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize);
@@ -389,29 +405,29 @@ void HelloGame::UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperti
 
 	//资源创建
 	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDes,
-		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&g_vertexBuffer)));
+		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&Actor->g_vertexBuffer)));
 
 	ThrowIfFailed(g_device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &indexResourceDes,
-		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&g_indexBuffer)));
+		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&Actor->g_indexBuffer)));
 
 	//复制顶点资源数据到GPUBuffer
 	UINT8* pVertexDataBegin;
-	ThrowIfFailed(g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, Mesh.vertices.data(), vertexBufferSize);
-	g_vertexBuffer->Unmap(0, nullptr);
+	ThrowIfFailed(Actor->g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	memcpy(pVertexDataBegin, Actor->Mesh->vertices.data(), vertexBufferSize);
+	Actor->g_vertexBuffer->Unmap(0, nullptr);
 
-	ThrowIfFailed(g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, Mesh.indices.data(), indexBufferSize);
-	g_indexBuffer->Unmap(0, nullptr);
+	ThrowIfFailed(Actor->g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	memcpy(pVertexDataBegin, Actor->Mesh->indices.data(), indexBufferSize);
+	Actor->g_indexBuffer->Unmap(0, nullptr);
 
 	//初始化资源缓冲区视图
-	g_vertexBufferView.BufferLocation = g_vertexBuffer->GetGPUVirtualAddress();
-	g_vertexBufferView.StrideInBytes = sizeof(Vertex);
-	g_vertexBufferView.SizeInBytes = vertexBufferSize;
+	Actor->g_vertexBufferView.BufferLocation = Actor->g_vertexBuffer->GetGPUVirtualAddress();
+	Actor->g_vertexBufferView.StrideInBytes = sizeof(Vertex);
+	Actor->g_vertexBufferView.SizeInBytes = vertexBufferSize;
 
-	g_indexBufferView.BufferLocation = g_indexBuffer->GetGPUVirtualAddress();
-	g_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-	g_indexBufferView.SizeInBytes = indexBufferSize;
+	Actor->g_indexBufferView.BufferLocation = Actor->g_indexBuffer->GetGPUVirtualAddress();
+	Actor->g_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	Actor->g_indexBufferView.SizeInBytes = indexBufferSize;
 }
 
 
@@ -550,7 +566,6 @@ void HelloGame::UpdateLight()
 
 void HelloGame::UpdateConstantBuffer()
 {
-
 	UpdateMVP();
 	UpdateLight();
 	//GPU复制数据
@@ -571,9 +586,11 @@ void HelloGame::UpdateMVP()
 
 	FMatrix4x4 m = ZMath::MatrixIdentity();
 	FMatrix4x4 p = ZMath::MatrixFov(PIDIV4, AspectRatio(), 1.0f, 1000.0f);
+	FMatrix4x4 VP = v * p;
 	FMatrix4x4 MVP = m * v * p;
 
 	ZMath::MaterixToFloat4x4(&g_constantBufferData.ObjectToWorld, m);
+	ZMath::MaterixToFloat4x4(&g_constantBufferData.VP, VP);
 	ZMath::MaterixToFloat4x4(&g_constantBufferData.MVP, MVP);
 	g_constantBufferData.cameraPosition = { x,y,z,1 };
 	

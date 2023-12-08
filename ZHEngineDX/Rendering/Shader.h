@@ -10,7 +10,8 @@ enum class EBlendMode
 class UShader 
 {
 public:
-	UShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout);
+	UShader();
+	UShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend);
 public:
 	Microsoft::WRL::ComPtr<ID3DBlob> vertexShader;
 	Microsoft::WRL::ComPtr<ID3DBlob> pixelShader;

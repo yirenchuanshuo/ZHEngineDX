@@ -1,19 +1,13 @@
+
 #include "ShadingModel.hlsl"
 #include "PostProcess.hlsl"
+
 
 Texture2D t1 : register(t0);
 Texture2D t2 : register(t1);
 SamplerState s1 : register(s0);
 SamplerState s2 : register(s1);
 
-cbuffer SceneConstantBuffer : register(b0)
-{
-    float4x4 ObjectToWorld;
-    float4x4 WorldViewProj;
-    float4 lightColor;
-    float4 lightDirection;
-    float4 cameraPosition;
-}
 
 
 struct VertexInput

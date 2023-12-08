@@ -1,5 +1,15 @@
 
 
+cbuffer SceneConstantBuffer : register(b0)
+{
+    float4x4 ObjectToWorld;
+    float4x4 ViewProj;
+    float4x4 WorldViewProj;
+    float4 lightColor;
+    float4 lightDirection;
+    float4 cameraPosition;
+}
+
 
 float3x3 TBN(float3 normal, float3 tangent, float3 bitangent)
 {

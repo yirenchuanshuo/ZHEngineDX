@@ -5,6 +5,7 @@
 #include "MeshBaseData.h"
 #include "../Common/ZHEngineMath.h"
 
+std::string GenerateUAssetPath(std::string& file);
 
 class OBJ {
 public:

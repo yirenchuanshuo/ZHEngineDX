@@ -6,6 +6,7 @@
 
 void OBJ::Load(std::string path)
 {
+	std::string pathName = path;
 	std::ifstream file(path);
 	if (!file.is_open())
 	{
@@ -94,7 +95,9 @@ void OBJ::Load(std::string path)
 	DataDescribe[2] = (UINT)indices.size();
 	DataDescribe[3] = DataDescribe[2]*sizeof(UINT);
 
-	MeshAssetCreate(*this, "Content/Mesh/Mode.uasset");
+	std::string UAssetPath = GenerateUAssetPath(pathName);
+
+	MeshAssetCreate(*this, UAssetPath);
 	file.close();
 }
 
@@ -144,4 +147,16 @@ void OBJ::ComputeTangent(UINT first, UINT second, UINT third)
 std::array<UINT, 4> OBJ::GetDataDescribe()
 {
 	return DataDescribe;
+}
+
+std::string GenerateUAssetPath(std::string& file)
+{
+	
+	size_t lastDot = file.find_last_of('.');
+	
+	std::string result = file.substr(0, lastDot);
+
+	result += ".uasset";
+
+	return result;
 }

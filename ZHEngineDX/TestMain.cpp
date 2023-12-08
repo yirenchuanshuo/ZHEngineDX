@@ -55,18 +55,12 @@ int main()
 		cout << Mesh.indices[i] << " " << Mesh.indices[i + 1] << " " << Mesh.indices[i + 2] << endl;
 	}*/
 	// { {1, 2, 1}, { 2,5,7 }, { 6,1,3 }, { 4,1,2 }, { 5,5,5 }}
-	vector<V3> F;
-	F.push_back({ 1,2,1 });
-	F.push_back({ 2,5,7 });
-	F.push_back({ 6,1,3 });
-	F.push_back({ 4,1,2 });
-	F.push_back({ 5,5,5 });
-	sort(F.begin(), F.end(), condition());
+	
 
-	for (auto& v : F)
-	{
-		cout << v.x << " " << v.y << " " << v.z << endl;
-	}
+	
+
+
+
 	system("pause");
 	return 0;
 }
