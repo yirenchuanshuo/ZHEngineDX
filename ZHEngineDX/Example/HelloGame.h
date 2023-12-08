@@ -39,7 +39,7 @@ public:
 
     //Data
     std::unique_ptr<RenderActor> ModeActor;
-    StaticMesh Sky;
+    std::unique_ptr<RenderActor> SkyActor;
     DirectionLight light;
     float lightangle=0.0f;
 

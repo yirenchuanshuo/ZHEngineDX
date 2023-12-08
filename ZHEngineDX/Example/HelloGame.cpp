@@ -24,7 +24,7 @@ HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
 	GameRHI(width, height, name, DXGI_FORMAT_R8G8B8A8_UNORM),
 	g_constantBufferData{},
 	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)},
-	g_skyShader(L"Shader/Sky.hlsl", "VSMain","PSMain",EBlendMode::SkyBox)
+	g_skyShader(L"Shader/Model.hlsl", "VSMain","PSMain",EBlendMode::Opaque)
 {
 
 }
@@ -97,7 +97,9 @@ void HelloGame::LoadPipeline()
 void HelloGame::LoadAsset()
 {
 	ModeActor = std::make_unique<RenderActor>();
+	SkyActor = std::make_unique<RenderActor>();
 	ModeActor->Init();
+	SkyActor->Init();
 
 	//创建根签名，选择合适的版本
 	CreateRootSignature();
@@ -118,11 +120,11 @@ void HelloGame::LoadAsset()
 	OBJ Mode;
 	Mode.Load(MODEASSETPATH(Cube));
 	OBJ Sky;
-	Sky.Load((MODEASSETPATH(Sky));
+	Sky.Load(MODEASSETPATH(Sky));
 #endif
 
 	ModeActor->Mesh->Load(MODEPATH(Cube));
-	//Sky.Load(MODEPATH(Sky));
+	SkyActor->Mesh->Load(MODEPATH(Sky));
 
 	
 	//数据上传堆
@@ -130,8 +132,8 @@ void HelloGame::LoadAsset()
 	CD3DX12_RANGE readRange(0, 0);
 
 	//上传顶点和顶点索引信息
-	UpLoadVertexAndIndexToHeap(heapProperties,readRange, ModeActor);
-	
+	UpLoadVertexAndIndexToHeap(heapProperties, readRange, ModeActor);
+	UpLoadVertexAndIndexToHeap(heapProperties, readRange, SkyActor);
 	//建立并上传数据到常量缓冲区
 	UpLoadConstantBuffer(heapProperties,readRange);
 
