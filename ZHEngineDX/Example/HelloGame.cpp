@@ -212,6 +212,21 @@ void HelloGame::PopulateCommandList()
 	//»­Í¼
 	g_commandList->DrawIndexedInstanced((UINT)ModeActor->Mesh->indices.size(), 1, 0, 0, 0);
 
+
+	//Sky
+	g_commandList->SetPipelineState(g_skyPipelineState.Get());
+	//Í¼ÔªÍØÆËÄ£Ê½
+	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//¶¥µã×°Åä
+	g_commandList->IASetVertexBuffers(0, 1, &SkyActor->g_vertexBufferView);
+	g_commandList->IASetIndexBuffer(&SkyActor->g_indexBufferView);
+
+	//»­Í¼
+	g_commandList->DrawIndexedInstanced((UINT)SkyActor->Mesh->indices.size(), 1, 0, 0, 0);
+
+
+
 	if (g_MSAA)
 	{
 		{
@@ -264,7 +279,7 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	//Ìì¿ÕÇòcbvsrvÃèÊö·û¶Ñ
-	cbvsrvHeapDesc.NumDescriptors = 2;
+	//cbvsrvHeapDesc.NumDescriptors = 2;
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_skycbvsrvHeap)));
 }
 
