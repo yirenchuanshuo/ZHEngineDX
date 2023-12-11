@@ -1,6 +1,8 @@
 #include"Common.hlsl"
 
-TextureCube skycubemap : register(t0);
+//TextureCube skycubemap : register(t0);
+Texture2D sky : register(t2);
+
 SamplerState s1 : register(s0);
 SamplerState s2 : register(s1);
 
@@ -28,14 +30,15 @@ PSInput VSMain(VertexInput vin)
 	
     worldposition.xyz += cameraPosition;
 
-	
     result.position = mul(worldposition, ViewProj);
+    
+    result.texCoord = vin.texCoord;
 	
     return result;
 }
 
 float4 PSMain(PSInput pin) : SV_Target
 {
-    return skycubemap.Sample(s1, pin.position.xyz);
+    return sky.Sample(s1, pin.texCoord);
 }
 

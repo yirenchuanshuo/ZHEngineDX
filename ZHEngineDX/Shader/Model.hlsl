@@ -71,7 +71,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 ambient =0.3*basecolor*AO;
     
     float3 color;
-    float3 brdfcolor = BRDF(basecolor,Metalic,roughness,Radiance,L,V,N)+ambient;
+    float3 brdfcolor = saturate(BRDF(basecolor, Metalic, roughness, Radiance, L, V, N) + ambient);
     //color = Blinn_Phong(basecolor, 20, 1 - roughness, L, N, V) + ambient;
     //color = Phong(basecolor,20,1 - roughness,L,N,V)+ambient;
     color = ACES_Tonemapping(brdfcolor);
