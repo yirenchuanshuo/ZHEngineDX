@@ -66,7 +66,7 @@ private:
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12PipelineState> g_skyPipelineState;
     
-    UINT g_cbvsrvDescriptorSize;
+    UINT g_cbvsrvDescriptorSize=0u;
 
 
     //×ÊÔ´¶Ñ

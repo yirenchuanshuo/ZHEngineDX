@@ -86,7 +86,6 @@ void HelloGame::LoadPipeline()
 	//创建D3D资源
 	CreateDeviceResources();
 	
-
 	//创建窗口资源
 	CreateWindowResources();
 
@@ -281,16 +280,18 @@ void HelloGame::PreperRenderActor()
 
 void HelloGame::CreateConstantBufferDesCribeHeap()
 {
+	LoadTexture();
+
+	UINT srvnum = (UINT)g_textures.size();
 	//创建常量缓冲描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = 1+g_textures.size();
+	cbvsrvHeapDesc.NumDescriptors = 1+ srvnum;
 	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
 	//创建常量缓存描述符堆
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_cbvsrvHeap)));
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
 	//天空球cbvsrv描述符堆
 	//cbvsrvHeapDesc.NumDescriptors = 2;
 	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_skycbvsrvHeap)));
@@ -489,7 +490,7 @@ void HelloGame::UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD
 void HelloGame::UpLoadShaderResource()
 {
 	
-	LoadTexture();
+	
 	
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES TexResourceheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -536,9 +537,8 @@ void HelloGame::UpLoadShaderResource()
 		g_commandList->ResourceBarrier(1, &Barrier);
 	}
 
-	
 	for (int i = 0; i < n; i++)
-	{
+	{		
 		srvDesc.Format = g_textures[i].texDesc.Format;
 		srvDesc.Texture2D.MipLevels = g_textures[i].texDesc.MipLevels;
 		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
@@ -650,7 +650,7 @@ void HelloGame::LoadTexture()
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{
-		UTexture Temptex;
+		UTexture Temptex = UTexture();
 		Temptex.Data = std::make_shared<BYTE>();
 		Temptex.Filename = TextureFiles[i];
 		Temptex.texSize = Texture::LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
