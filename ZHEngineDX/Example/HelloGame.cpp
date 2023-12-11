@@ -96,11 +96,6 @@ void HelloGame::LoadPipeline()
 
 void HelloGame::LoadAsset()
 {
-	ModeActor = std::make_unique<RenderActor>();
-	SkyActor = std::make_unique<RenderActor>();
-	ModeActor->Init();
-	SkyActor->Init();
-
 	//创建根签名，选择合适的版本
 	CreateRootSignature();
 
@@ -115,27 +110,8 @@ void HelloGame::LoadAsset()
 	
 	//ThrowIfFailed(g_commandList->Close());
 
-	//创建顶点Buffer
-#if WRITEMODE
-	OBJ Mode;
-	Mode.Load(MODEASSETPATH(Cube));
-	OBJ Sky;
-	Sky.Load(MODEASSETPATH(Sky));
-#endif
-
-	ModeActor->Mesh->Load(MODEPATH(Cube));
-	SkyActor->Mesh->Load(MODEPATH(Sky));
-
-	
-	//数据上传堆
-	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	CD3DX12_RANGE readRange(0, 0);
-
-	//上传顶点和顶点索引信息
-	UpLoadVertexAndIndexToHeap(heapProperties, readRange, ModeActor);
-	UpLoadVertexAndIndexToHeap(heapProperties, readRange, SkyActor);
-	//建立并上传数据到常量缓冲区
-	UpLoadConstantBuffer(heapProperties,readRange);
+	//准备渲染对象
+	PreperRenderActor();
 
 	//加载纹理数据并创建着色器资源
 	UpLoadShaderResource();
@@ -269,6 +245,36 @@ void HelloGame::PreperShader()
 	NormalMode.CreateShader();
 	g_shaders.push_back(NormalMode);
 	g_skyShader.CreateShader();
+}
+
+void HelloGame::PreperRenderActor()
+{
+	ModeActor = std::make_unique<RenderActor>();
+	SkyActor = std::make_unique<RenderActor>();
+	ModeActor->Init();
+	SkyActor->Init();
+
+	//创建顶点Buffer
+#if WRITEMODE
+	OBJ Mode;
+	Mode.Load(MODEASSETPATH(Cube));
+	OBJ Sky;
+	Sky.Load(MODEASSETPATH(Sky));
+#endif
+
+	ModeActor->Mesh->Load(MODEPATH(Cube));
+	SkyActor->Mesh->Load(MODEPATH(Sky));
+
+
+	//数据上传堆
+	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	CD3DX12_RANGE readRange(0, 0);
+
+	//上传顶点和顶点索引信息
+	UpLoadVertexAndIndexToHeap(heapProperties, readRange, ModeActor);
+	UpLoadVertexAndIndexToHeap(heapProperties, readRange, SkyActor);
+	//建立并上传数据到常量缓冲区
+	UpLoadConstantBuffer(heapProperties, readRange);
 }
 
 

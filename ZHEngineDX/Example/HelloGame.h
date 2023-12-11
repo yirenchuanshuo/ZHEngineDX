@@ -99,7 +99,7 @@ private:
     
     //Two Level
     void PreperShader();
-    
+    void PreperRenderActor();
 
     //Three Level
     void CreateConstantBufferDesCribeHeap();
