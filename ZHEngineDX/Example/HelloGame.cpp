@@ -491,7 +491,6 @@ void HelloGame::UpLoadShaderResource()
 {
 	
 	
-	
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES TexResourceheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	
@@ -537,18 +536,22 @@ void HelloGame::UpLoadShaderResource()
 		g_commandList->ResourceBarrier(1, &Barrier);
 	}
 
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < n-1; i++)
 	{		
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Format = g_textures[i].texDesc.Format;
 		srvDesc.Texture2D.MipLevels = g_textures[i].texDesc.MipLevels;
 		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
 		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, cbvsrvHandle);
 	}
 
-	//srvDesc.Format = g_textures[2].texDesc.Format;
-	//srvDesc.Texture2D.MipLevels = g_textures[2].texDesc.MipLevels;
-	//skycbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-	//g_device->CreateShaderResourceView(g_textures[2].Resource.Get(), &srvDesc, skycbvsrvHandle);
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	srvDesc.TextureCube.MostDetailedMip = 0;
+	srvDesc.Format = g_textures[n - 1].texDesc.Format;
+	srvDesc.TextureCube.MipLevels = g_textures[n - 1].texDesc.MipLevels;
+	srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+	g_device->CreateShaderResourceView(g_textures[n - 1].Resource.Get(), &srvDesc, cbvsrvHandle);
 	
 }
 
@@ -646,16 +649,16 @@ void HelloGame::LoadTexture()
 	std::vector<LPCWSTR> TextureFiles;
 	TextureFiles.push_back(L"Content/Tex/Wall_00_BaseColorAO.png");
 	TextureFiles.push_back(L"Content/Tex/Wall_00_NormalR.png");
-	TextureFiles.push_back(L"Content/Tex/Sky.jpg");
+	TextureFiles.push_back(L"Content/Tex/Sky.png");
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{
 		UTexture Temptex = UTexture();
 		Temptex.Data = std::make_shared<BYTE>();
 		Temptex.Filename = TextureFiles[i];
+
 		Temptex.texSize = Texture::LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
 		Temptex.GenerateTextureData();
 		g_textures.push_back(Temptex);
 	}
-
 }

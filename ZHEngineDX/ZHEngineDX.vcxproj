@@ -166,10 +166,12 @@
     <ClInclude Include="Common\CommonCore.h">
       <FileType>Document</FileType>
     </ClInclude>
+    <ClCompile Include="Common\DDSTextureLoader.cpp" />
     <ClCompile Include="Example\HelloGame.cpp" />
     <ClCompile Include="GameRHI\Camera.cpp" />
     <ClCompile Include="GameRHI\GameRHI.cpp" />
     <ClCompile Include="GameRHI\GameWindowApplication.cpp" />
+    <ClInclude Include="Common\DDSTextureLoader.h" />
     <ClInclude Include="Common\ZHEngineTimer.h" />
     <ClInclude Include="Core\DXRHI.h" />
     <ClInclude Include="Mesh\AssetLoad.h" />

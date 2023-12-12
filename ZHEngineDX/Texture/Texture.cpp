@@ -186,15 +186,16 @@ UINT Texture:: LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RES
 	resourceDescription = {};
 	resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDescription.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	resourceDescription.Width = textureWidth;
-	resourceDescription.Height = textureHeight;
 	resourceDescription.DepthOrArraySize = 1;
 	resourceDescription.MipLevels = 1;
-	resourceDescription.Format = dxgiFormat;
 	resourceDescription.SampleDesc.Count = 1;
 	resourceDescription.SampleDesc.Quality = 0;
 	resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	resourceDescription.Flags = D3D12_RESOURCE_FLAG_NONE;
+	resourceDescription.Width = textureWidth;
+	resourceDescription.Height = textureHeight;
+	resourceDescription.Format = dxgiFormat;
+	
 
 	return imageSize;
 }

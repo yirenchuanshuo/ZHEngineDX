@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/CommonCore.h"
+#include "../Common/DDSTextureLoader.h"
 
 namespace Texture
 {
