@@ -1,8 +1,6 @@
 #include"Common.hlsl"
 
 TextureCube sky : register(t2);
-
-
 SamplerState s1 : register(s0);
 SamplerState s2 : register(s1);
 

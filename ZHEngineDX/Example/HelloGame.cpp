@@ -2,8 +2,8 @@
 
 
 
-#define MODEPATH(ModeName) "Content/Mesh/" #ModeName ".uasset"
-#define MODEASSETPATH(ModeName) "Content/Mesh/" #ModeName ".obj"
+#define MODEPATH(ModeName) "Content/Mesh/"#ModeName".uasset"
+#define MODEASSETPATH(ModeName) "Content/Mesh/"#ModeName".obj"
 #define WRITEMODE 0
 
 
@@ -664,12 +664,12 @@ void HelloGame::LoadTexture()
 void HelloGame::LoadSkyCubeMap()
 {
 	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Content/Tex/SkyPX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyNX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyPY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyNY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyPZ.png");
-	TextureFiles.push_back(L"Content/Tex/SkyNZ.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyPX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyNX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyPY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyNY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyPZ.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyNZ.png");
 	size_t n = TextureFiles.size();
 	std::vector<UTexture> skytextures;
 	for (int i = 0; i < n; i++)
