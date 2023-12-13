@@ -85,12 +85,17 @@ void HelloGame::LoadPipeline()
 
 	//创建D3D资源
 	CreateDeviceResources();
+
+
+	//创建常量缓冲区描述符堆
+	CreateConstantBufferDesCribeHeap();
+
 	
 	//创建窗口资源
 	CreateWindowResources();
 
-	//创建常量缓冲区描述符堆
-	CreateConstantBufferDesCribeHeap();
+
+	
 }
 
 void HelloGame::LoadAsset()
@@ -114,6 +119,7 @@ void HelloGame::LoadAsset()
 
 	//加载纹理数据并创建着色器资源
 	UpLoadShaderResource();
+	LoadSkyCubeMap();
 
 	//关闭命令列表准备渲染
 	ThrowIfFailed(g_commandList->Close());
@@ -192,11 +198,7 @@ void HelloGame::PopulateCommandList()
 	//Sky
 	g_commandList->SetPipelineState(g_skyPipelineState.Get());
 
-	//ID3D12DescriptorHeap* skyppHeaps[] = { g_skycbvsrvHeap.Get() };
-	//g_commandList->SetDescriptorHeaps(_countof(skyppHeaps), skyppHeaps);
-
-	//D3D12_GPU_DESCRIPTOR_HANDLE skygpuDescriptorHandle = g_skycbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
-	//g_commandList->SetGraphicsRootDescriptorTable(0, skygpuDescriptorHandle);
+	
 	//图元拓扑模式
 	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -281,6 +283,7 @@ void HelloGame::PreperRenderActor()
 void HelloGame::CreateConstantBufferDesCribeHeap()
 {
 	LoadTexture();
+	
 
 	UINT srvnum = (UINT)g_textures.size();
 	//创建常量缓冲描述符堆描述
@@ -295,6 +298,7 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	//天空球cbvsrv描述符堆
 	//cbvsrvHeapDesc.NumDescriptors = 2;
 	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_skycbvsrvHeap)));
+
 }
 
 
@@ -508,17 +512,17 @@ void HelloGame::UpLoadShaderResource()
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	//CD3DX12_CPU_DESCRIPTOR_HANDLE skycbvsrvHandle(g_skycbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	size_t n = g_textures.size();
-	for (auto& Texture : g_textures)
+	for (int i = 0; i < n; i++)
 	{
 		ThrowIfFailed(g_device->CreateCommittedResource(
 			&TexResourceheap,
 			D3D12_HEAP_FLAG_NONE,
-			&Texture.texDesc,
+			&g_textures[i].texDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			nullptr,
-			IID_PPV_ARGS(&Texture.Resource)));
+			IID_PPV_ARGS(&g_textures[i].Resource)));
 
-		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(Texture.Resource.Get(), 0, 1);
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures[i].Resource.Get(), 0, 1);
 		CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 
 
@@ -528,16 +532,17 @@ void HelloGame::UpLoadShaderResource()
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
-			IID_PPV_ARGS(&Texture.UploadHeap)));
+			IID_PPV_ARGS(&g_textures[i].UploadHeap)));
 
 		//把资源从上传堆拷贝到默认堆，描述该堆作用
-		UpdateSubresources(g_commandList.Get(), Texture.Resource.Get(), Texture.UploadHeap.Get(), 0, 0, 1, &Texture.texData);
-		CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(Texture.Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		UpdateSubresources(g_commandList.Get(), g_textures[i].Resource.Get(), g_textures[i].UploadHeap.Get(), 0, 0, 1, &g_textures[i].texData);
+		CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures[i].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		g_commandList->ResourceBarrier(1, &Barrier);
+
 	}
 
-	for (int i = 0; i < n-1; i++)
-	{		
+	for (int i = 0; i < n; i++)
+	{
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Format = g_textures[i].texDesc.Format;
 		srvDesc.Texture2D.MipLevels = g_textures[i].texDesc.MipLevels;
@@ -545,13 +550,7 @@ void HelloGame::UpLoadShaderResource()
 		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, cbvsrvHandle);
 	}
 
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-	srvDesc.TextureCube.MostDetailedMip = 0;
-	srvDesc.Format = g_textures[n - 1].texDesc.Format;
-	srvDesc.TextureCube.MipLevels = g_textures[n - 1].texDesc.MipLevels;
-	srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-	cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-	g_device->CreateShaderResourceView(g_textures[n - 1].Resource.Get(), &srvDesc, cbvsrvHandle);
+	
 	
 }
 
@@ -649,7 +648,6 @@ void HelloGame::LoadTexture()
 	std::vector<LPCWSTR> TextureFiles;
 	TextureFiles.push_back(L"Content/Tex/Wall_00_BaseColorAO.png");
 	TextureFiles.push_back(L"Content/Tex/Wall_00_NormalR.png");
-	TextureFiles.push_back(L"Content/Tex/Sky.png");
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{
@@ -661,4 +659,154 @@ void HelloGame::LoadTexture()
 		Temptex.GenerateTextureData();
 		g_textures.push_back(Temptex);
 	}
+}
+
+void HelloGame::LoadSkyCubeMap()
+{
+	std::vector<LPCWSTR> TextureFiles;
+	TextureFiles.push_back(L"Content/Tex/SkyPX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyNX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyPY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyNY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyPZ.png");
+	TextureFiles.push_back(L"Content/Tex/SkyNZ.png");
+	size_t n = TextureFiles.size();
+	std::vector<UTexture> skytextures;
+	for (int i = 0; i < n; i++)
+	{
+		UTexture Temptex = UTexture();
+		Temptex.Data = std::make_shared<BYTE>();
+		Temptex.Filename = TextureFiles[i];
+
+		Temptex.texSize = Texture::LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
+		Temptex.GenerateTextureData();
+		skytextures.push_back(Temptex);
+	}
+
+	D3D12_RESOURCE_DESC skyResourceDesc = {};
+	skyResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	skyResourceDesc.MipLevels = 1;
+	skyResourceDesc.Format = skytextures[0].texDesc.Format;
+	skyResourceDesc.Width = skytextures[0].texDesc.Width;
+	skyResourceDesc.Height = skytextures[0].texDesc.Height;
+	skyResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	skyResourceDesc.DepthOrArraySize = 6;
+	skyResourceDesc.SampleDesc.Count = 1;
+	skyResourceDesc.SampleDesc.Quality = 0;
+
+
+	//创建纹理资源的堆
+	CD3DX12_HEAP_PROPERTIES TexResourceheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+	//创建数据上传堆 CPUGPU都可访问
+	CD3DX12_HEAP_PROPERTIES DataUpLoadheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+
+
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&TexResourceheap,
+		D3D12_HEAP_FLAG_NONE,
+		&skyResourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&g_SkyCubeMap.Resource)));
+
+	D3D12_RESOURCE_DESC   skyCubeMapResourceDesc = g_SkyCubeMap.Resource->GetDesc();
+	UINT SubresourcesNum = 6;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT SkyCubeMapLayout[6] = {};
+	UINT RowNum[6] = {};
+	UINT64 RowNumByteSize[6] = {};
+	UINT64 TotalByte = 0;
+
+	g_device->GetCopyableFootprints(&skyCubeMapResourceDesc,0,SubresourcesNum,0,SkyCubeMapLayout,RowNum,RowNumByteSize,&TotalByte);
+
+	g_ResourceBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	g_ResourceBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	g_ResourceBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	g_ResourceBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+	g_ResourceBufferDesc.Width = TotalByte;
+	g_ResourceBufferDesc.Height = 1;
+	g_ResourceBufferDesc.DepthOrArraySize = 1;
+	g_ResourceBufferDesc.MipLevels = 1;
+	g_ResourceBufferDesc.SampleDesc.Count = 1;
+	g_ResourceBufferDesc.SampleDesc.Quality = 0;
+
+	ThrowIfFailed(g_device->CreateCommittedResource(
+		&DataUpLoadheap,
+		D3D12_HEAP_FLAG_NONE,
+		&g_ResourceBufferDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&g_SkyCubeMap.UploadHeap)));
+
+	BYTE* pData = nullptr;
+	ThrowIfFailed(g_SkyCubeMap.UploadHeap->Map(0, nullptr, reinterpret_cast<void**>(&pData)));
+
+	for (UINT i = 0; i < SubresourcesNum; i++)
+	{
+		if (RowNumByteSize[i] > (SIZE_T)-1)
+		{
+			ThrowIfFailed(E_FAIL);
+		}
+
+		D3D12_MEMCPY_DEST CopyDestData = { pData + SkyCubeMapLayout[i].Offset
+			, SkyCubeMapLayout[i].Footprint.RowPitch
+			, SkyCubeMapLayout[i].Footprint.RowPitch * RowNum[i]
+		};
+
+		for (UINT z = 0; z < SkyCubeMapLayout[i].Footprint.Depth; ++z)
+		{// Mipmap
+			BYTE* pDestSlice = reinterpret_cast<BYTE*>(CopyDestData.pData) + CopyDestData.SlicePitch * z;
+			const BYTE* pSrcSlice = reinterpret_cast<const BYTE*>(skytextures[i].Data.get());
+
+			for (UINT y = 0; y < RowNum[i]; ++y)
+			{// Rows
+				memcpy(pDestSlice + CopyDestData.RowPitch * y,
+					pSrcSlice + skytextures[i].texBytesPerRow * y,
+					(SIZE_T)RowNumByteSize[i]);
+			}
+		}
+	}
+
+	g_SkyCubeMap.UploadHeap->Unmap(0,nullptr);
+
+	for (UINT i = 0; i < SubresourcesNum; i++)
+	{
+		D3D12_TEXTURE_COPY_LOCATION DstCopyLocation = {};
+		DstCopyLocation.pResource = g_SkyCubeMap.Resource.Get();
+		DstCopyLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		DstCopyLocation.SubresourceIndex = i;
+
+		D3D12_TEXTURE_COPY_LOCATION SrcCopyLocation = {};
+		SrcCopyLocation.pResource = g_SkyCubeMap.UploadHeap.Get();
+		SrcCopyLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		SrcCopyLocation.PlacedFootprint = SkyCubeMapLayout[i];
+
+		g_commandList->CopyTextureRegion(&DstCopyLocation, 0, 0, 0, &SrcCopyLocation, nullptr);
+	}
+
+	D3D12_RESOURCE_BARRIER skyBarrier = {};
+	skyBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	skyBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	skyBarrier.Transition.pResource = g_SkyCubeMap.Resource.Get();
+	skyBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	skyBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	skyBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+	g_commandList->ResourceBarrier(1, &skyBarrier);
+
+	//创建着色器资源视图描述
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = skyCubeMapResourceDesc.Format;
+	srvDesc.TextureCube.MipLevels = skyCubeMapResourceDesc.MipLevels;
+
+	int offset = g_textures.size() + 1;
+
+	//获取着色器资源视图起始地址
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	cbvsrvHandle.Offset(offset, g_cbvsrvDescriptorSize);
+
+	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, cbvsrvHandle);
 }

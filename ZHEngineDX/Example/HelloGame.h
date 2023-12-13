@@ -28,6 +28,7 @@ public:
 protected:
     virtual void UpdateMVP();
     virtual void LoadTexture();
+    virtual void LoadSkyCubeMap();
 
 public:
     
@@ -72,6 +73,8 @@ private:
     //资源堆
     ComPtr<ID3D12Heap>					g_textureHeap;
     ComPtr<ID3D12Heap>					g_textureUpLoadHeap;
+    D3D12_RESOURCE_DESC                 g_ResourceBufferDesc;
+
     //资源Buffer
     ComPtr<ID3D12Resource> g_vertexBuffer;
     D3D12_VERTEX_BUFFER_VIEW g_vertexBufferView;
@@ -87,6 +90,7 @@ private:
     UShader g_skyShader;
 
     std::vector<UTexture> g_textures;
+    UTexture g_SkyCubeMap;
     UINT8* g_pCbvDataBegin;
     
 
