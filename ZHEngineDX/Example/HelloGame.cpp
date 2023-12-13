@@ -284,11 +284,10 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 {
 	LoadTexture();
 	
-
 	UINT srvnum = (UINT)g_textures.size();
 	//创建常量缓冲描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = 1+ srvnum;
+	cbvsrvHeapDesc.NumDescriptors = srvnum+2;
 	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -315,8 +314,8 @@ void HelloGame::CreateRootSignature()
 	//创建对根参数的描述和根参数
 	CD3DX12_DESCRIPTOR_RANGE1 skyrange;
 	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[3];
-	CD3DX12_ROOT_PARAMETER1 rootParameters[3];
+	CD3DX12_DESCRIPTOR_RANGE1 ranges[3] = {};
+	CD3DX12_ROOT_PARAMETER1 rootParameters[3] = {};
 
 	//指定该根参数为常量缓冲区视图
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
@@ -500,6 +499,7 @@ void HelloGame::UpLoadShaderResource()
 	
 	//创建数据上传堆 CPUGPU都可访问
 	CD3DX12_HEAP_PROPERTIES DataUpLoadheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	
 
 	//创建着色器资源视图描述
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -664,12 +664,12 @@ void HelloGame::LoadTexture()
 void HelloGame::LoadSkyCubeMap()
 {
 	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyPX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyNX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyPY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyNY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyPZ.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_02/SkyNZ.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyPX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyNX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyPY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyNY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyPZ.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyNZ.png");
 	size_t n = TextureFiles.size();
 	std::vector<UTexture> skytextures;
 	for (int i = 0; i < n; i++)
@@ -801,12 +801,13 @@ void HelloGame::LoadSkyCubeMap()
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = skyCubeMapResourceDesc.Format;
 	srvDesc.TextureCube.MipLevels = skyCubeMapResourceDesc.MipLevels;
-
-	int offset = g_textures.size() + 1;
+	 
+	int offset = g_textures.size()+1;
 
 	//获取着色器资源视图起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	cbvsrvHandle.Offset(offset, g_cbvsrvDescriptorSize);
+	cbvsrvHandle.ptr += (offset * g_cbvsrvDescriptorSize);
+	//cbvsrvHandle.Offset(offset, g_cbvsrvDescriptorSize);
 
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, cbvsrvHandle);
 }
