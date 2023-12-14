@@ -1,12 +1,19 @@
 #pragma once
 #include "../Mesh/StaticMesh.h"
+#include "../GameHelper/GameHelper.h"
 
 class RenderActor
 {
 public:
     RenderActor();
 
-    void Init();
+    void Init(ID3D12Device* pDevice);
+    void RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState*pPipleLineState, ID3D12DescriptorHeap* pCbvSrvDescriptorHeap,
+         ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize);
+public:
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_bundle;
+
 public:
 	std::unique_ptr<StaticMesh> Mesh;
 

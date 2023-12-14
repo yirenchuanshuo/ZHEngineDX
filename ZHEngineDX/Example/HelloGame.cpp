@@ -86,6 +86,10 @@ void HelloGame::LoadPipeline()
 	//创建D3D资源
 	CreateDeviceResources();
 
+	ModeActor = std::make_unique<RenderActor>();
+	SkyActor = std::make_unique<RenderActor>();
+	ModeActor->Init(GetD3DDevice());
+	SkyActor->Init(GetD3DDevice());
 
 	//创建常量缓冲区描述符堆
 	CreateConstantBufferDesCribeHeap();
@@ -123,6 +127,7 @@ void HelloGame::LoadAsset()
 	UpLoadShaderResource();
 	LoadSkyCubeMap();
 
+
 	//关闭命令列表准备渲染
 	ThrowIfFailed(g_commandList->Close());
 	ID3D12CommandList* ppCommandLists[] = { g_commandList.Get() };
@@ -130,7 +135,13 @@ void HelloGame::LoadAsset()
 
 	//设置围栏
 	SetFence();
-	CreateFrameResource();
+
+	/*ModeActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_pipelineState.Get(), g_cbvsrvHeap.Get(),
+		g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+
+	SkyActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_skyPipelineState.Get(), g_cbvsrvHeap.Get(),
+		g_samplerHeap.Get(), g_cbvsrvDescriptorSize);*/
+	
 }
 
 void HelloGame::PopulateCommandList()
@@ -184,12 +195,12 @@ void HelloGame::PopulateCommandList()
 
 	g_commandList->SetGraphicsRootDescriptorTable(0, g_samplerHeap->GetGPUDescriptorHandleForHeapStart());
 
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = g_cbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForSecondDescriptor = { gpuDescriptorHandle.ptr + g_cbvsrvDescriptorSize };
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForThirdDescriptor = { gpuDescriptorHandle.ptr + g_cbvsrvDescriptorSize*3 };
-	g_commandList->SetGraphicsRootDescriptorTable(1, gpuDescriptorHandle);
-	g_commandList->SetGraphicsRootDescriptorTable(2, gpuDescriptorHandleForSecondDescriptor);
-	g_commandList->SetGraphicsRootDescriptorTable(3, gpuDescriptorHandleForThirdDescriptor);
+	D3D12_GPU_DESCRIPTOR_HANDLE cbvsrvHandle = g_cbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE cbvsrvHandleForSecondDescriptor = { cbvsrvHandle.ptr + g_cbvsrvDescriptorSize };
+	D3D12_GPU_DESCRIPTOR_HANDLE cbvsrvHandleForThirdDescriptor = { cbvsrvHandle.ptr + g_cbvsrvDescriptorSize*3 };
+	g_commandList->SetGraphicsRootDescriptorTable(1, cbvsrvHandle);
+	g_commandList->SetGraphicsRootDescriptorTable(2, cbvsrvHandleForSecondDescriptor);
+	g_commandList->SetGraphicsRootDescriptorTable(3, cbvsrvHandleForThirdDescriptor);
 
 
 	//图元拓扑模式
@@ -248,6 +259,8 @@ void HelloGame::PopulateCommandList()
 	ThrowIfFailed(g_commandList->Close());
 }
 
+
+
 void HelloGame::PreperShader()
 {
 	UShader NormalMode(L"Shader/Model.hlsl","VSMain","PSMain",EBlendMode::Opaque);
@@ -258,10 +271,6 @@ void HelloGame::PreperShader()
 
 void HelloGame::PreperRenderActor()
 {
-	ModeActor = std::make_unique<RenderActor>();
-	SkyActor = std::make_unique<RenderActor>();
-	ModeActor->Init();
-	SkyActor->Init();
 
 	//创建顶点Buffer
 #if WRITEMODE
@@ -308,7 +317,7 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 void HelloGame::CreateSamplerDescribeHeap()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-	samplerHeapDesc.NumDescriptors = 2;
+	samplerHeapDesc.NumDescriptors = 1;
 	samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 	samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&g_samplerHeap)));
@@ -352,7 +361,7 @@ void HelloGame::CreateRootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
-	//创建静态采样器
+	//创建动态采样器
 	
 	D3D12_SAMPLER_DESC sampler0 = CreateSamplerDesCribe(0);
 	g_device->CreateSampler(&sampler0,g_samplerHeap->GetCPUDescriptorHandleForHeapStart());

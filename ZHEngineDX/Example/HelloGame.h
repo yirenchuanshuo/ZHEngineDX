@@ -8,6 +8,7 @@
 
 
 
+
 class HelloGame :public GameRHI
 {
 public:
@@ -103,6 +104,7 @@ private:
     void LoadPipeline();
     void LoadAsset();
     void PopulateCommandList();
+    
     
     //Two Level
     void PreperShader();
