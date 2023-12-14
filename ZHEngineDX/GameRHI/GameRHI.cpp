@@ -73,6 +73,7 @@ void GameRHI::CreateDeviceResources()
 
 	//创建命令列表，用命令分配器给命令列表分配对象
 	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[0].Get(), nullptr, IID_PPV_ARGS(g_commandList.ReleaseAndGetAddressOf())));
+	NAME_D3D12_OBJECT(g_commandList);
 	ThrowIfFailed(g_commandList->Close());
 
 	
@@ -287,6 +288,7 @@ void GameRHI::CreateFrameResource()
 			static_cast<INT>(n), g_rtvDescriptorSize);
 
 		g_device->CreateRenderTargetView(g_renderTargets[n].Get(), &rtvDesc, rtvDescriptor);
+		NAME_D3D12_OBJECT_INDEXED(g_renderTargets, n);
 
 		//创建命令分配器
 		//ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_commandAllocator[n])));

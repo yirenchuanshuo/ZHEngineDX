@@ -51,6 +51,9 @@
     <ClCompile Include="Common\DDSTextureLoader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\FrameResource.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h">
@@ -111,6 +114,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Common\DDSTextureLoader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\FrameResource.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

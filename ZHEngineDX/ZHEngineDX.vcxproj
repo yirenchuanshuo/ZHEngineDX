@@ -181,6 +181,7 @@
     </ClInclude>
     <ClCompile Include="Mesh\OBJ.cpp" />
     <ClCompile Include="Mesh\StaticMesh.cpp" />
+    <ClCompile Include="Rendering\FrameResource.cpp" />
     <ClCompile Include="Rendering\RenderActor.cpp" />
     <ClCompile Include="Rendering\Shader.cpp" />
     <ClCompile Include="TestMain.cpp" />
@@ -188,6 +189,7 @@
     <ClCompile Include="ZHEngine.cpp" />
     <ClInclude Include="Mesh\OBJ.h" />
     <ClInclude Include="Mesh\StaticMesh.h" />
+    <ClInclude Include="Rendering\FrameResource.h" />
     <ClInclude Include="Rendering\RenderActor.h" />
     <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Texture\Texture.h" />

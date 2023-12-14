@@ -64,6 +64,7 @@ private:
     ComPtr<ID3D12RootSignature> g_rootSignature;
     ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
     ComPtr<ID3D12DescriptorHeap> g_skycbvsrvHeap;
+    ComPtr<ID3D12DescriptorHeap> g_samplerHeap;
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12PipelineState> g_skyPipelineState;
     
@@ -109,12 +110,13 @@ private:
 
     //Three Level
     void CreateConstantBufferDesCribeHeap();
+    void CreateSamplerDescribeHeap();
     void CreateRootSignature();
-    D3D12_STATIC_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
+    D3D12_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
     void CreateShader(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader,std::wstring VSFileName, std::wstring PSFileName);
     void CreatePSO();
-    void UpLoadVertexAndIndexToHeap(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange, std::unique_ptr<RenderActor>& Actor);
-    void UpLoadConstantBuffer(CD3DX12_HEAP_PROPERTIES& heapProperties, CD3DX12_RANGE& readRange);
+    void UpLoadVertexAndIndexToHeap( std::unique_ptr<RenderActor>& Actor);
+    void UpLoadConstantBuffer();
     void UpLoadShaderResource();
     
     
