@@ -62,7 +62,6 @@ void HelloGame::OnRender()
 void HelloGame::OnDestroy()
 {
 	WaitForGPU();
-	//CloseHandle(g_fenceEvent.Get());
 }
 
 void HelloGame::Tick()
@@ -127,6 +126,7 @@ void HelloGame::LoadAsset()
 	UpLoadShaderResource();
 	LoadSkyCubeMap();
 
+	
 
 	//关闭命令列表准备渲染
 	ThrowIfFailed(g_commandList->Close());
@@ -136,11 +136,16 @@ void HelloGame::LoadAsset()
 	//设置围栏
 	SetFence();
 
-	/*ModeActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_pipelineState.Get(), g_cbvsrvHeap.Get(),
-		g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+	ID3D12RootSignature** root = g_rootSignature.GetAddressOf();
+	ID3D12PipelineState** pipl = g_pipelineState.GetAddressOf();
+	ID3D12DescriptorHeap** samplerheap = g_samplerHeap.GetAddressOf();
+	ID3D12DescriptorHeap** cbvsrvheap = g_cbvsrvHeap.GetAddressOf();
 
-	SkyActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_skyPipelineState.Get(), g_cbvsrvHeap.Get(),
-		g_samplerHeap.Get(), g_cbvsrvDescriptorSize);*/
+	ModeActor->RecordCommands(GetD3DDevice(), g_frameIndex, g_rootSignature.Get(), g_pipelineState.Get(), 
+		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+
+	SkyActor->RecordCommands(GetD3DDevice(), g_frameIndex, g_rootSignature.Get(), g_skyPipelineState.Get(), 
+		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 	
 }
 
@@ -191,43 +196,10 @@ void HelloGame::PopulateCommandList()
 	//设置常量缓冲区描述堆，提交到渲染命令
 	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvsrvHeap.Get(),g_samplerHeap.Get()};
 	g_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-	//设置根描述符表，上传参数
 
-	g_commandList->SetGraphicsRootDescriptorTable(0, g_samplerHeap->GetGPUDescriptorHandleForHeapStart());
-
-	D3D12_GPU_DESCRIPTOR_HANDLE cbvsrvHandle = g_cbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
-	D3D12_GPU_DESCRIPTOR_HANDLE cbvsrvHandleForSecondDescriptor = { cbvsrvHandle.ptr + g_cbvsrvDescriptorSize };
-	D3D12_GPU_DESCRIPTOR_HANDLE cbvsrvHandleForThirdDescriptor = { cbvsrvHandle.ptr + g_cbvsrvDescriptorSize*3 };
-	g_commandList->SetGraphicsRootDescriptorTable(1, cbvsrvHandle);
-	g_commandList->SetGraphicsRootDescriptorTable(2, cbvsrvHandleForSecondDescriptor);
-	g_commandList->SetGraphicsRootDescriptorTable(3, cbvsrvHandleForThirdDescriptor);
-
-
-	//图元拓扑模式
-	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//顶点装配
-	g_commandList->IASetVertexBuffers(0, 1, &ModeActor->g_vertexBufferView);
-	g_commandList->IASetIndexBuffer(&ModeActor->g_indexBufferView);
-
-	//画图
-	g_commandList->DrawIndexedInstanced((UINT)ModeActor->Mesh->GetIndicesSize(), 1, 0, 0, 0);
-
-
-	//Sky
-	g_commandList->SetPipelineState(g_skyPipelineState.Get());
-
-	
-	//图元拓扑模式
-	g_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//顶点装配
-	g_commandList->IASetVertexBuffers(0, 1, &SkyActor->g_vertexBufferView);
-	g_commandList->IASetIndexBuffer(&SkyActor->g_indexBufferView);
-
-	//画图
-	g_commandList->DrawIndexedInstanced((UINT)SkyActor->Mesh->GetIndicesSize(), 1, 0, 0, 0);
-
+	//执行Actor渲染捆绑包
+	g_commandList->ExecuteBundle(ModeActor->GetBundle());
+	g_commandList->ExecuteBundle(SkyActor->GetBundle());
 
 
 	if (g_MSAA)

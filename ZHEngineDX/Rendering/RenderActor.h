@@ -1,6 +1,7 @@
 #pragma once
 #include "../Mesh/StaticMesh.h"
 #include "../GameHelper/GameHelper.h"
+#include "../GameRHI/GameRHI.h"
 
 class RenderActor
 {
@@ -8,11 +9,10 @@ public:
     RenderActor();
 
     void Init(ID3D12Device* pDevice);
-    void RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState*pPipleLineState, ID3D12DescriptorHeap* pCbvSrvDescriptorHeap,
+    void RecordCommands(ID3D12Device* pDevice, UINT FrameIndex,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState, ID3D12DescriptorHeap* pCbvSrvDescriptorHeap,
          ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize);
-public:
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_bundle;
+
+    ID3D12GraphicsCommandList* GetBundle() { return g_bundle.Get(); }
 
 public:
 	std::unique_ptr<StaticMesh> Mesh;
@@ -22,4 +22,8 @@ public:
 
     Microsoft::WRL::ComPtr<ID3D12Resource> g_indexBuffer;
     D3D12_INDEX_BUFFER_VIEW g_indexBufferView;
+
+private:
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_bundle;
 };

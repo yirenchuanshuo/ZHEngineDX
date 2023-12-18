@@ -45,7 +45,7 @@ public:
 public:
 	//State
 	bool g_MSAA = true;
-
+	static const UINT FrameCount = 3;
 	//BackGround
 	float clearColor[4] = { 0,0,0,1 };
 
@@ -63,7 +63,7 @@ protected:
 	void SetFence();
 
 protected:
-	static const UINT FrameCount = 3;
+	
 	UINT g_frameIndex;
 
 	//D3DOBJ
