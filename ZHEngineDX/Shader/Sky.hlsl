@@ -1,4 +1,5 @@
-#include"Common.hlsl"
+#include "Common.hlsl"
+#include "PostProcess.hlsl"
 
 TextureCube sky : register(t2);
 SamplerState s1 : register(s0);
@@ -37,6 +38,10 @@ PSInput VSMain(VertexInput vin)
 
 float4 PSMain(PSInput pin) : SV_Target
 {
-    return sky.Sample(s1, pin.localposition.xyz);
+    float4 basecolor = sky.Sample(s1, pin.localposition.xyz);
+    float4 skycolor = pow(basecolor, 2.2);
+    skycolor.rgb = ACES_Tonemapping(basecolor.rgb);
+    skycolor = pow(basecolor, 1 / 2.2);
+    return skycolor;
 }
 

@@ -63,12 +63,12 @@ float4 PSMain(PSInput input) : SV_TARGET
     //N = normalize(N);
     N = TransformTangentToWorld(normal, tangent, bitangent,N);
     
-    float3 Radiance = lightColor.rgb*5;
+    float3 Radiance = lightColor.rgb*10;
     
     float3 L = normalize(lightDirection.xyz);
     float3 V = normalize(cameraPosition.xyz - input.worldposition.xyz);
     
-    float3 ambient =0.3*basecolor*AO;
+    float3 ambient =0.03*basecolor*AO;
     
     float3 color;
     float3 brdfcolor = saturate(BRDF(basecolor, Metalic, roughness, Radiance, L, V, N) + ambient);
