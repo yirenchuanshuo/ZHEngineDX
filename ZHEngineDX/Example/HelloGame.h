@@ -42,6 +42,7 @@ public:
     //Data
     std::unique_ptr<RenderActor> ModeActor;
     std::unique_ptr<RenderActor> SkyActor;
+    std::unique_ptr<RenderActor> IBLGeometryActor;
     DirectionLight light;
     float lightangle=0.0f;
 

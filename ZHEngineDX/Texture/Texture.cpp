@@ -200,4 +200,13 @@ UINT Texture:: LoadImageDataFromFile(std::shared_ptr<BYTE>& imageData, D3D12_RES
 	return imageSize;
 }
 
+IBLTextureBuffer::IBLTextureBuffer()
+	:height(512),width(512),format(DXGI_FORMAT_R32G32B32A32_FLOAT)
+{
 
+}
+
+IBLTextureBuffer::IBLTextureBuffer(UINT w, UINT h)
+	:height(w), width(h), format(DXGI_FORMAT_R32G32B32A32_FLOAT)
+{
+}

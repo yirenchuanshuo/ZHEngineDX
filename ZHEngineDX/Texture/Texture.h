@@ -29,3 +29,22 @@ public:
 	D3D12_SUBRESOURCE_DATA texData;
 
 };
+
+class IBLTextureBuffer
+{
+public:
+	IBLTextureBuffer();
+	IBLTextureBuffer(UINT w,UINT h);
+public:
+
+	UINT height;
+	UINT width;
+
+	DXGI_FORMAT format;
+
+	D3D12_RESOURCE_BARRIER  renderTargetBarrier;
+
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> RenderTargetHeap;
+	Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
+	Microsoft::WRL::ComPtr<ID3D12Resource> UploadHeap;
+};
