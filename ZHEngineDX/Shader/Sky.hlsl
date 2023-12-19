@@ -1,9 +1,8 @@
 #include "Common.hlsl"
 #include "PostProcess.hlsl"
 
-TextureCube sky : register(t2);
-SamplerState s1 : register(s0);
-SamplerState s2 : register(s1);
+
+
 
 
 struct VertexInput

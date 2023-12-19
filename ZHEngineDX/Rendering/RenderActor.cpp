@@ -34,9 +34,11 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,UINT FrameIndex,ID3D12Roo
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = pCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForSecondDescriptor = { gpuDescriptorHandle.ptr + cbvSrvDescriptorSize };
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForThirdDescriptor = { gpuDescriptorHandle.ptr + cbvSrvDescriptorSize * 3 };
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandleForForthDescriptor = { gpuDescriptorHandleForThirdDescriptor.ptr + cbvSrvDescriptorSize };
 	g_bundle->SetGraphicsRootDescriptorTable(1, gpuDescriptorHandle);
 	g_bundle->SetGraphicsRootDescriptorTable(2, gpuDescriptorHandleForSecondDescriptor);
 	g_bundle->SetGraphicsRootDescriptorTable(3, gpuDescriptorHandleForThirdDescriptor);
+	g_bundle->SetGraphicsRootDescriptorTable(4, gpuDescriptorHandleForForthDescriptor);
 
 	//Í¼ÔªÍØÆËÄ£Ê½
 	g_bundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

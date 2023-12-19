@@ -308,12 +308,12 @@ void HelloGame::CreateRootSignature()
 	}
 	//创建对根参数的描述和根参数
 	CD3DX12_DESCRIPTOR_RANGE1 skyrange;
+	CD3DX12_DESCRIPTOR_RANGE1 EnvBRDFrange;
 	
-	
-	CD3DX12_ROOT_PARAMETER1 rootParameters[4];
+	CD3DX12_ROOT_PARAMETER1 rootParameters[5];
 	CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
-	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-
+	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
 	//指定该根参数为常量缓冲区视图
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
@@ -323,7 +323,8 @@ void HelloGame::CreateRootSignature()
 	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	rootParameters[2].InitAsDescriptorTable(2, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[3].InitAsDescriptorTable(1,&skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[3].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[4].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
 	
 
 	//定义根签名属性
@@ -577,8 +578,6 @@ void HelloGame::UpLoadShaderResource()
 		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
 		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, cbvsrvHandle);
 	}
-
-	
 	
 }
 
@@ -676,6 +675,7 @@ void HelloGame::LoadTexture()
 	std::vector<LPCWSTR> TextureFiles;
 	TextureFiles.push_back(L"Content/Tex/Wall_00_BaseColorAO.png");
 	TextureFiles.push_back(L"Content/Tex/Wall_00_NormalR.png");
+	TextureFiles.push_back(L"Content/Tex/BRDFLut.png");
 	size_t n = TextureFiles.size();
 	for (size_t i = 0; i < n; i++)
 	{

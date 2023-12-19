@@ -7,6 +7,11 @@ float3 Fresnel_Schlick(float HoV, float3 F0)
     return F0 + (1.0 - F0) * pow(1.0 - HoV, 5.0);
 }
 
+float3 Fresnel_Schlick_Roughness(float HoV, float3 F0,float Roughness)
+{
+    return F0 + (max(float3(1.0 - Roughness, 1.0 - Roughness, 1.0 - Roughness),F0) - F0) * pow(1.0 - HoV, 5.0);
+}
+
 float Distribution_GGX(float3 N, float3 H, float Roughness)
 {
     float a = Roughness * Roughness;

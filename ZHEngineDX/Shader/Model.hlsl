@@ -3,9 +3,7 @@
 #include "PostProcess.hlsl"
 
 
-Texture2D t1 : register(t0);
-Texture2D t2 : register(t1);
-SamplerState s1 : register(s0);
+
 
 
 
@@ -68,10 +66,8 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 L = normalize(lightDirection.xyz);
     float3 V = normalize(cameraPosition.xyz - input.worldposition.xyz);
     
-    float3 ambient =0.03*basecolor*AO;
-    
     float3 color;
-    float3 brdfcolor = saturate(BRDF(basecolor, Metalic, roughness, Radiance, L, V, N) + ambient);
+    float3 brdfcolor = saturate(BRDF(basecolor, Metalic, roughness, AO, Radiance, L, V, N));
     //color = Blinn_Phong(basecolor, 20, 1 - roughness, L, N, V) + ambient;
     //color = Phong(basecolor,20,1 - roughness,L,N,V)+ambient;
     color = ACES_Tonemapping(brdfcolor);
