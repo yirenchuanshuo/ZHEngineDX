@@ -40,7 +40,7 @@ float3 BRDF(float3 basecolor, float Metallic, float Roughness,float AO, float3 R
         float3 kS = F;
         float3 kD = 1.0 - kS;
         kD *= (1.0 - Metallic);
-        float3 irradiance = sky.Sample(s1, N).rgb;
+        float3 irradiance = sky.Sample(s1, N).rgb*2;
         
         float3 diffuse = basecolor*irradiance;
         

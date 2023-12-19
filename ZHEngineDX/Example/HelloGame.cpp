@@ -692,12 +692,12 @@ void HelloGame::LoadTexture()
 void HelloGame::LoadSkyCubeMap()
 {
 	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyPX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyNX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyPY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyNY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyPZ.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_00/SkyNZ.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNX.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNY.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPZ.png");
+	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNZ.png");
 	size_t n = TextureFiles.size();
 	std::vector<UTexture> skytextures;
 	for (int i = 0; i < n; i++)

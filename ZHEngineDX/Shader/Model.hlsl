@@ -61,7 +61,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     //N = normalize(N);
     N = TransformTangentToWorld(normal, tangent, bitangent,N);
     
-    float3 Radiance = lightColor.rgb*10;
+    float3 Radiance = lightColor.rgb*5;
     
     float3 L = normalize(lightDirection.xyz);
     float3 V = normalize(cameraPosition.xyz - input.worldposition.xyz);
