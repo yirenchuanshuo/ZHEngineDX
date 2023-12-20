@@ -173,7 +173,6 @@
     <ClCompile Include="GameRHI\GameWindowApplication.cpp" />
     <ClInclude Include="Common\DDSTextureLoader.h" />
     <ClInclude Include="Common\ZHEngineTimer.h" />
-    <ClInclude Include="Core\DXRHI.h" />
     <ClInclude Include="Mesh\AssetLoad.h" />
     <ClInclude Include="Mesh\Light.h" />
     <ClInclude Include="Mesh\MeshBaseData.h">
@@ -182,6 +181,7 @@
     <ClCompile Include="Mesh\OBJ.cpp" />
     <ClCompile Include="Mesh\StaticMesh.cpp" />
     <ClCompile Include="Rendering\FrameResource.cpp" />
+    <ClCompile Include="Rendering\Material.cpp" />
     <ClCompile Include="Rendering\RenderActor.cpp" />
     <ClCompile Include="Rendering\Shader.cpp" />
     <ClCompile Include="TestMain.cpp" />
@@ -190,6 +190,7 @@
     <ClInclude Include="Mesh\OBJ.h" />
     <ClInclude Include="Mesh\StaticMesh.h" />
     <ClInclude Include="Rendering\FrameResource.h" />
+    <ClInclude Include="Rendering\Material.h" />
     <ClInclude Include="Rendering\RenderActor.h" />
     <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Texture\Texture.h" />

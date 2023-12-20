@@ -2,6 +2,7 @@
 #include "../Mesh/StaticMesh.h"
 #include "../GameHelper/GameHelper.h"
 #include "../GameRHI/GameRHI.h"
+#include "Material.h"
 
 class RenderActor
 {
@@ -16,6 +17,7 @@ public:
 
 public:
 	std::unique_ptr<StaticMesh> Mesh;
+    std::unique_ptr<UMaterial> Material;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> g_vertexBuffer;
     D3D12_VERTEX_BUFFER_VIEW g_vertexBufferView;

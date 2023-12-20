@@ -11,6 +11,21 @@ UShader::UShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode
 {
 }
 
+ID3DBlob* UShader::GetVertexShader()const
+{
+	return vertexShader.Get();
+}
+
+ID3DBlob* UShader::GetPixelShader()const
+{
+	return pixelShader.Get();
+}
+
+EBlendMode UShader::GetBlendMode()const
+{
+	return blendMode;
+}
+
 void UShader::CreateShader()
 {
 	UINT compileFlags = 0;

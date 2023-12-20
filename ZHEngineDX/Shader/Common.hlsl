@@ -1,6 +1,5 @@
 
-Texture2D t1 : register(t0);
-Texture2D t2 : register(t1);
+
 
 Texture2D IBLLut : register(t2);
 

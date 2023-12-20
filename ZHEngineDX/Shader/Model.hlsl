@@ -3,9 +3,8 @@
 #include "PostProcess.hlsl"
 
 
-
-
-
+Texture2D t1 : register(t0);
+Texture2D t2 : register(t1);
 
 struct VertexInput
 {

@@ -4,7 +4,7 @@
 #include "../Mesh/OBJ.h"
 #include "../Rendering/RenderActor.h"
 #include "../Texture/Texture.h"
-#include "../Rendering/Shader.h"
+#include "../Rendering/Material.h"
 
 
 
@@ -64,13 +64,14 @@ private:
     
     //渲染预备资源
     ComPtr<ID3D12RootSignature> g_rootSignature;
-    ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
+    ComPtr<ID3D12DescriptorHeap> g_UniformcbvsrvHeap;
     ComPtr<ID3D12DescriptorHeap> g_skycbvsrvHeap;
     ComPtr<ID3D12DescriptorHeap> g_samplerHeap;
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12PipelineState> g_skyPipelineState;
     
     UINT g_cbvsrvDescriptorSize=0u;
+    //UINT g_skycbvsrvDescriptorSize = 0u;
 
 
     //资源堆
@@ -81,20 +82,15 @@ private:
     D3D12_RESOURCE_DESC                 g_ResourceBufferDesc;
 
     //资源Buffer
-    ComPtr<ID3D12Resource> g_vertexBuffer;
-    D3D12_VERTEX_BUFFER_VIEW g_vertexBufferView;
 
-    ComPtr<ID3D12Resource> g_indexBuffer;
-    D3D12_INDEX_BUFFER_VIEW g_indexBufferView;
-
-    ComPtr<ID3D12Resource> g_constantBuffer;
-    SceneConstantBuffer g_constantBufferData;
+    ComPtr<ID3D12Resource> g_UniformconstantBuffer;
+    SceneConstantBuffer g_UniformconstantBufferData;
 
     //渲染资源
-    std::vector<UShader> g_shaders;
-    UShader g_skyShader;
+    std::vector<UMaterial> g_materials;
+    UMaterial g_skyMaterial;
 
-    std::vector<UTexture> g_textures;
+    std::vector<UTexture> g_Uniformtextures;
     UTexture g_SkyCubeMap;
     UINT8* g_pCbvDataBegin;
     
@@ -118,7 +114,7 @@ private:
     D3D12_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
     void CreateShader(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader,std::wstring VSFileName, std::wstring PSFileName);
     void CreatePSO();
-    void UpLoadVertexAndIndexToHeap( std::unique_ptr<RenderActor>& Actor);
+    void UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& Actor) const;
     void UpLoadConstantBuffer();
     void UpLoadShaderResource();
     
