@@ -136,10 +136,10 @@ void HelloGame::LoadAsset()
 	
 
 	ModeActor->RecordCommands(GetD3DDevice(), g_frameIndex, g_rootSignature.Get(), g_pipelineState.Get(), 
-		g_UniformcbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 
 	SkyActor->RecordCommands(GetD3DDevice(), g_frameIndex, g_rootSignature.Get(), g_skyPipelineState.Get(), 
-		g_UniformcbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 	
 }
 
@@ -188,7 +188,7 @@ void HelloGame::PopulateCommandList()
 	g_commandList->SetPipelineState(g_pipelineState.Get());
 
 	//设置常量缓冲区描述堆，提交到渲染命令
-	ID3D12DescriptorHeap* ppHeaps[] = { g_UniformcbvsrvHeap.Get(),g_samplerHeap.Get()};
+	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvsrvHeap.Get(),g_samplerHeap.Get()};
 	g_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 	//执行Actor渲染捆绑包
@@ -266,22 +266,21 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 {
 	LoadTexture();
 	
-	UINT srvnum = (UINT)g_Uniformtextures.size();
 	//创建常量缓冲描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = srvnum+2;
+	cbvsrvHeapDesc.NumDescriptors = g_textures.size()+g_Uniformtextures.size()+2;
 	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
 	//创建常量缓存描述符堆
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_UniformcbvsrvHeap)));
-	NAME_D3D12_OBJECT(g_UniformcbvsrvHeap);
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_cbvsrvHeap)));
+	NAME_D3D12_OBJECT(g_cbvsrvHeap);
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
 	//天空球cbvsrv描述符堆
-	//cbvsrvHeapDesc.NumDescriptors = 2;
-	//NAME_D3D12_OBJECT(g_skycbvsrvHeap);
-	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_skycbvsrvHeap)));
+	cbvsrvHeapDesc.NumDescriptors = 2+g_Uniformtextures.size();
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_UniformcbvsrvHeap)));
+	NAME_D3D12_OBJECT(g_UniformcbvsrvHeap);
 }
 
 void HelloGame::CreateSamplerDescribeHeap()
@@ -515,8 +514,8 @@ void HelloGame::UpLoadConstantBuffer()
 	cbvDesc.SizeInBytes = constantBufferSize;
 
 	//创建常量缓冲区视图
+	g_device->CreateConstantBufferView(&cbvDesc, g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	g_device->CreateConstantBufferView(&cbvDesc, g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	//g_device->CreateConstantBufferView(&cbvDesc, g_skycbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_UniformconstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
 	memcpy(g_pCbvDataBegin, &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
@@ -541,10 +540,47 @@ void HelloGame::UpLoadShaderResource()
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 	//获取着色器资源视图起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE skycbvsrvHandle(g_skycbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	size_t n = g_Uniformtextures.size();
-	for (int i = 0; i < n; i++)
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE UniformcbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	size_t TextureNums = g_textures.size();
+	for (int i = 0; i < TextureNums; i++)
+	{
+		ThrowIfFailed(g_device->CreateCommittedResource(
+			&TexResourceheap,
+			D3D12_HEAP_FLAG_NONE,
+			&g_textures[i].texDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&g_textures[i].Resource)));
+
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(g_textures[i].Resource.Get(), 0, 1);
+		CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+
+
+		ThrowIfFailed(g_device->CreateCommittedResource(
+			&DataUpLoadheap,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&g_textures[i].UploadHeap)));
+
+		//把资源从上传堆拷贝到默认堆，描述该堆作用
+		UpdateSubresources(g_commandList.Get(), g_textures[i].Resource.Get(), g_textures[i].UploadHeap.Get(), 0, 0, 1, &g_textures[i].texData);
+		CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(g_textures[i].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		g_commandList->ResourceBarrier(1, &Barrier);
+
+		
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Format = g_textures[i].texDesc.Format;
+		srvDesc.Texture2D.MipLevels = g_textures[i].texDesc.MipLevels;
+		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, cbvsrvHandle);
+	}
+
+	size_t UniformTextureNums = g_Uniformtextures.size();
+	
+	for (int i = 0; i < UniformTextureNums; i++)
 	{
 		ThrowIfFailed(g_device->CreateCommittedResource(
 			&TexResourceheap,
@@ -571,17 +607,13 @@ void HelloGame::UpLoadShaderResource()
 		CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(g_Uniformtextures[i].Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		g_commandList->ResourceBarrier(1, &Barrier);
 
-	}
-
-	for (int i = 0; i < n; i++)
-	{
+		
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Format = g_Uniformtextures[i].texDesc.Format;
 		srvDesc.Texture2D.MipLevels = g_Uniformtextures[i].texDesc.MipLevels;
 		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
 		g_device->CreateShaderResourceView(g_Uniformtextures[i].Resource.Get(), &srvDesc, cbvsrvHandle);
 	}
-	
 }
 
 void HelloGame::UpdateLight()
@@ -636,13 +668,27 @@ void HelloGame::LoadTexture()
 	std::vector<LPCWSTR> TextureFiles;
 	TextureFiles.push_back(L"Content/Tex/Wall_00_BaseColorAO.png");
 	TextureFiles.push_back(L"Content/Tex/Wall_00_NormalR.png");
-	TextureFiles.push_back(L"Content/Tex/BRDFLut.png");
-	size_t n = TextureFiles.size();
-	for (size_t i = 0; i < n; i++)
+	
+	size_t TextureNums = TextureFiles.size();
+	for (size_t i = 0; i < TextureNums; i++)
 	{
 		UTexture Temptex = UTexture();
 		Temptex.Data = std::make_shared<BYTE>();
 		Temptex.Filename = TextureFiles[i];
+
+		Temptex.texSize = Texture::LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
+		Temptex.GenerateTextureData();
+		g_textures.push_back(Temptex);
+	}
+
+	std::vector<LPCWSTR> UniformTextureFiles;
+	UniformTextureFiles.push_back(L"Content/Tex/BRDFLut.png");
+	size_t UniformTextureNums = UniformTextureFiles.size();
+	for (size_t i = 0; i < UniformTextureNums; i++)
+	{
+		UTexture Temptex = UTexture();
+		Temptex.Data = std::make_shared<BYTE>();
+		Temptex.Filename = UniformTextureFiles[i];
 
 		Temptex.texSize = Texture::LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
 		Temptex.GenerateTextureData();
@@ -652,20 +698,20 @@ void HelloGame::LoadTexture()
 
 void HelloGame::LoadSkyCubeMap()
 {
-	std::vector<LPCWSTR> TextureFiles;
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNX.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNY.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPZ.png");
-	TextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNZ.png");
-	size_t n = TextureFiles.size();
+	std::vector<LPCWSTR> UniformTextureFiles;
+	UniformTextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPX.png");
+	UniformTextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNX.png");
+	UniformTextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPY.png");
+	UniformTextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNY.png");
+	UniformTextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyPZ.png");
+	UniformTextureFiles.push_back(L"Content/Tex/SkyCubeMap_03/SkyNZ.png");
+	size_t UniformTextureNums = UniformTextureFiles.size();
 	std::vector<UTexture> skytextures;
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < UniformTextureNums; i++)
 	{
 		UTexture Temptex = UTexture();
 		Temptex.Data = std::make_shared<BYTE>();
-		Temptex.Filename = TextureFiles[i];
+		Temptex.Filename = UniformTextureFiles[i];
 
 		Temptex.texSize = Texture::LoadImageDataFromFile(Temptex.Data, Temptex.texDesc, Temptex.Filename, Temptex.texBytesPerRow);
 		Temptex.GenerateTextureData();
@@ -791,10 +837,10 @@ void HelloGame::LoadSkyCubeMap()
 	srvDesc.Format = skyCubeMapResourceDesc.Format;
 	srvDesc.TextureCube.MipLevels = skyCubeMapResourceDesc.MipLevels;
 	 
-	UINT offset = static_cast<UINT>(g_Uniformtextures.size()+1);
+	UINT offset = static_cast<UINT>(g_Uniformtextures.size()+g_textures.size()+1);
 
 	//获取着色器资源视图起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	cbvsrvHandle.ptr += (offset * g_cbvsrvDescriptorSize);
 	//cbvsrvHandle.Offset(offset, g_cbvsrvDescriptorSize);
 

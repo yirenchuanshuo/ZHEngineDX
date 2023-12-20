@@ -64,13 +64,13 @@ private:
     //渲染预备资源
     ComPtr<ID3D12RootSignature> g_rootSignature;
     ComPtr<ID3D12DescriptorHeap> g_UniformcbvsrvHeap;
-    ComPtr<ID3D12DescriptorHeap> g_skycbvsrvHeap;
+    ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
     ComPtr<ID3D12DescriptorHeap> g_samplerHeap;
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12PipelineState> g_skyPipelineState;
     
     UINT g_cbvsrvDescriptorSize=0u;
-    //UINT g_skycbvsrvDescriptorSize = 0u;
+    
 
 
     //资源堆
@@ -89,6 +89,7 @@ private:
     std::vector<UMaterial> g_materials;
     UMaterial g_skyMaterial;
 
+    std::vector<UTexture> g_textures;
     std::vector<UTexture> g_Uniformtextures;
     UTexture g_SkyCubeMap;
     UINT8* g_pCbvDataBegin;

@@ -13,7 +13,7 @@ public:
     void RecordCommands(ID3D12Device* pDevice, UINT FrameIndex,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState, ID3D12DescriptorHeap* pCbvSrvDescriptorHeap,
          ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
 
-    ID3D12GraphicsCommandList* GetBundle() { return g_bundle.Get(); }
+    ID3D12GraphicsCommandList* GetBundle()const { return g_bundle.Get(); }
 
 public:
 	std::unique_ptr<StaticMesh> Mesh;
