@@ -135,10 +135,10 @@ void HelloGame::LoadAsset()
 
 	
 
-	ModeActor->RecordCommands(GetD3DDevice(), g_frameIndex, g_rootSignature.Get(), g_pipelineState.Get(), 
+	ModeActor->RecordCommands(GetD3DDevice(),  g_rootSignature.Get(), g_pipelineState.Get(), 
 		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 
-	SkyActor->RecordCommands(GetD3DDevice(), g_frameIndex, g_rootSignature.Get(), g_skyPipelineState.Get(), 
+	SkyActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_skyPipelineState.Get(), 
 		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 	
 }
