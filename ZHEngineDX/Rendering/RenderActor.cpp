@@ -34,8 +34,8 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,UINT FrameIndex,ID3D12Roo
 	
 	D3D12_GPU_DESCRIPTOR_HANDLE SampleDescriptorHeapHandle = pSamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	D3D12_DESCRIPTOR_HEAP_DESC SampleheapDesc = pSamplerDescriptorHeap->GetDesc();
-	UINT SampleDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(SampleheapDesc.Type);
-	UINT SampleNums = SampleheapDesc.NumDescriptors;
+	const UINT SampleDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(SampleheapDesc.Type);
+	const UINT SampleNums = SampleheapDesc.NumDescriptors;
 	for(UINT i=0;i<SampleNums;i++)
 	{
 		g_bundle->SetGraphicsRootDescriptorTable(GraphicsRootDescriptorPos,SampleDescriptorHeapHandle);
@@ -43,8 +43,8 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,UINT FrameIndex,ID3D12Roo
 		GraphicsRootDescriptorPos++;
 	}
 
-	D3D12_DESCRIPTOR_HEAP_DESC CbvSrvHeapDesc = pCbvSrvDescriptorHeap->GetDesc();
-	UINT CbvSrvNums = CbvSrvHeapDesc.NumDescriptors;
+	const D3D12_DESCRIPTOR_HEAP_DESC CbvSrvHeapDesc = pCbvSrvDescriptorHeap->GetDesc();
+	const UINT CbvSrvNums = CbvSrvHeapDesc.NumDescriptors;
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = pCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	
 	for(UINT i=0;i<CbvSrvNums;i++)

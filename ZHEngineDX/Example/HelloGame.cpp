@@ -307,24 +307,25 @@ void HelloGame::CreateRootSignature()
 	//创建对根参数的描述和根参数
 	CD3DX12_DESCRIPTOR_RANGE1 skyrange;
 	CD3DX12_DESCRIPTOR_RANGE1 EnvBRDFrange;
-	
-	CD3DX12_ROOT_PARAMETER1 rootParameters[6];
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+	CD3DX12_DESCRIPTOR_RANGE1 samplerRanges;
+	CD3DX12_DESCRIPTOR_RANGE1 cbvRanges;
+	CD3DX12_DESCRIPTOR_RANGE1 normalSrvRanges[2];
 	
 
 	//指定该根参数为常量缓冲区视图
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	samplerRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+	cbvRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	normalSrvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	normalSrvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+
+	std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters(6);
 	
-	
-	rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
-	rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[1].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParameters[2].InitAsDescriptorTable(1, &normalSrvRanges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[3].InitAsDescriptorTable(1, &normalSrvRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);
 	rootParameters[4].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
 	rootParameters[5].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
 	
@@ -344,7 +345,7 @@ void HelloGame::CreateRootSignature()
 
 	//创建根签名描述符
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
+	rootSignatureDesc.Init_1_1(static_cast<UINT>(rootParameters.size()), rootParameters.data(), 0, nullptr, rootSignatureFlags);
 
 	
 	//创建根签名
@@ -437,8 +438,8 @@ void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& A
 	/*ComPtr<ID3D12Resource> vertexBufferUpLoadHeap;
 	ComPtr<ID3D12Resource> indexBufferUpLoadHeap;*/
 
-	const UINT vertexBufferSize = (UINT)Actor->Mesh->GetVerticesByteSize();
-	const UINT indexBufferSize = (UINT)Actor->Mesh->GetIndicesByteSize();
+	const UINT vertexBufferSize = static_cast<UINT>(Actor->Mesh->GetVerticesByteSize());
+	const UINT indexBufferSize = static_cast<UINT>(Actor->Mesh->GetIndicesByteSize());
 
 	//资源描述符
 	const CD3DX12_RESOURCE_DESC vertexResourceDes = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
@@ -700,7 +701,7 @@ void HelloGame::LoadSkyCubeMap()
 		IID_PPV_ARGS(&g_SkyCubeMap.Resource)));
 
 	D3D12_RESOURCE_DESC   skyCubeMapResourceDesc = g_SkyCubeMap.Resource->GetDesc();
-	UINT SubresourcesNum = 6;
+	const UINT SubresourcesNum = 6;
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT SkyCubeMapLayout[6] = {};
 	UINT RowNum[6] = {};
 	UINT64 RowNumByteSize[6] = {};
@@ -790,7 +791,7 @@ void HelloGame::LoadSkyCubeMap()
 	srvDesc.Format = skyCubeMapResourceDesc.Format;
 	srvDesc.TextureCube.MipLevels = skyCubeMapResourceDesc.MipLevels;
 	 
-	UINT offset = (UINT)g_Uniformtextures.size()+1;
+	UINT offset = static_cast<UINT>(g_Uniformtextures.size()+1);
 
 	//获取着色器资源视图起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
