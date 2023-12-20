@@ -12,7 +12,7 @@
 class HelloGame :public GameRHI
 {
 public:
-	HelloGame(UINT width, UINT height, std::wstring name);
+	HelloGame(UINT width, UINT height, const std::wstring& name);
 
     virtual void OnInit()override;
     virtual void OnUpdate(ZHEngineTimer const& timer)override;
@@ -42,7 +42,6 @@ public:
     //Data
     std::unique_ptr<RenderActor> ModeActor;
     std::unique_ptr<RenderActor> SkyActor;
-    std::unique_ptr<RenderActor> IBLGeometryActor;
     DirectionLight light;
     float lightangle=0.0f;
 
@@ -93,7 +92,6 @@ private:
     std::vector<UTexture> g_Uniformtextures;
     UTexture g_SkyCubeMap;
     UINT8* g_pCbvDataBegin;
-    
 
 
 private:

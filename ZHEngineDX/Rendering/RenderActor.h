@@ -11,7 +11,7 @@ public:
 
     void Init(ID3D12Device* pDevice);
     void RecordCommands(ID3D12Device* pDevice, UINT FrameIndex,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState, ID3D12DescriptorHeap* pCbvSrvDescriptorHeap,
-         ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize);
+         ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
 
     ID3D12GraphicsCommandList* GetBundle() { return g_bundle.Get(); }
 

@@ -15,7 +15,7 @@ namespace
 	}
 };
 
-GameRHI::GameRHI(UINT width, UINT height, std::wstring name,
+GameRHI::GameRHI(UINT width, UINT height,  std::wstring name,
 	DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat):
     g_width(width),
     g_height(height),

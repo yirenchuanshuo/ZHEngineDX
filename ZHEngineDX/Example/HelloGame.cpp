@@ -9,18 +9,18 @@
 
 void DebugMessage(std::wstring strToDisplay)
 {
-	wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), sizeof(DebugToDisplay) / sizeof(DebugToDisplay[0]));
+	wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), std::size(strToDisplay));
 }
 
 template<typename T>
 constexpr UINT CalcConstantBufferByteSize()
 {
-	UINT byteSize = sizeof(T);
+	const UINT byteSize = sizeof(T);
 	return (byteSize + 255) & ~255;
 }
 
 
-HelloGame::HelloGame(UINT width, UINT height, std::wstring name):
+HelloGame::HelloGame(UINT width, UINT height, const std::wstring& name):
 	GameRHI(width, height, name, DXGI_FORMAT_R8G8B8A8_UNORM),
 	g_UniformconstantBufferData{},
 	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)}
@@ -97,8 +97,6 @@ void HelloGame::LoadPipeline()
 	
 	//创建窗口资源
 	CreateWindowResources();
-
-
 	
 }
 
@@ -279,10 +277,11 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_UniformcbvsrvHeap)));
 	NAME_D3D12_OBJECT(g_UniformcbvsrvHeap);
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	
 	//天空球cbvsrv描述符堆
 	//cbvsrvHeapDesc.NumDescriptors = 2;
+	//NAME_D3D12_OBJECT(g_skycbvsrvHeap);
 	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_skycbvsrvHeap)));
-
 }
 
 void HelloGame::CreateSamplerDescribeHeap()
@@ -309,21 +308,25 @@ void HelloGame::CreateRootSignature()
 	CD3DX12_DESCRIPTOR_RANGE1 skyrange;
 	CD3DX12_DESCRIPTOR_RANGE1 EnvBRDFrange;
 	
-	CD3DX12_ROOT_PARAMETER1 rootParameters[5];
+	CD3DX12_ROOT_PARAMETER1 rootParameters[6];
 	CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
-	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	
 
 	//指定该根参数为常量缓冲区视图
 	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
-	rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
 	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
 	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	rootParameters[2].InitAsDescriptorTable(2, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[3].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[4].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	
+	
+	rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+	rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[4].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParameters[5].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
 	
 
 	//定义根签名属性
@@ -580,57 +583,15 @@ void HelloGame::UpLoadShaderResource()
 	
 }
 
-
-void HelloGame::UpdateBackGround()
-{
-	if (clearColor[0] <= 1.0f && isRAdd)
-	{
-		clearColor[0] += 0.001f;
-		isRAdd = true;
-	}
-	else
-	{
-		clearColor[0] -= 0.002f;
-		clearColor[0] <= 0 ? isRAdd = true : isRAdd = false;
-
-	}
-
-	if (clearColor[1] <= 1.0f && isGAdd)
-	{
-		clearColor[1] += 0.002f;
-		isGAdd = true;
-	}
-	else
-	{
-		clearColor[1] -= 0.001f;
-		clearColor[1] <= 0 ? isGAdd = true : isGAdd = false;
-
-	}
-
-	if (clearColor[2] <= 1.0f && isBAdd)
-	{
-		clearColor[2] += 0.001f;
-		isBAdd = true;
-	}
-	else
-	{
-		clearColor[2] -= 0.001f;
-		clearColor[2] <= 0 ? isBAdd = true : isBAdd = false;
-
-	}
-
-	clearColor[3] = 1.0f;
-}
-
 void HelloGame::UpdateLight()
 {
 	FVector4 lightDirV = ZMath::Normalize4(FVector4{1,0,1,0});
-	float angle = 0.5f;
+	constexpr  float angle = 0.5f;
 	lightangle += angle;
-	float angleInRadians = ZMath::AngleToRadians(lightangle);
+	const float angleInRadians = ZMath::AngleToRadians(lightangle);
 	FMatrix4x4 rotationMatrix = ZMath::MatrixRotateY(angleInRadians);
 	lightDirV = -ZMath::Normalize4(ZMath::Transform(lightDirV,rotationMatrix));
-	Float4 lightDir = ZMath::FVector4ToFloat4(lightDirV);
+	const Float4 lightDir = ZMath::FVector4ToFloat4(lightDirV);
 	light.direction = lightDir;
 	g_UniformconstantBufferData.lightColor = light.color;
 	g_UniformconstantBufferData.lightDirection = light.direction;
@@ -829,7 +790,7 @@ void HelloGame::LoadSkyCubeMap()
 	srvDesc.Format = skyCubeMapResourceDesc.Format;
 	srvDesc.TextureCube.MipLevels = skyCubeMapResourceDesc.MipLevels;
 	 
-	int offset = g_Uniformtextures.size()+1;
+	UINT offset = (UINT)g_Uniformtextures.size()+1;
 
 	//获取着色器资源视图起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -837,4 +798,46 @@ void HelloGame::LoadSkyCubeMap()
 	//cbvsrvHandle.Offset(offset, g_cbvsrvDescriptorSize);
 
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, cbvsrvHandle);
+}
+
+
+void HelloGame::UpdateBackGround()
+{
+	if (clearColor[0] <= 1.0f && isRAdd)
+	{
+		clearColor[0] += 0.001f;
+		isRAdd = true;
+	}
+	else
+	{
+		clearColor[0] -= 0.002f;
+		clearColor[0] <= 0 ? isRAdd = true : isRAdd = false;
+
+	}
+
+	if (clearColor[1] <= 1.0f && isGAdd)
+	{
+		clearColor[1] += 0.002f;
+		isGAdd = true;
+	}
+	else
+	{
+		clearColor[1] -= 0.001f;
+		clearColor[1] <= 0 ? isGAdd = true : isGAdd = false;
+
+	}
+
+	if (clearColor[2] <= 1.0f && isBAdd)
+	{
+		clearColor[2] += 0.001f;
+		isBAdd = true;
+	}
+	else
+	{
+		clearColor[2] -= 0.001f;
+		clearColor[2] <= 0 ? isBAdd = true : isBAdd = false;
+
+	}
+
+	clearColor[3] = 1.0f;
 }

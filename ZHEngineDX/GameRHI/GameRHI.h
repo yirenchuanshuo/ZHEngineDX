@@ -45,7 +45,7 @@ public:
 public:
 	//State
 	bool g_MSAA = true;
-	static const UINT FrameCount = 3;
+	static constexpr  UINT FrameCount = 3;
 	//BackGround
 	float clearColor[4] = { 0,0,0,1 };
 
@@ -100,7 +100,7 @@ protected:
 	
 	
 
-	// Î§À¸
+	// Î§
 	Microsoft::WRL::Wrappers::Event g_fenceEvent;
 	ComPtr<ID3D12Fence> g_fence;
 	UINT64 g_fenceValues[FrameCount];
@@ -161,7 +161,5 @@ protected:
 private:
 	std::wstring g_assetsPath;
 	std::wstring g_title;
-
-	
 };
 
