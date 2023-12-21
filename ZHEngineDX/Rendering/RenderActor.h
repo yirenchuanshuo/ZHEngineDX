@@ -10,8 +10,8 @@ public:
     RenderActor();
 
     void Init(ID3D12Device* pDevice);
-    void RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState, ID3D12DescriptorHeap* pCbvSrvDescriptorHeap,
-         ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
+    void RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState, 
+        ID3D12DescriptorHeap* pCbvSrvDescriptorHeap, ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
 
     ID3D12GraphicsCommandList* GetBundle()const { return g_bundle.Get(); }
 

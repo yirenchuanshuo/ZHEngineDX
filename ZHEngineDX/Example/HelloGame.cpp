@@ -139,7 +139,7 @@ void HelloGame::LoadAsset()
 		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 
 	SkyActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_skyPipelineState.Get(), 
-		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+		g_cbvsrvHeap.Get(), g_samplerHeap.Get(),  g_cbvsrvDescriptorSize);
 	
 }
 
@@ -277,10 +277,13 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	NAME_D3D12_OBJECT(g_cbvsrvHeap);
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
+
 	//天空球cbvsrv描述符堆
-	cbvsrvHeapDesc.NumDescriptors = 2+g_Uniformtextures.size();
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_UniformcbvsrvHeap)));
-	NAME_D3D12_OBJECT(g_UniformcbvsrvHeap);
+	//cbvsrvHeapDesc.NumDescriptors = 2+g_Uniformtextures.size();
+	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_UniformcbvsrvHeap)));
+	//NAME_D3D12_OBJECT(g_UniformcbvsrvHeap);
+
+	
 }
 
 void HelloGame::CreateSamplerDescribeHeap()
@@ -310,14 +313,15 @@ void HelloGame::CreateRootSignature()
 	CD3DX12_DESCRIPTOR_RANGE1 cbvRanges;
 	CD3DX12_DESCRIPTOR_RANGE1 normalSrvRanges[2];
 	
-
 	//指定该根参数为常量缓冲区视图
 	samplerRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
 	cbvRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	normalSrvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	normalSrvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 10, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 11, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	
+	
 
 	std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters(6);
 	
@@ -366,12 +370,9 @@ D3D12_SAMPLER_DESC HelloGame::CreateSamplerDesCribe(UINT index)
 	sampler.MipLODBias = 0;
 	sampler.MaxAnisotropy = 8;
 	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	//sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 	sampler.MinLOD = 0.0f;
 	sampler.MaxLOD = D3D12_FLOAT32_MAX;
-	//sampler.ShaderRegister = index;
-	//sampler.RegisterSpace = 0;
-	//sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	
 
 	return sampler;
 }
@@ -434,8 +435,7 @@ void HelloGame::CreatePSO()
 
 void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& Actor) const
 {
-	/*ComPtr<ID3D12Resource> vertexBufferUpLoadHeap;
-	ComPtr<ID3D12Resource> indexBufferUpLoadHeap;*/
+	
 
 	const UINT vertexBufferSize = static_cast<UINT>(Actor->Mesh->GetVerticesByteSize());
 	const UINT indexBufferSize = static_cast<UINT>(Actor->Mesh->GetIndicesByteSize());
@@ -448,8 +448,6 @@ void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& A
 	const CD3DX12_HEAP_PROPERTIES uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	
 	//资源创建
-	/*ThrowIfFailed(g_device->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDes,
-		D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&Actor->g_vertexBuffer)));*/
 
 	ThrowIfFailed(g_device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDes,
 		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&Actor->g_vertexBuffer)));
@@ -464,16 +462,6 @@ void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& A
 
 	//复制顶点资源数据到GPUBuffer
 	UINT8* pVertexDataBegin;
-
-	/*D3D12_SUBRESOURCE_DATA vertexData = {};
-	vertexData.pData = pVertexDataBegin;
-	vertexData.RowPitch = vertexBufferSize;
-	vertexData.SlicePitch = vertexData.RowPitch;
-
-	CD3DX12_RESOURCE_BARRIER vertexBarrier = CD3DX12_RESOURCE_BARRIER::Transition(Actor->g_vertexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
-	UpdateSubresources<1>(g_commandList.Get(), Actor->g_vertexBuffer.Get(), vertexBufferUpLoadHeap.Get(), 0, 0, 1, &vertexData);
-	g_commandList->ResourceBarrier(1, &vertexBarrier);*/
 
 
 	ThrowIfFailed(Actor->g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
@@ -515,7 +503,7 @@ void HelloGame::UpLoadConstantBuffer()
 
 	//创建常量缓冲区视图
 	g_device->CreateConstantBufferView(&cbvDesc, g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	g_device->CreateConstantBufferView(&cbvDesc, g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	//g_device->CreateConstantBufferView(&cbvDesc, g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_UniformconstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
 	memcpy(g_pCbvDataBegin, &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
@@ -541,7 +529,9 @@ void HelloGame::UpLoadShaderResource()
 
 	//获取着色器资源视图起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	CD3DX12_CPU_DESCRIPTOR_HANDLE UniformcbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	
+
+	//CD3DX12_CPU_DESCRIPTOR_HANDLE UniformcbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	size_t TextureNums = g_textures.size();
 	for (int i = 0; i < TextureNums; i++)
 	{

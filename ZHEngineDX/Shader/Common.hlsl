@@ -1,9 +1,6 @@
 
-
-
-Texture2D IBLLut : register(t2);
-
-TextureCube sky : register(t3);
+Texture2D IBLLut : register(t10);
+TextureCube sky : register(t11);
 SamplerState s1 : register(s0);
 
 cbuffer SceneConstantBuffer : register(b0)
