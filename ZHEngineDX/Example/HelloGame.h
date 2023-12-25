@@ -74,8 +74,6 @@ private:
 
 
     //×ÊÔ´¶Ñ
-    ComPtr<ID3D12Heap>					g_textureHeap;
-    ComPtr<ID3D12Heap>					g_textureUpLoadHeap;
     
 
     D3D12_RESOURCE_DESC                 g_ResourceBufferDesc;
