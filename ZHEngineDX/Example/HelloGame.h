@@ -66,6 +66,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> g_UniformcbvsrvHeap;
     ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
     ComPtr<ID3D12DescriptorHeap> g_samplerHeap;
+    ComPtr<ID3D12DescriptorHeap> g_samplerHeapSky;
     ComPtr<ID3D12PipelineState> g_pipelineState;
     ComPtr<ID3D12PipelineState> g_skyPipelineState;
     

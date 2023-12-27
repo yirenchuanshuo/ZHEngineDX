@@ -18,15 +18,16 @@ void RenderActor::Init(ID3D12Device* pDevice)
 }
 
 void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState,
-	ID3D12DescriptorHeap* pCbvSrvDescriptorHeap, ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize)const
+	 ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize)const
 {
 	
 	//设置根描述符表，上传参数
-	g_bundle->SetGraphicsRootSignature(pRootSignature);
 	g_bundle->SetPipelineState(pPipleLineState);
+	g_bundle->SetGraphicsRootSignature(pRootSignature);
+	
 
 	//设置常量缓冲区描述堆，提交到渲染命令
-	ID3D12DescriptorHeap* ppHeaps[] = { pCbvSrvDescriptorHeap ,pSamplerDescriptorHeap};
+	ID3D12DescriptorHeap* ppHeaps[] = { cbvsrvHeap.Get() ,pSamplerDescriptorHeap};
 	g_bundle->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	//设置根描述符表，上传参数
 
@@ -43,9 +44,9 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRoo
 		GraphicsRootDescriptorPos++;
 	}
 
-	const D3D12_DESCRIPTOR_HEAP_DESC CbvSrvHeapDesc = pCbvSrvDescriptorHeap->GetDesc();
+	const D3D12_DESCRIPTOR_HEAP_DESC CbvSrvHeapDesc = cbvsrvHeap->GetDesc();
 	const UINT CbvSrvNums = CbvSrvHeapDesc.NumDescriptors;
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = pCbvSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = cbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
 	
 	for(UINT i=0;i<CbvSrvNums;i++)
 	{

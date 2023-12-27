@@ -136,10 +136,10 @@ void HelloGame::LoadAsset()
 	
 
 	ModeActor->RecordCommands(GetD3DDevice(),  g_rootSignature.Get(), g_pipelineState.Get(), 
-		g_cbvsrvHeap.Get(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+		 g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 
 	SkyActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_skyPipelineState.Get(), 
-		g_cbvsrvHeap.Get(), g_samplerHeap.Get(),  g_cbvsrvDescriptorSize);
+		g_samplerHeap.Get(),  g_cbvsrvDescriptorSize);
 	
 }
 
@@ -183,16 +183,17 @@ void HelloGame::PopulateCommandList()
 	g_commandList->RSSetViewports(1, &g_viewport);
 	g_commandList->RSSetScissorRects(1, &g_scissorRect);
 
-	//设置必要状态
-	g_commandList->SetGraphicsRootSignature(g_rootSignature.Get());
-	g_commandList->SetPipelineState(g_pipelineState.Get());
-
+	
 	//设置常量缓冲区描述堆，提交到渲染命令
-	ID3D12DescriptorHeap* ppHeaps[] = { g_cbvsrvHeap.Get(),g_samplerHeap.Get()};
-	g_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
+	std::vector<ID3D12DescriptorHeap*> ppHeaps = { ModeActor->GetCbvSrvHeap(),g_samplerHeap.Get() };
+	g_commandList->SetDescriptorHeaps(static_cast<UINT>(ppHeaps.size()), ppHeaps.data());
 	//执行Actor渲染捆绑包
 	g_commandList->ExecuteBundle(ModeActor->GetBundle());
+	
+	
+	ppHeaps = { SkyActor->GetCbvSrvHeap(),g_samplerHeap.Get() };
+	g_commandList->SetDescriptorHeaps(static_cast<UINT>(ppHeaps.size()), ppHeaps.data());
+	//执行Actor渲染捆绑包
 	g_commandList->ExecuteBundle(SkyActor->GetBundle());
 
 
@@ -273,10 +274,15 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
 	//创建常量缓存描述符堆
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_cbvsrvHeap)));
-	NAME_D3D12_OBJECT(g_cbvsrvHeap);
-	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(ModeActor->GetCbvSrvHeapAddress())));
+	NAME_D3D12_OBJECT(ModeActor->GetCbvSrvHeapRef());
+
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(SkyActor->GetCbvSrvHeapAddress())));
+	NAME_D3D12_OBJECT(SkyActor->GetCbvSrvHeapRef());
+
+
+	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	//天空球cbvsrv描述符堆
 	//cbvsrvHeapDesc.NumDescriptors = 2+g_Uniformtextures.size();
@@ -293,6 +299,7 @@ void HelloGame::CreateSamplerDescribeHeap()
 	samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 	samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&g_samplerHeap)));
+	
 }
 
 
@@ -343,6 +350,7 @@ void HelloGame::CreateRootSignature()
 	//创建动态采样器
 	
 	D3D12_SAMPLER_DESC sampler0 = CreateSamplerDesCribe(0);
+	
 	g_device->CreateSampler(&sampler0,g_samplerHeap->GetCPUDescriptorHandleForHeapStart());
 	
 
@@ -502,7 +510,8 @@ void HelloGame::UpLoadConstantBuffer()
 	cbvDesc.SizeInBytes = constantBufferSize;
 
 	//创建常量缓冲区视图
-	g_device->CreateConstantBufferView(&cbvDesc, g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	g_device->CreateConstantBufferView(&cbvDesc, ModeActor->GetCbvSrvHandle());
+	g_device->CreateConstantBufferView(&cbvDesc, SkyActor->GetCbvSrvHandle());
 	//g_device->CreateConstantBufferView(&cbvDesc, g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_UniformconstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
@@ -528,8 +537,8 @@ void HelloGame::UpLoadShaderResource()
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 	//获取着色器资源视图起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	
+	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvHandle());
 
 	//CD3DX12_CPU_DESCRIPTOR_HANDLE UniformcbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	size_t TextureNums = g_textures.size();
@@ -564,8 +573,10 @@ void HelloGame::UpLoadShaderResource()
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Format = g_textures[i].texDesc.Format;
 		srvDesc.Texture2D.MipLevels = g_textures[i].texDesc.MipLevels;
-		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, cbvsrvHandle);
+		ModeCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+		SkyCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, ModeCbvSrvHandle);
+		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, SkyCbvSrvHandle);
 	}
 
 	size_t UniformTextureNums = g_Uniformtextures.size();
@@ -601,9 +612,14 @@ void HelloGame::UpLoadShaderResource()
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Format = g_Uniformtextures[i].texDesc.Format;
 		srvDesc.Texture2D.MipLevels = g_Uniformtextures[i].texDesc.MipLevels;
-		cbvsrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-		g_device->CreateShaderResourceView(g_Uniformtextures[i].Resource.Get(), &srvDesc, cbvsrvHandle);
+		
+		ModeCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+		SkyCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+		
+		g_device->CreateShaderResourceView(g_Uniformtextures[i].Resource.Get(), &srvDesc, ModeCbvSrvHandle);
+		g_device->CreateShaderResourceView(g_Uniformtextures[i].Resource.Get(), &srvDesc, SkyCbvSrvHandle);
 	}
+
 }
 
 void HelloGame::UpdateLight()
@@ -830,11 +846,14 @@ void HelloGame::LoadSkyCubeMap()
 	UINT offset = static_cast<UINT>(g_Uniformtextures.size()+g_textures.size()+1);
 
 	//获取着色器资源视图起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvsrvHandle(g_cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	cbvsrvHandle.ptr += (offset * g_cbvsrvDescriptorSize);
-	//cbvsrvHandle.Offset(offset, g_cbvsrvDescriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvHandle());
+	ModeCbvSrvHandle.ptr += (offset * g_cbvsrvDescriptorSize);
+	SkyCbvSrvHandle.ptr += (offset * g_cbvsrvDescriptorSize);
+	
 
-	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, cbvsrvHandle);
+	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, ModeCbvSrvHandle);
+	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, SkyCbvSrvHandle);
 }
 
 
