@@ -22,13 +22,12 @@ void RenderActor::LoadMesh(std::string filepath)
 	Mesh->Load(filepath);
 }
 
-void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState,
-	 ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize)const
+void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize)const
 {
 	
 	//设置根描述符表，上传参数
-	g_bundle->SetPipelineState(pPipleLineState);
-	g_bundle->SetGraphicsRootSignature(pRootSignature);
+	g_bundle->SetPipelineState(PipeLineState.Get());
+	g_bundle->SetGraphicsRootSignature(rootSignature.Get());
 	
 
 	//设置常量缓冲区描述堆，提交到渲染命令
@@ -71,6 +70,35 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRoo
 	g_bundle->DrawIndexedInstanced(Mesh->GetIndicesSize(), 1, 0, 0, 0);
 
 	g_bundle->Close();
+}
+
+void RenderActor::SetPipleLineState(ID3D12Device* pDevice, D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc)
+{
+	PSODesc.pRootSignature = rootSignature.Get();
+
+
+	ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(&PipeLineState)));
+	NAME_D3D12_OBJECT(PipeLineState);
+}
+
+void RenderActor::SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc)
+{
+	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+
+	featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+	if (FAILED(pDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+	{
+		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+	}
+
+
+	//创建根签名
+	ComPtr<ID3DBlob> signature;
+	ComPtr<ID3DBlob> error;
+	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
+	ThrowIfFailed(pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+	NAME_D3D12_OBJECT(rootSignature);
 }
 
 

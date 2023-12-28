@@ -11,10 +11,11 @@ public:
 
     void Init(ID3D12Device* pDevice);
     void LoadMesh(std::string filepath);
-    void RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState, 
-         ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
+    void RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
 
 
+    void SetPipleLineState(ID3D12Device* pDevice,D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc);
+    void SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc);
 
 
     ID3D12GraphicsCommandList* GetBundle()const { return g_bundle.Get(); }
@@ -30,6 +31,7 @@ public:
     Vertex* GetMeshVerticesData() { return Mesh->GetVerticesData(); }
     UINT* GetMeshIndicesData() { return Mesh->GetIndicesData(); }
 
+
 public:
 	std::unique_ptr<StaticMesh> Mesh;
     std::unique_ptr<UMaterial> Material;
@@ -40,12 +42,10 @@ public:
     Microsoft::WRL::ComPtr<ID3D12Resource> g_indexBuffer;
     D3D12_INDEX_BUFFER_VIEW g_indexBufferView;
 
-   
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
-
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 private:
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvsrvHeap;
-
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> PipeLineState;
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_bundle;
 };

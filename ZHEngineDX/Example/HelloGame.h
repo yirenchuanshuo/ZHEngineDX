@@ -62,15 +62,10 @@ public:
 private:
     
     //渲染预备资源
-    ComPtr<ID3D12RootSignature> g_rootSignature;
     
     ComPtr<ID3D12DescriptorHeap> g_samplerHeap;
-    ComPtr<ID3D12DescriptorHeap> g_samplerHeapSky;
-    ComPtr<ID3D12PipelineState> g_pipelineState;
-    ComPtr<ID3D12PipelineState> g_skyPipelineState;
     
     UINT g_cbvsrvDescriptorSize=0u;
-    
 
 
     //资源堆
@@ -111,6 +106,5 @@ private:
     void UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& Actor) const;
     void UpLoadConstantBuffer();
     void UpLoadShaderResource();
-    
     
 };

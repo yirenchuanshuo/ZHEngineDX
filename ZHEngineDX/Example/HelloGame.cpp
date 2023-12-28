@@ -135,11 +135,9 @@ void HelloGame::LoadAsset()
 
 	
 
-	ModeActor->RecordCommands(GetD3DDevice(),  g_rootSignature.Get(), g_pipelineState.Get(), 
-		 g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+	ModeActor->RecordCommands(GetD3DDevice(),  g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
 
-	SkyActor->RecordCommands(GetD3DDevice(), g_rootSignature.Get(), g_skyPipelineState.Get(), 
-		g_samplerHeap.Get(),  g_cbvsrvDescriptorSize);
+	SkyActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(),  g_cbvsrvDescriptorSize);
 	
 }
 
@@ -278,6 +276,8 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(ModeActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(ModeActor->GetCbvSrvHeapRef());
 
+
+	cbvsrvHeapDesc.NumDescriptors = g_Uniformtextures.size() + 2;
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(SkyActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(SkyActor->GetCbvSrvHeapRef());
 
@@ -299,14 +299,7 @@ void HelloGame::CreateSamplerDescribeHeap()
 
 void HelloGame::CreateRootSignature()
 {
-	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
-
-	featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
-
-	if (FAILED(g_device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
-	{
-		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
-	}
+	
 	//创建对根参数的描述和根参数
 	CD3DX12_DESCRIPTOR_RANGE1 skyrange;
 	CD3DX12_DESCRIPTOR_RANGE1 EnvBRDFrange;
@@ -324,14 +317,14 @@ void HelloGame::CreateRootSignature()
 	
 	
 
-	std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters(6);
+	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersNormal(6);
 	
-	rootParameters[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[1].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
-	rootParameters[2].InitAsDescriptorTable(1, &normalSrvRanges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[3].InitAsDescriptorTable(1, &normalSrvRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[4].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParameters[5].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[1].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersNormal[2].InitAsDescriptorTable(1, &normalSrvRanges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[3].InitAsDescriptorTable(1, &normalSrvRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[4].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[5].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
 	
 
 	//定义根签名属性
@@ -344,22 +337,27 @@ void HelloGame::CreateRootSignature()
 	//创建动态采样器
 	
 	D3D12_SAMPLER_DESC sampler0 = CreateSamplerDesCribe(0);
-	
 	g_device->CreateSampler(&sampler0,g_samplerHeap->GetCPUDescriptorHandleForHeapStart());
 	
 
 	//创建根签名描述符
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init_1_1(static_cast<UINT>(rootParameters.size()), rootParameters.data(), 0, nullptr, rootSignatureFlags);
+	rootSignatureDesc.Init_1_1(static_cast<UINT>(rootParametersNormal.size()), rootParametersNormal.data(), 0, nullptr, rootSignatureFlags);
 
-	
 	//创建根签名
-	ComPtr<ID3DBlob> signature;
-	ComPtr<ID3DBlob> error;
-	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
-	ThrowIfFailed(g_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&g_rootSignature)));
-	NAME_D3D12_OBJECT(g_rootSignature);
-	
+	ModeActor->SetRootSignature(GetD3DDevice(), rootSignatureDesc);
+
+	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersSky(4);
+	rootParametersSky[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersSky[1].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersSky[2].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersSky[3].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC SkyRootSignatureDesc;
+	SkyRootSignatureDesc.Init_1_1(static_cast<UINT>(rootParametersSky.size()), rootParametersSky.data(), 0, nullptr, rootSignatureFlags);
+
+
+	SkyActor->SetRootSignature(GetD3DDevice(), SkyRootSignatureDesc);
 }
 
 D3D12_SAMPLER_DESC HelloGame::CreateSamplerDesCribe(UINT index)
@@ -408,7 +406,6 @@ void HelloGame::CreatePSO()
 	if (g_materials[0].GetMateriBlendMode() == EBlendMode::Opaque)
 	{
 		psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-		psoDesc.pRootSignature = g_rootSignature.Get();
 		psoDesc.VS = CD3DX12_SHADER_BYTECODE(g_materials[0].shader->GetVertexShader());
 		psoDesc.PS = CD3DX12_SHADER_BYTECODE(g_materials[0].shader->GetPixelShader());
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -422,17 +419,17 @@ void HelloGame::CreatePSO()
 		psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
 		//创建PSO
-		ThrowIfFailed(g_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pipelineState)));
-		NAME_D3D12_OBJECT(g_pipelineState);
+		ModeActor->SetPipleLineState(GetD3DDevice(), psoDesc);
+		
 	}
 	
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC SkypsoDesc = psoDesc;
 	SkypsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	SkypsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-	SkypsoDesc.pRootSignature = g_rootSignature.Get();
 	SkypsoDesc.VS = CD3DX12_SHADER_BYTECODE(g_skyMaterial.shader->GetVertexShader());
 	SkypsoDesc.PS = CD3DX12_SHADER_BYTECODE(g_skyMaterial.shader->GetPixelShader());
-	ThrowIfFailed(g_device->CreateGraphicsPipelineState(&SkypsoDesc, IID_PPV_ARGS(&g_skyPipelineState)));
+	SkyActor->SetPipleLineState(GetD3DDevice(), SkypsoDesc);
+	
 }
 
 void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& Actor) const
@@ -567,9 +564,7 @@ void HelloGame::UpLoadShaderResource()
 		srvDesc.Format = g_textures[i].texDesc.Format;
 		srvDesc.Texture2D.MipLevels = g_textures[i].texDesc.MipLevels;
 		ModeCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-		SkyCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
 		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, ModeCbvSrvHandle);
-		g_device->CreateShaderResourceView(g_textures[i].Resource.Get(), &srvDesc, SkyCbvSrvHandle);
 	}
 
 	size_t UniformTextureNums = g_Uniformtextures.size();
@@ -836,13 +831,14 @@ void HelloGame::LoadSkyCubeMap()
 	srvDesc.Format = skyCubeMapResourceDesc.Format;
 	srvDesc.TextureCube.MipLevels = skyCubeMapResourceDesc.MipLevels;
 	 
-	UINT offset = static_cast<UINT>(g_Uniformtextures.size()+g_textures.size()+1);
+	UINT ModeOffset = static_cast<UINT>(g_Uniformtextures.size()+g_textures.size()+1);
+	UINT SkyOffset = static_cast<UINT>(g_Uniformtextures.size() + 1);
 
 	//获取着色器资源视图起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvHandle());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvHandle());
-	ModeCbvSrvHandle.ptr += (offset * g_cbvsrvDescriptorSize);
-	SkyCbvSrvHandle.ptr += (offset * g_cbvsrvDescriptorSize);
+	ModeCbvSrvHandle.ptr += (ModeOffset * g_cbvsrvDescriptorSize);
+	SkyCbvSrvHandle.ptr += (SkyOffset * g_cbvsrvDescriptorSize);
 	
 
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, ModeCbvSrvHandle);
