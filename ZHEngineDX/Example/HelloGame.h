@@ -63,8 +63,7 @@ private:
     
     //渲染预备资源
     ComPtr<ID3D12RootSignature> g_rootSignature;
-    ComPtr<ID3D12DescriptorHeap> g_UniformcbvsrvHeap;
-    ComPtr<ID3D12DescriptorHeap> g_cbvsrvHeap;
+    
     ComPtr<ID3D12DescriptorHeap> g_samplerHeap;
     ComPtr<ID3D12DescriptorHeap> g_samplerHeapSky;
     ComPtr<ID3D12PipelineState> g_pipelineState;
@@ -75,12 +74,9 @@ private:
 
 
     //资源堆
-    
-
     D3D12_RESOURCE_DESC                 g_ResourceBufferDesc;
 
     //资源Buffer
-
     ComPtr<ID3D12Resource> g_UniformconstantBuffer;
     SceneConstantBuffer g_UniformconstantBufferData;
 

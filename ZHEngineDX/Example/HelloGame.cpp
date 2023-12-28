@@ -250,8 +250,8 @@ void HelloGame::PreperRenderActor()
 	Sky.Load(MODEASSETPATH(Sky));
 #endif
 
-	ModeActor->Mesh->Load(MODEPATH(Cube));
-	SkyActor->Mesh->Load(MODEPATH(Sky));
+	ModeActor->LoadMesh(MODEPATH(Cube));
+	SkyActor->LoadMesh(MODEPATH(Sky));
 	
 
 	//上传顶点和顶点索引信息
@@ -284,12 +284,6 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	//天空球cbvsrv描述符堆
-	//cbvsrvHeapDesc.NumDescriptors = 2+g_Uniformtextures.size();
-	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(&g_UniformcbvsrvHeap)));
-	//NAME_D3D12_OBJECT(g_UniformcbvsrvHeap);
-
-	
 }
 
 void HelloGame::CreateSamplerDescribeHeap()
@@ -445,8 +439,8 @@ void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& A
 {
 	
 
-	const UINT vertexBufferSize = static_cast<UINT>(Actor->Mesh->GetVerticesByteSize());
-	const UINT indexBufferSize = static_cast<UINT>(Actor->Mesh->GetIndicesByteSize());
+	const UINT vertexBufferSize = static_cast<UINT>(Actor->GetMeshVerticesByteSize());
+	const UINT indexBufferSize = static_cast<UINT>(Actor->GetMeshIndicesByteSize());
 
 	//资源描述符
 	const CD3DX12_RESOURCE_DESC vertexResourceDes = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
@@ -473,11 +467,11 @@ void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& A
 
 
 	ThrowIfFailed(Actor->g_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, Actor->Mesh->GetVerticesData(), vertexBufferSize);
+	memcpy(pVertexDataBegin, Actor->GetMeshVerticesData(), vertexBufferSize);
 	Actor->g_vertexBuffer->Unmap(0, nullptr);
 
 	ThrowIfFailed(Actor->g_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, Actor->Mesh->GetIndicesData(), indexBufferSize);
+	memcpy(pVertexDataBegin, Actor->GetMeshIndicesData(), indexBufferSize);
 	Actor->g_indexBuffer->Unmap(0, nullptr);
 
 	//初始化资源缓冲区视图
@@ -512,7 +506,6 @@ void HelloGame::UpLoadConstantBuffer()
 	//创建常量缓冲区视图
 	g_device->CreateConstantBufferView(&cbvDesc, ModeActor->GetCbvSrvHandle());
 	g_device->CreateConstantBufferView(&cbvDesc, SkyActor->GetCbvSrvHandle());
-	//g_device->CreateConstantBufferView(&cbvDesc, g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_UniformconstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
 	memcpy(g_pCbvDataBegin, &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
@@ -540,7 +533,7 @@ void HelloGame::UpLoadShaderResource()
 	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvHandle());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvHandle());
 
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE UniformcbvsrvHandle(g_UniformcbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	
 	size_t TextureNums = g_textures.size();
 	for (int i = 0; i < TextureNums; i++)
 	{

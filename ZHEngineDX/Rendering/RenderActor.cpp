@@ -17,6 +17,11 @@ void RenderActor::Init(ID3D12Device* pDevice)
 		nullptr, IID_PPV_ARGS(g_bundle.ReleaseAndGetAddressOf())));
 }
 
+void RenderActor::LoadMesh(std::string filepath)
+{
+	Mesh->Load(filepath);
+}
+
 void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12RootSignature* pRootSignature, ID3D12PipelineState* pPipleLineState,
 	 ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize)const
 {
