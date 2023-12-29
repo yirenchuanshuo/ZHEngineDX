@@ -9,14 +9,18 @@ class RenderActor
 public:
     RenderActor();
 
-    void Init(ID3D12Device* pDevice);
+    void Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const char* vsout, const char* psout, EBlendMode blend);
     void LoadMesh(std::string filepath);
+    void SetTextures(UTexture& Texture);
+    void AddHandleOffsetNum();
+
     void RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
 
 
     void SetPipleLineState(ID3D12Device* pDevice,D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc);
     void SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc);
-
+    void UpLoadShaderResource(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList,D3D12_SHADER_RESOURCE_VIEW_DESC& SrvDesc);
+   
 
     ID3D12GraphicsCommandList* GetBundle()const { return g_bundle.Get(); }
 
@@ -30,22 +34,31 @@ public:
     size_t GetMeshIndicesByteSize() { return Mesh->GetIndicesByteSize(); }
     Vertex* GetMeshVerticesData() { return Mesh->GetVerticesData(); }
     UINT* GetMeshIndicesData() { return Mesh->GetIndicesData(); }
+    EBlendMode GetActorMaterialBlendMode() { return Material->GetMateriBlendMode(); }
 
+    UINT GetCbvSrvHeapDescriptorsNum(UINT UniformDataTypeNums) { return Material->textures.size() + UniformDataTypeNums; }
+    CD3DX12_CPU_DESCRIPTOR_HANDLE GetCbvSrvAvailableHandle();
 
 public:
-	std::unique_ptr<StaticMesh> Mesh;
-    std::unique_ptr<UMaterial> Material;
-
+	
+   
     Microsoft::WRL::ComPtr<ID3D12Resource> g_vertexBuffer;
     D3D12_VERTEX_BUFFER_VIEW g_vertexBufferView;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> g_indexBuffer;
     D3D12_INDEX_BUFFER_VIEW g_indexBufferView;
 
-    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+    
 private:
+    std::unique_ptr<StaticMesh> Mesh;
+    std::unique_ptr<UMaterial> Material;
+
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvsrvHeap;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> PipeLineState;
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_bundle;
+
+    UINT cbvsrvDescriptorSize;
+    UINT HandleOffsetNum;
 };

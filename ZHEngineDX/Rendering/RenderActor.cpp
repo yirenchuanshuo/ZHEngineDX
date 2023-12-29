@@ -1,15 +1,19 @@
 #include "RenderActor.h"
 
 RenderActor::RenderActor()
-	:g_vertexBufferView{}, g_indexBufferView{}
+	:g_vertexBufferView{}, g_indexBufferView{}, HandleOffsetNum(0)
 {
-
+	
 }
 
-void RenderActor::Init(ID3D12Device* pDevice)
+void RenderActor::Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const char* vsout, const char* psout, EBlendMode blend)
 {
 	Mesh = std::make_unique<StaticMesh>();
+	Material = std::make_unique<UMaterial>();
+	Material->CompileShader(shaderfile, vsout, psout, blend);
 	
+	cbvsrvDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 	ThrowIfFailed(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE,
 		IID_PPV_ARGS(&g_bundleAllocator)));
 
@@ -20,6 +24,16 @@ void RenderActor::Init(ID3D12Device* pDevice)
 void RenderActor::LoadMesh(std::string filepath)
 {
 	Mesh->Load(filepath);
+}
+
+void RenderActor::SetTextures(UTexture& Texture)
+{
+	Material->textures.push_back(Texture);
+}
+
+void RenderActor::AddHandleOffsetNum()
+{
+	HandleOffsetNum += 1;
 }
 
 void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize)const
@@ -75,7 +89,8 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSa
 void RenderActor::SetPipleLineState(ID3D12Device* pDevice, D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc)
 {
 	PSODesc.pRootSignature = rootSignature.Get();
-
+	PSODesc.VS = CD3DX12_SHADER_BYTECODE(Material->shader->GetVertexShader());
+	PSODesc.PS = CD3DX12_SHADER_BYTECODE(Material->shader->GetPixelShader());
 
 	ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(&PipeLineState)));
 	NAME_D3D12_OBJECT(PipeLineState);
@@ -100,5 +115,67 @@ void RenderActor::SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT
 	ThrowIfFailed(pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 	NAME_D3D12_OBJECT(rootSignature);
 }
+
+void RenderActor::UpLoadShaderResource(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList,D3D12_SHADER_RESOURCE_VIEW_DESC& SrvDesc)
+{
+	//获取着色器资源视图起始地址
+	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(GetCbvSrvHandle());
+	//创建纹理资源的堆
+	CD3DX12_HEAP_PROPERTIES TexResourceheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+	//创建数据上传堆 CPUGPU都可访问
+	CD3DX12_HEAP_PROPERTIES DataUpLoadheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+	size_t TextureNums = Material->textures.size();
+	for (int i = 0; i < TextureNums; i++)
+	{
+		auto& TextureData = Material->textures[i];
+
+		ThrowIfFailed(pDevice->CreateCommittedResource(
+			&TexResourceheap,
+			D3D12_HEAP_FLAG_NONE,
+			&TextureData.texDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&TextureData.Resource)));
+
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(TextureData.Resource.Get(), 0, 1);
+		CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+
+
+		ThrowIfFailed(pDevice->CreateCommittedResource(
+			&DataUpLoadheap,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&TextureData.UploadHeap)));
+
+		//把资源从上传堆拷贝到默认堆，描述该堆作用
+		UpdateSubresources(pCommandList, TextureData.Resource.Get(), TextureData.UploadHeap.Get(), 0, 0, 1, &TextureData.texData);
+		CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(TextureData.Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		pCommandList->ResourceBarrier(1, &Barrier);
+
+
+		SrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		SrvDesc.Format = TextureData.texDesc.Format;
+		SrvDesc.Texture2D.MipLevels = TextureData.texDesc.MipLevels;
+		CbvSrvHandle.Offset(1, cbvsrvDescriptorSize);
+		HandleOffsetNum += 1;
+		pDevice->CreateShaderResourceView(TextureData.Resource.Get(), &SrvDesc, CbvSrvHandle);
+	}
+}
+
+CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetCbvSrvAvailableHandle()
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
+	if (HandleOffsetNum > 0)
+	{
+		CbvSrvHandle.ptr += HandleOffsetNum * cbvsrvDescriptorSize;
+	}
+	return CbvSrvHandle;
+}
+
+
 
 
