@@ -47,7 +47,7 @@ public:
 
     Microsoft::WRL::ComPtr<ID3D12Resource> g_indexBuffer;
     D3D12_INDEX_BUFFER_VIEW g_indexBufferView;
-
+    
     
 private:
     std::unique_ptr<StaticMesh> Mesh;

@@ -16,6 +16,7 @@ public:
 
     virtual void OnInit()override;
     virtual void OnUpdate(ZHEngineTimer const& timer)override;
+    virtual void OnResize()override;
     virtual void OnRender()override;
     virtual void OnDestroy()override;
     virtual void Tick()override;

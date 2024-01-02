@@ -42,6 +42,12 @@ void HelloGame::OnUpdate(ZHEngineTimer const& timer)
 	UpdateConstantBuffer();
 }
 
+void HelloGame::OnResize()
+{
+	GameRHI::OnResize();
+	UpdateMVP();
+}
+
 void HelloGame::OnRender()
 {
 	if (g_timer.GetFrameCount() == 0)
@@ -483,7 +489,9 @@ void HelloGame::UpLoadConstantBuffer()
 
 	//创建常量缓冲区视图
 	g_device->CreateConstantBufferView(&cbvDesc, ModeActor->GetCbvSrvHandle());
+	ModeActor->AddHandleOffsetNum();
 	g_device->CreateConstantBufferView(&cbvDesc, SkyActor->GetCbvSrvHandle());
+	SkyActor->AddHandleOffsetNum();
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_UniformconstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
 	memcpy(g_pCbvDataBegin, &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
@@ -509,9 +517,8 @@ void HelloGame::UpLoadShaderResource()
 	ModeActor->UpLoadShaderResource(GetD3DDevice(), GetCommandList(), srvDesc);
 
 	//获取着色器资源视图起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvHandle());
-	ModeCbvSrvHandle.ptr += 2 * g_cbvsrvDescriptorSize;
-	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvAvailableHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvAvailableHandle());
 
 
 	size_t UniformTextureNums = g_Uniformtextures.size();
@@ -549,10 +556,13 @@ void HelloGame::UpLoadShaderResource()
 		srvDesc.Texture2D.MipLevels = g_Uniformtextures[i].texDesc.MipLevels;
 		
 		ModeCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
+		ModeActor->AddHandleOffsetNum();
 		SkyCbvSrvHandle.Offset(1, g_cbvsrvDescriptorSize);
-		
+		SkyActor->AddHandleOffsetNum();
+
 		g_device->CreateShaderResourceView(g_Uniformtextures[i].Resource.Get(), &srvDesc, ModeCbvSrvHandle);
 		g_device->CreateShaderResourceView(g_Uniformtextures[i].Resource.Get(), &srvDesc, SkyCbvSrvHandle);
+		
 	}
 
 }
@@ -781,12 +791,9 @@ void HelloGame::LoadSkyCubeMap()
 	 
 
 	//获取着色器资源视图起始地址
-	//ModeActor->AddHandleOffsetNum();
-	//SkyActor->AddHandleOffsetNum();
-	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvHandle());
-	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvHandle());
-	ModeCbvSrvHandle.ptr += 4 * g_cbvsrvDescriptorSize;
-	SkyCbvSrvHandle.ptr += 2*g_cbvsrvDescriptorSize;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvAvailableHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvAvailableHandle());
+	
 
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, ModeCbvSrvHandle);
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, SkyCbvSrvHandle);

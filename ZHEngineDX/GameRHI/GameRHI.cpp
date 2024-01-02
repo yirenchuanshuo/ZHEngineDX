@@ -26,6 +26,7 @@ GameRHI::GameRHI(UINT width, UINT height,  std::wstring name,
 	g_backBufferFormat(backBufferFormat),
 	g_depthstencilBufferFormat(depthBufferFormat),
 	g_useWarpDevice(false),
+	g_Drag(false),
 	hwnd(nullptr),
 	g_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
 	g_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height))
@@ -372,6 +373,17 @@ IDXGIAdapter1* GameRHI::GetSupportedAdapter(ComPtr<IDXGIFactory6>& dxgiFactory, 
 	return adapter;
 }
 
+void GameRHI::OnResize()
+{
+	assert(g_device);
+	assert(g_swapChain);
+	assert(g_commandAllocators);
+	WaitForGPU();
+
+	CreateWindowResources();
+	UpdateViewport();
+}
+
 void GameRHI::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	g_camera.g_LastMousePos.x = x;
@@ -422,6 +434,37 @@ float GameRHI::AspectRatio() const
 	
 	return static_cast<float>(g_width) / g_height;
 	
+}
+
+void GameRHI::UpdateViewport()
+{
+	g_viewport.TopLeftX = 0;
+	g_viewport.TopLeftY = 0;
+	g_viewport.Width = static_cast<float>(g_width);
+	g_viewport.Height = static_cast<float>(g_height);
+
+	g_viewport.MinDepth = D3D12_MIN_DEPTH;
+	g_viewport.MaxDepth = D3D12_MAX_DEPTH;
+
+	g_scissorRect.left = 0;
+	g_scissorRect.top = 0;
+	g_scissorRect.right = g_width;
+	g_scissorRect.bottom = g_height;
+}
+
+void GameRHI::IsDragging()
+{
+	g_Drag = true;
+}
+
+void GameRHI::NotDragging()
+{
+	g_Drag = false;
+}
+
+bool GameRHI::GetDragSate()const
+{
+	return g_Drag;
 }
 
 
@@ -479,6 +522,7 @@ void GameRHI::CreateSwapChain()
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.SampleDesc.Quality = 0;
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	//Ö¸¶¨´°¿Ú
 	

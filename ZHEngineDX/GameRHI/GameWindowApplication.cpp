@@ -54,7 +54,7 @@ int GameWindowApplication::Run(GameRHI* gameRHI, HINSTANCE hInstance, int nCmdSh
 			gameRHI->Tick();
 		}
 	}
-
+	
 	gameRHI->OnDestroy();
 
 	CoUninitialize();
@@ -98,6 +98,27 @@ LRESULT GameWindowApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam
 		}
 		return 0;
 	}
+	case WM_SIZE:
+		gameRHI->SetWidth(LOWORD(lParam));
+		gameRHI->SetHeight(HIWORD(lParam));
+		if (wParam == SIZE_MAXIMIZED)
+		{
+			gameRHI->OnResize();
+		}
+		else if (wParam == SIZE_RESTORED)
+		{
+			if (!gameRHI->GetDragSate())
+			{
+				gameRHI->OnResize();
+			}
+		}
+		return 0;
+	case WM_ENTERSIZEMOVE:
+		gameRHI->IsDragging();
+		return 0;
+	case WM_EXITSIZEMOVE:
+		gameRHI->NotDragging();
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;

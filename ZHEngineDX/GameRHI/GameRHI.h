@@ -62,6 +62,7 @@ public:
 protected:
 	void SetFence();
 
+
 protected:
 	
 	UINT g_frameIndex;
@@ -117,6 +118,7 @@ private:
 	void CreateRenderTargetViewDesCribeHeap();
 	void CreateDepthStencilViewDesCribeHeap();
 	void CreateDepthStencialBuffer();
+	
 
 
 	//Windows
@@ -127,6 +129,7 @@ public:
 	virtual void OnInit() = 0;
 	virtual void OnUpdate(ZHEngineTimer const& timer) = 0;
 	virtual void OnRender() = 0;
+	virtual void OnResize();
 	virtual void OnDestroy() = 0;
 	virtual void Tick() = 0;
 
@@ -136,9 +139,16 @@ public:
 
 
 	float AspectRatio()const;
+	void UpdateViewport();
+
+	void IsDragging();
+	void NotDragging();
+	bool GetDragSate()const;
 
 	UINT GetWidth() const { return g_width; }
 	UINT GetHeight() const { return g_height; }
+	void SetWidth(UINT width) { g_width = width; }
+	void SetHeight(UINT height) { g_height = height; }
 	const WCHAR* GetTitle() const { return g_title.c_str(); }
 	std::wstring GetGameAssetPath();
 
@@ -156,6 +166,7 @@ protected:
 	Camera g_camera;
 	ZHEngineTimer g_timer;
 	bool g_useWarpDevice;
+	bool g_Drag;
 
 
 private:

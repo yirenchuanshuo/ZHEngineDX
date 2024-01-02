@@ -119,7 +119,7 @@ void RenderActor::SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT
 void RenderActor::UpLoadShaderResource(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList,D3D12_SHADER_RESOURCE_VIEW_DESC& SrvDesc)
 {
 	//获取着色器资源视图起始地址
-	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(GetCbvSrvHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(GetCbvSrvAvailableHandle());
 	//创建纹理资源的堆
 	CD3DX12_HEAP_PROPERTIES TexResourceheap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
@@ -160,9 +160,10 @@ void RenderActor::UpLoadShaderResource(ID3D12Device* pDevice, ID3D12GraphicsComm
 		SrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		SrvDesc.Format = TextureData.texDesc.Format;
 		SrvDesc.Texture2D.MipLevels = TextureData.texDesc.MipLevels;
+		pDevice->CreateShaderResourceView(TextureData.Resource.Get(), &SrvDesc, CbvSrvHandle);
+
 		CbvSrvHandle.Offset(1, cbvsrvDescriptorSize);
 		HandleOffsetNum += 1;
-		pDevice->CreateShaderResourceView(TextureData.Resource.Get(), &SrvDesc, CbvSrvHandle);
 	}
 }
 
