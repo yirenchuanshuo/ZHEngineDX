@@ -2,7 +2,11 @@
 #include "PostProcess.hlsl"
 
 
-
+cbuffer ObjectConstantBuffer : register(b0)
+{
+    float4x4 ObjectToWorld;
+    float4x4 WorldViewProj;
+}
 
 
 struct VertexInput

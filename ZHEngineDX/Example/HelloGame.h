@@ -50,9 +50,7 @@ public:
     struct SceneConstantBuffer
     {
         //ÄÚ´æ¶ÔÆë256;
-        Float4x4 ObjectToWorld;
         Float4x4 VP;
-        Float4x4 MVP;
         FLinearColor lightColor;
         Float4 lightDirection;
         Float4 cameraPosition;
@@ -83,7 +81,7 @@ private:
     std::vector<UTexture> g_textures;
     std::vector<UTexture> g_Uniformtextures;
     UTexture g_SkyCubeMap;
-    UINT8* g_pCbvDataBegin;
+    std::shared_ptr<UINT8> g_pCbvDataBegin;
 
 
 private:
@@ -94,7 +92,6 @@ private:
     
     
     //Two Level
-    void PreperShader();
     void PreperRenderActor();
 
     //Three Level

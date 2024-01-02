@@ -3,11 +3,11 @@ Texture2D IBLLut : register(t10);
 TextureCube sky : register(t11);
 SamplerState s1 : register(s0);
 
-cbuffer SceneConstantBuffer : register(b0)
+
+
+cbuffer SceneConstantBuffer : register(b1)
 {
-    float4x4 ObjectToWorld;
     float4x4 ViewProj;
-    float4x4 WorldViewProj;
     float4 lightColor;
     float4 lightDirection;
     float4 cameraPosition;

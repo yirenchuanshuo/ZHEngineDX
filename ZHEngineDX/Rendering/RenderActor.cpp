@@ -10,6 +10,7 @@ void RenderActor::Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const c
 {
 	Mesh = std::make_unique<StaticMesh>();
 	Material = std::make_unique<UMaterial>();
+	pObjectCbvDataBegin = std::make_shared<UINT8>();
 	Material->CompileShader(shaderfile, vsout, psout, blend);
 	
 	cbvsrvDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -29,6 +30,14 @@ void RenderActor::LoadMesh(std::string filepath)
 void RenderActor::SetTextures(UTexture& Texture)
 {
 	Material->textures.push_back(Texture);
+}
+
+void RenderActor::UpdateMVP(FMatrix4x4& VP)
+{
+	FMatrix4x4 m = ZMath::MatrixIdentity();
+	FMatrix4x4 mvp = m * VP;
+	ZMath::MaterixToFloat4x4(&g_ObjectConstantBufferData.ObjectToWorld, m);
+	ZMath::MaterixToFloat4x4(&g_ObjectConstantBufferData.ObjectToClip, mvp);
 }
 
 void RenderActor::AddHandleOffsetNum()
@@ -165,6 +174,35 @@ void RenderActor::UpLoadShaderResource(ID3D12Device* pDevice, ID3D12GraphicsComm
 		CbvSrvHandle.Offset(1, cbvsrvDescriptorSize);
 		HandleOffsetNum += 1;
 	}
+}
+
+void RenderActor::CreateConstantBufferView(ID3D12Device* pDevice)
+{
+	//数据上传堆
+	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	CD3DX12_RANGE readRange(0, 0);
+
+	//创建常量缓冲区资源描述符
+	constexpr UINT constantBufferSize = CalcConstantBufferByteSize<ObjectConstantBuffer>();
+	CD3DX12_RESOURCE_DESC constantResourceDes = CD3DX12_RESOURCE_DESC::Buffer(constantBufferSize);
+	//创建常量缓冲区资源
+	ThrowIfFailed(pDevice->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &constantResourceDes,
+		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&g_ObjectConstantBuffer)));
+
+	//创建常量缓冲区视图描述符
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = g_ObjectConstantBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = constantBufferSize;
+
+
+	pDevice->CreateConstantBufferView(&cbvDesc, GetCbvSrvAvailableHandle());
+	ThrowIfFailed(g_ObjectConstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pObjectCbvDataBegin)));
+	HandleOffsetNum++;
+}
+
+void RenderActor::UpLoadConstantBuffer()
+{
+	memcpy(pObjectCbvDataBegin.get(), &g_ObjectConstantBufferData, sizeof(g_ObjectConstantBufferData));
 }
 
 CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetCbvSrvAvailableHandle()

@@ -12,12 +12,7 @@ void DebugMessage(std::wstring strToDisplay)
 	wcsncpy_s(DebugToDisplay, strToDisplay.c_str(), std::size(strToDisplay));
 }
 
-template<typename T>
-constexpr UINT CalcConstantBufferByteSize()
-{
-	const UINT byteSize = sizeof(T);
-	return (byteSize + 255) & ~255;
-}
+
 
 
 HelloGame::HelloGame(UINT width, UINT height, const std::wstring& name):
@@ -25,7 +20,7 @@ HelloGame::HelloGame(UINT width, UINT height, const std::wstring& name):
 	g_UniformconstantBufferData{},
 	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)}
 {
-
+	g_pCbvDataBegin = std::make_shared<UINT8>();
 }
 
 void HelloGame::OnInit()
@@ -297,11 +292,13 @@ void HelloGame::CreateRootSignature()
 	CD3DX12_DESCRIPTOR_RANGE1 EnvBRDFrange;
 	CD3DX12_DESCRIPTOR_RANGE1 samplerRanges;
 	CD3DX12_DESCRIPTOR_RANGE1 cbvRanges;
+	CD3DX12_DESCRIPTOR_RANGE1 ModecbvRanges;
 	CD3DX12_DESCRIPTOR_RANGE1 normalSrvRanges[2];
 	
 	//指定该根参数为常量缓冲区视图
 	samplerRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
-	cbvRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	ModecbvRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	cbvRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	normalSrvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	normalSrvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 10, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
@@ -309,14 +306,15 @@ void HelloGame::CreateRootSignature()
 	
 	
 
-	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersNormal(6);
+	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersNormal(7);
 	
 	rootParametersNormal[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[1].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
-	rootParametersNormal[2].InitAsDescriptorTable(1, &normalSrvRanges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[3].InitAsDescriptorTable(1, &normalSrvRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[4].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[5].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[1].InitAsDescriptorTable(1, &ModecbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersNormal[2].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersNormal[3].InitAsDescriptorTable(1, &normalSrvRanges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[4].InitAsDescriptorTable(1, &normalSrvRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[5].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[6].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
 	
 
 	//定义根签名属性
@@ -339,11 +337,12 @@ void HelloGame::CreateRootSignature()
 	//创建根签名
 	ModeActor->SetRootSignature(GetD3DDevice(), rootSignatureDesc);
 
-	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersSky(4);
+	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersSky(5);
 	rootParametersSky[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersSky[1].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
-	rootParametersSky[2].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersSky[3].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersSky[1].InitAsDescriptorTable(1, &ModecbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersSky[2].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersSky[3].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersSky[4].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC SkyRootSignatureDesc;
 	SkyRootSignatureDesc.Init_1_1(static_cast<UINT>(rootParametersSky.size()), rootParametersSky.data(), 0, nullptr, rootSignatureFlags);
@@ -488,13 +487,17 @@ void HelloGame::UpLoadConstantBuffer()
 	cbvDesc.SizeInBytes = constantBufferSize;
 
 	//创建常量缓冲区视图
-	g_device->CreateConstantBufferView(&cbvDesc, ModeActor->GetCbvSrvHandle());
+	ModeActor->CreateConstantBufferView(GetD3DDevice());
+	g_device->CreateConstantBufferView(&cbvDesc, ModeActor->GetCbvSrvAvailableHandle());
 	ModeActor->AddHandleOffsetNum();
-	g_device->CreateConstantBufferView(&cbvDesc, SkyActor->GetCbvSrvHandle());
+	
+	SkyActor->CreateConstantBufferView(GetD3DDevice());
+	g_device->CreateConstantBufferView(&cbvDesc, SkyActor->GetCbvSrvAvailableHandle());
 	SkyActor->AddHandleOffsetNum();
+	
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_UniformconstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
-	memcpy(g_pCbvDataBegin, &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
+	memcpy(g_pCbvDataBegin.get(), &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
 }
 
 void HelloGame::UpLoadShaderResource()
@@ -587,7 +590,9 @@ void HelloGame::UpdateConstantBuffer()
 	UpdateMVP();
 	UpdateLight();
 	//GPU复制数据
-	memcpy(g_pCbvDataBegin, &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
+	ModeActor->UpLoadConstantBuffer();
+	SkyActor->UpLoadConstantBuffer();
+	memcpy(g_pCbvDataBegin.get(), &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
 }
 
 void HelloGame::UpdateMVP()
@@ -601,15 +606,12 @@ void HelloGame::UpdateMVP()
 	FVector4 up = ZMath::MakeFvector4(0.0f, 1.0f, 0.0f, 0.0f);
 
 	FMatrix4x4 v = ZMath::LookAt(pos, target, up);
-
-	FMatrix4x4 m = ZMath::MatrixIdentity();
 	FMatrix4x4 p = ZMath::MatrixFov(PIDIV4, AspectRatio(), 1.0f, 1000.0f);
 	FMatrix4x4 VP = v * p;
-	FMatrix4x4 MVP = m * v * p;
-
-	ZMath::MaterixToFloat4x4(&g_UniformconstantBufferData.ObjectToWorld, m);
+	
+	ModeActor->UpdateMVP(VP);
+	SkyActor->UpdateMVP(VP);
 	ZMath::MaterixToFloat4x4(&g_UniformconstantBufferData.VP, VP);
-	ZMath::MaterixToFloat4x4(&g_UniformconstantBufferData.MVP, MVP);
 	g_UniformconstantBufferData.cameraPosition = { x,y,z,1 };
 	
 }

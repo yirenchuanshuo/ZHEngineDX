@@ -4,6 +4,13 @@
 
 #define UPPER(A,B) ((UINT)(((A)+((B)-1))&~(B - 1)))
 
+template<typename T>
+constexpr UINT CalcConstantBufferByteSize()
+{
+	const UINT byteSize = sizeof(T);
+	return (byteSize + 255) & ~255;
+}
+
 namespace ZMath
 {
 	constexpr  float PI       = 3.1415926535f;
