@@ -196,6 +196,8 @@ namespace ZMath
 	}
 
 	//Common
-	
-	
+	static FMatrix4x4 VectorToMatrix(FVector4 &v)
+	{
+		return XMMatrixTranslationFromVector(v);
+	}
 }

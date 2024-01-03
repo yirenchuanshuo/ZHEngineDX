@@ -16,6 +16,12 @@ class RenderActor
 public:
     RenderActor();
 
+    //Function
+    void SetPosition(FVector4& Pos) { Position = Pos; }
+    FVector4 GetPosition() { return Position; }
+    
+
+    //RHI
     void Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const char* vsout, const char* psout, EBlendMode blend);
     void LoadMesh(std::string filepath);
     void SetTextures(UTexture& Texture);
@@ -32,6 +38,7 @@ public:
     void UpLoadShaderResource(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList,D3D12_SHADER_RESOURCE_VIEW_DESC& SrvDesc);
     void CreateConstantBufferView(ID3D12Device* pDevice);
     void UpLoadConstantBuffer();
+
 
     ID3D12GraphicsCommandList* GetBundle()const { return g_bundle.Get(); }
 
@@ -70,9 +77,12 @@ private:
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_bundle;
+
     Microsoft::WRL::ComPtr<ID3D12Resource> g_ObjectConstantBuffer;
 
     std::shared_ptr<UINT8> pObjectCbvDataBegin;
     UINT cbvsrvDescriptorSize;
     UINT HandleOffsetNum;
+
+    FVector4 Position;
 };

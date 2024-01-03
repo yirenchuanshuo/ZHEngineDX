@@ -1,10 +1,12 @@
 #include "RenderActor.h"
 
 RenderActor::RenderActor()
-	:g_vertexBufferView{}, g_indexBufferView{}, HandleOffsetNum(0)
+	:g_vertexBufferView{}, g_indexBufferView{}, HandleOffsetNum(0),cbvsrvDescriptorSize(0), Position{0,0,0,1}
 {
 	
 }
+
+
 
 void RenderActor::Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const char* vsout, const char* psout, EBlendMode blend)
 {
@@ -34,7 +36,7 @@ void RenderActor::SetTextures(UTexture& Texture)
 
 void RenderActor::UpdateMVP(FMatrix4x4& VP)
 {
-	FMatrix4x4 m = ZMath::MatrixIdentity();
+	FMatrix4x4 m = ZMath::VectorToMatrix(Position);
 	FMatrix4x4 mvp = m * VP;
 	ZMath::MaterixToFloat4x4(&g_ObjectConstantBufferData.ObjectToWorld, m);
 	ZMath::MaterixToFloat4x4(&g_ObjectConstantBufferData.ObjectToClip, mvp);
