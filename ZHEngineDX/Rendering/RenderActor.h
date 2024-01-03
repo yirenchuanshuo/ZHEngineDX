@@ -54,7 +54,7 @@ public:
     UINT* GetMeshIndicesData() { return Mesh->GetIndicesData(); }
     EBlendMode GetActorMaterialBlendMode() { return Material->GetMateriBlendMode(); }
 
-    UINT GetCbvSrvHeapDescriptorsNum(UINT UniformDataTypeNums) { return Material->textures.size() + 1 + UniformDataTypeNums; }
+    UINT GetCbvSrvHeapDescriptorsNum(UINT UniformCbvDataNums, UINT UniformSrvDataNums, UINT FrameCount);
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetCbvSrvAvailableHandle();
 
@@ -66,6 +66,8 @@ public:
 
     Microsoft::WRL::ComPtr<ID3D12Resource> g_indexBuffer;
     D3D12_INDEX_BUFFER_VIEW g_indexBufferView;
+    
+    
     
     
 private:
@@ -81,8 +83,11 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> g_ObjectConstantBuffer;
 
     std::shared_ptr<UINT8> pObjectCbvDataBegin;
+
+    UINT OneFrameCbvSrvNums;
     UINT cbvsrvDescriptorSize;
     UINT HandleOffsetNum;
+
 
     FVector4 Position;
 };

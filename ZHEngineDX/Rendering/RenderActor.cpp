@@ -73,11 +73,11 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSa
 		GraphicsRootDescriptorPos++;
 	}
 
-	const D3D12_DESCRIPTOR_HEAP_DESC CbvSrvHeapDesc = cbvsrvHeap->GetDesc();
-	const UINT CbvSrvNums = CbvSrvHeapDesc.NumDescriptors;
+	
+	
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle = cbvsrvHeap->GetGPUDescriptorHandleForHeapStart();
 	
-	for(UINT i=0;i<CbvSrvNums;i++)
+	for(UINT i=0;i< OneFrameCbvSrvNums;i++)
 	{
 		g_bundle->SetGraphicsRootDescriptorTable(GraphicsRootDescriptorPos, gpuDescriptorHandle);
 		gpuDescriptorHandle.ptr+=cbvSrvDescriptorSize;
@@ -92,7 +92,7 @@ void RenderActor::RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSa
 	g_bundle->IASetVertexBuffers(0, 1, &g_vertexBufferView);
 
 	//»­Í¼
-	g_bundle->DrawIndexedInstanced(Mesh->GetIndicesSize(), 1, 0, 0, 0);
+	g_bundle->DrawIndexedInstanced(static_cast<UINT>(Mesh->GetIndicesSize()), 1, 0, 0, 0);
 
 	g_bundle->Close();
 }
@@ -208,12 +208,21 @@ void RenderActor::UpLoadConstantBuffer()
 	memcpy(pObjectCbvDataBegin.get(), &g_ObjectConstantBufferData, sizeof(g_ObjectConstantBufferData));
 }
 
+UINT RenderActor::GetCbvSrvHeapDescriptorsNum(UINT UniformCbvDataNums, UINT UniformSrvDataNums, UINT FrameCount)
+{
+	OneFrameCbvSrvNums = static_cast<UINT>(Material->textures.size()) + 1
+		+ UniformCbvDataNums/FrameCount+ UniformSrvDataNums;
+	return static_cast<UINT>(Material->textures.size()) + FrameCount + UniformCbvDataNums+ UniformSrvDataNums;
+}
+
 CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetCbvSrvAvailableHandle()
 {
 	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(cbvsrvHeap->GetCPUDescriptorHandleForHeapStart(),HandleOffsetNum,cbvsrvDescriptorSize);
 	return CbvSrvHandle;
 }
+
+
 
 
 

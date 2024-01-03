@@ -270,7 +270,7 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	
 	//´´½¨³£Á¿»º³åÃèÊö·û¶ÑÃèÊö
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = ModeActor->GetCbvSrvHeapDescriptorsNum(g_Uniformtextures.size()+2);
+	cbvsrvHeapDesc.NumDescriptors = ModeActor->GetCbvSrvHeapDescriptorsNum(FrameCount, g_Uniformtextures.size() + 1, FrameCount);
 	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -280,12 +280,12 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	NAME_D3D12_OBJECT(ModeActor->GetCbvSrvHeapRef());
 
 
-	cbvsrvHeapDesc.NumDescriptors = GroundActor->GetCbvSrvHeapDescriptorsNum(g_Uniformtextures.size() + 2);
+	cbvsrvHeapDesc.NumDescriptors = GroundActor->GetCbvSrvHeapDescriptorsNum(FrameCount, g_Uniformtextures.size() + 1, FrameCount);
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(GroundActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(GroundActor->GetCbvSrvHeapRef());
 
 
-	cbvsrvHeapDesc.NumDescriptors = SkyActor->GetCbvSrvHeapDescriptorsNum(g_Uniformtextures.size() + 2);
+	cbvsrvHeapDesc.NumDescriptors = SkyActor->GetCbvSrvHeapDescriptorsNum(FrameCount, g_Uniformtextures.size() + 1, FrameCount);
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(SkyActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(SkyActor->GetCbvSrvHeapRef());
 
