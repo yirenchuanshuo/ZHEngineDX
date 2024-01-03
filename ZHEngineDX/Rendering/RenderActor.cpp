@@ -209,11 +209,8 @@ void RenderActor::UpLoadConstantBuffer()
 
 CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetCbvSrvAvailableHandle()
 {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(cbvsrvHeap->GetCPUDescriptorHandleForHeapStart());
-	if (HandleOffsetNum > 0)
-	{
-		CbvSrvHandle.ptr += HandleOffsetNum * cbvsrvDescriptorSize;
-	}
+	
+	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(cbvsrvHeap->GetCPUDescriptorHandleForHeapStart(),HandleOffsetNum,cbvsrvDescriptorSize);
 	return CbvSrvHandle;
 }
 
