@@ -200,6 +200,7 @@ void RenderActor::CreateConstantBufferView(ID3D12Device* pDevice)
 	pDevice->CreateConstantBufferView(&cbvDesc, GetCbvSrvAvailableHandle());
 	ThrowIfFailed(g_ObjectConstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pObjectCbvDataBegin)));
 	HandleOffsetNum++;
+	UINT A = HandleOffsetNum;
 }
 
 void RenderActor::UpLoadConstantBuffer()

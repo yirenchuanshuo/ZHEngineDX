@@ -117,7 +117,6 @@ void HelloGame::LoadAsset()
 	//创建命令列表，用命令分配器给命令列表分配对象
 	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[g_frameIndex].Get(), nullptr, IID_PPV_ARGS(&g_commandList)));
 	
-	//ThrowIfFailed(g_commandList->Close());
 
 	//准备渲染对象
 	PreperRenderActor();
@@ -125,6 +124,9 @@ void HelloGame::LoadAsset()
 	//加载纹理数据并创建着色器资源
 	UpLoadShaderResource();
 	LoadSkyCubeMap();
+
+	//建立并上传数据到常量缓冲区
+	UpLoadConstantBuffer();
 
 	
 
@@ -256,8 +258,8 @@ void HelloGame::PreperRenderActor()
 	UpLoadVertexAndIndexToHeap(ModeActor);
 	UpLoadVertexAndIndexToHeap(GroundActor);
 	UpLoadVertexAndIndexToHeap(SkyActor);
-	//建立并上传数据到常量缓冲区
-	UpLoadConstantBuffer();
+
+	
 }
 
 
@@ -327,12 +329,12 @@ void HelloGame::CreateRootSignature()
 	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersNormal(7);
 	
 	rootParametersNormal[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[1].InitAsDescriptorTable(1, &ModecbvRanges, D3D12_SHADER_VISIBILITY_ALL);
-	rootParametersNormal[2].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
-	rootParametersNormal[3].InitAsDescriptorTable(1, &normalSrvRanges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[4].InitAsDescriptorTable(1, &normalSrvRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[5].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersNormal[6].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[1].InitAsDescriptorTable(1, &normalSrvRanges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[2].InitAsDescriptorTable(1, &normalSrvRanges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[3].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[4].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersNormal[5].InitAsDescriptorTable(1, &ModecbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersNormal[6].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
 	
 
 	//定义根签名属性
@@ -359,10 +361,10 @@ void HelloGame::CreateRootSignature()
 
 	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersSky(5);
 	rootParametersSky[0].InitAsDescriptorTable(1, &samplerRanges, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersSky[1].InitAsDescriptorTable(1, &ModecbvRanges, D3D12_SHADER_VISIBILITY_ALL);
-	rootParametersSky[2].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
-	rootParametersSky[3].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
-	rootParametersSky[4].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersSky[1].InitAsDescriptorTable(1, &EnvBRDFrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersSky[2].InitAsDescriptorTable(1, &skyrange, D3D12_SHADER_VISIBILITY_PIXEL);
+	rootParametersSky[3].InitAsDescriptorTable(1, &ModecbvRanges, D3D12_SHADER_VISIBILITY_ALL);
+	rootParametersSky[4].InitAsDescriptorTable(1, &cbvRanges, D3D12_SHADER_VISIBILITY_ALL);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC SkyRootSignatureDesc;
 	SkyRootSignatureDesc.Init_1_1(static_cast<UINT>(rootParametersSky.size()), rootParametersSky.data(), 0, nullptr, rootSignatureFlags);
@@ -509,15 +511,15 @@ void HelloGame::UpLoadConstantBuffer()
 	//创建常量缓冲区视图
 	ModeActor->CreateConstantBufferView(GetD3DDevice());
 	g_device->CreateConstantBufferView(&cbvDesc, ModeActor->GetCbvSrvAvailableHandle());
-	ModeActor->AddHandleOffsetNum();
+	
 
 	GroundActor->CreateConstantBufferView(GetD3DDevice());
 	g_device->CreateConstantBufferView(&cbvDesc, GroundActor->GetCbvSrvAvailableHandle());
-	GroundActor->AddHandleOffsetNum();
+	
 	
 	SkyActor->CreateConstantBufferView(GetD3DDevice());
 	g_device->CreateConstantBufferView(&cbvDesc, SkyActor->GetCbvSrvAvailableHandle());
-	SkyActor->AddHandleOffsetNum();
+	
 	
 	//复制常量缓冲区数据到GPU
 	ThrowIfFailed(g_UniformconstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&g_pCbvDataBegin)));
@@ -544,7 +546,8 @@ void HelloGame::UpLoadShaderResource()
 	ModeActor->UpLoadShaderResource(GetD3DDevice(), GetCommandList(), srvDesc);
 	GroundActor->UpLoadShaderResource(GetD3DDevice(), GetCommandList(), srvDesc);
 
-	//获取着色器资源视图起始地址
+
+	//获取着色器资源视图有效起始地址
 	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvSrvHandle(ModeActor->GetCbvSrvAvailableHandle());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GroundCbvSrvHandle(GroundActor->GetCbvSrvAvailableHandle());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvSrvHandle(SkyActor->GetCbvSrvAvailableHandle());
@@ -847,8 +850,11 @@ void HelloGame::LoadSkyCubeMap()
 	
 
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, ModeCbvSrvHandle);
+	ModeActor->AddHandleOffsetNum();
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, GroundCbvSrvHandle);
+	GroundActor->AddHandleOffsetNum();
 	g_device->CreateShaderResourceView(g_SkyCubeMap.Resource.Get(), &srvDesc, SkyCbvSrvHandle);
+	SkyActor->AddHandleOffsetNum();
 }
 
 
