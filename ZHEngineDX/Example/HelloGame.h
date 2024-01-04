@@ -27,6 +27,8 @@ public:
     virtual void UpdateLight();
     virtual void UpdateConstantBuffer();
 
+    virtual void CreateFrameResource();
+
 protected:
     virtual void UpdateMVP();
     virtual void LoadTexture();
@@ -103,7 +105,7 @@ private:
     void CreateShader(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader,std::wstring VSFileName, std::wstring PSFileName);
     void CreatePSO();
     void UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& Actor) const;
-    void UpLoadConstantBuffer();
+    void UpLoadConstantBuffer(UINT FrameIndex);
     void UpLoadShaderResource();
     
 };

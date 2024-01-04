@@ -135,7 +135,7 @@ void GameRHI::CreateWindowResources()
 		CreateSwapChain();
 	}
 
-	CreateFrameResource();
+	CreateFrameBuffer();
 	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
 
 	if (g_depthstencilBufferFormat != DXGI_FORMAT_UNKNOWN)
@@ -273,7 +273,7 @@ void GameRHI::MoveToNextFrame()
 	g_fenceValues[g_frameIndex] = currentFenceValue + 1;
 }
 
-void GameRHI::CreateFrameResource()
+void GameRHI::CreateFrameBuffer()
 {
 	for (UINT n = 0; n < FrameCount; n++)
 	{

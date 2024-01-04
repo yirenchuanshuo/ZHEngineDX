@@ -55,7 +55,7 @@ public:
 	void CreateWindowResources();
 	void WaitForGPU();
 	void MoveToNextFrame();
-	void CreateFrameResource();
+	void CreateFrameBuffer();
 	void SetMSAA();
 	
 

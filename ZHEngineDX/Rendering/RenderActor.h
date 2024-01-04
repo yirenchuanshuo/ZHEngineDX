@@ -30,13 +30,13 @@ public:
 
 
 
-    void RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT cbvSrvDescriptorSize) const ;
+    void RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT frameIndex, UINT cbvSrvDescriptorSize) const ;
 
 
     void SetPipleLineState(ID3D12Device* pDevice,D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc);
     void SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc);
     void UpLoadShaderResource(ID3D12Device* pDevice, ID3D12GraphicsCommandList* pCommandList,D3D12_SHADER_RESOURCE_VIEW_DESC& SrvDesc);
-    void CreateConstantBufferView(ID3D12Device* pDevice);
+    void CreateConstantBufferView(ID3D12Device* pDevice, CD3DX12_CPU_DESCRIPTOR_HANDLE& CbvHandle);
     void UpLoadConstantBuffer();
 
 
@@ -55,8 +55,10 @@ public:
     EBlendMode GetActorMaterialBlendMode() { return Material->GetMateriBlendMode(); }
 
     UINT GetCbvSrvHeapDescriptorsNum(UINT UniformCbvDataNums, UINT UniformSrvDataNums, UINT FrameCount);
+    UINT GetMaterialSrvNums();
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetCbvSrvAvailableHandle();
+    CD3DX12_CPU_DESCRIPTOR_HANDLE GetFrameCbvHandle(UINT FrameIndex, UINT FrameCount, UINT UniformSrvNums);
 
 public:
     ObjectConstantBuffer g_ObjectConstantBufferData;
@@ -84,6 +86,7 @@ private:
 
     std::shared_ptr<UINT8> pObjectCbvDataBegin;
 
+    UINT SrvNums;
     UINT OneFrameCbvSrvNums;
     UINT cbvsrvDescriptorSize;
     UINT HandleOffsetNum;

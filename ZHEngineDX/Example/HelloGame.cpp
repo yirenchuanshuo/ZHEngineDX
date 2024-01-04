@@ -126,7 +126,7 @@ void HelloGame::LoadAsset()
 	LoadSkyCubeMap();
 
 	//建立并上传数据到常量缓冲区
-	UpLoadConstantBuffer();
+	UpLoadConstantBuffer(0);
 
 	
 
@@ -138,11 +138,12 @@ void HelloGame::LoadAsset()
 	//设置围栏
 	SetFence();
 
-	ModeActor->RecordCommands(GetD3DDevice(),  g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
-
-	SkyActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(),  g_cbvsrvDescriptorSize);
 	
-	GroundActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), g_cbvsrvDescriptorSize);
+	ModeActor->RecordCommands(GetD3DDevice(),  g_samplerHeap.Get(), 0 , g_cbvsrvDescriptorSize);
+
+	SkyActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), 0 ,  g_cbvsrvDescriptorSize);
+	
+	GroundActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), 0 , g_cbvsrvDescriptorSize);
 }
 
 void HelloGame::PopulateCommandList()
@@ -490,7 +491,7 @@ void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& A
 }
 
 
-void HelloGame::UpLoadConstantBuffer()
+void HelloGame::UpLoadConstantBuffer(UINT FrameIndex)
 {
 	//数据上传堆
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -509,16 +510,26 @@ void HelloGame::UpLoadConstantBuffer()
 	cbvDesc.SizeInBytes = constantBufferSize;
 
 	//创建常量缓冲区视图
-	ModeActor->CreateConstantBufferView(GetD3DDevice());
-	g_device->CreateConstantBufferView(&cbvDesc, ModeActor->GetCbvSrvAvailableHandle());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE ModeCbvHandle(
+		ModeActor->GetFrameCbvHandle(FrameIndex,FrameCount,static_cast<UINT>(g_Uniformtextures.size()+1)));
 	
+	ModeActor->CreateConstantBufferView(GetD3DDevice(), ModeCbvHandle);
+	ModeCbvHandle.Offset(g_cbvsrvDescriptorSize);
+	g_device->CreateConstantBufferView(&cbvDesc, ModeCbvHandle);
+	
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GroundCbvHandle(
+		GroundActor->GetFrameCbvHandle(FrameIndex, FrameCount, static_cast<UINT>(g_Uniformtextures.size() + 1)));
 
-	GroundActor->CreateConstantBufferView(GetD3DDevice());
-	g_device->CreateConstantBufferView(&cbvDesc, GroundActor->GetCbvSrvAvailableHandle());
+	GroundActor->CreateConstantBufferView(GetD3DDevice(), GroundCbvHandle);
+	GroundCbvHandle.Offset(g_cbvsrvDescriptorSize);
+	g_device->CreateConstantBufferView(&cbvDesc, GroundCbvHandle);
 	
+	CD3DX12_CPU_DESCRIPTOR_HANDLE SkyCbvHandle(
+		SkyActor->GetFrameCbvHandle(FrameIndex, FrameCount, static_cast<UINT>(g_Uniformtextures.size() + 1)));
 	
-	SkyActor->CreateConstantBufferView(GetD3DDevice());
-	g_device->CreateConstantBufferView(&cbvDesc, SkyActor->GetCbvSrvAvailableHandle());
+	SkyActor->CreateConstantBufferView(GetD3DDevice(), SkyCbvHandle);
+	SkyCbvHandle.Offset(g_cbvsrvDescriptorSize);
+	g_device->CreateConstantBufferView(&cbvDesc, SkyCbvHandle);
 	
 	
 	//复制常量缓冲区数据到GPU
@@ -626,6 +637,15 @@ void HelloGame::UpdateConstantBuffer()
 	GroundActor->UpLoadConstantBuffer();
 	SkyActor->UpLoadConstantBuffer();
 	memcpy(g_pCbvDataBegin.get(), &g_UniformconstantBufferData, sizeof(g_UniformconstantBufferData));
+}
+
+void HelloGame::CreateFrameResource()
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE ModecbvSrvHandle(ModeActor->GetCbvSrvAvailableHandle());
+	for (UINT n = 0; n < FrameCount; n++)
+	{
+		UpLoadConstantBuffer(n);
+	}
 }
 
 void HelloGame::UpdateMVP()
