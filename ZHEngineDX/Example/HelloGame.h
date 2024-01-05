@@ -43,9 +43,9 @@ public:
     bool isBAdd = true;
 
     //Data
-    std::unique_ptr<RenderActor> ModeActor;
-    std::unique_ptr<RenderActor> SkyActor;
-    std::unique_ptr<RenderActor> GroundActor;
+    std::shared_ptr<RenderActor> ModeActor;
+    std::shared_ptr<RenderActor> SkyActor;
+    std::shared_ptr<RenderActor> GroundActor;
     DirectionLight light;
     float lightangle=0.0f;
 
@@ -68,7 +68,8 @@ private:
     ComPtr<ID3D12DescriptorHeap> g_samplerHeap;
     
     UINT g_cbvsrvDescriptorSize=0u;
-
+    UINT g_currentFrameResourceIndex;
+    UINT g_frameCounter;
 
     //×ÊÔ´¶Ñ
     D3D12_RESOURCE_DESC                 g_ResourceBufferDesc;
@@ -104,7 +105,7 @@ private:
     D3D12_SAMPLER_DESC CreateSamplerDesCribe(UINT index);
     void CreateShader(ComPtr<ID3DBlob>& vertexShader, ComPtr<ID3DBlob>& pixelShader,std::wstring VSFileName, std::wstring PSFileName);
     void CreatePSO();
-    void UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& Actor) const;
+    void UpLoadVertexAndIndexToHeap(std::shared_ptr<RenderActor>& Actor) const;
     void UpLoadConstantBuffer(UINT FrameIndex);
     void UpLoadShaderResource();
     

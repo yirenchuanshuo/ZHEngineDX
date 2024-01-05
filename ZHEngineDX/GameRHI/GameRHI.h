@@ -26,7 +26,7 @@ public:
 	ID3D12Resource*				GetRenderTarget() const { return g_renderTargets[g_frameIndex].Get(); }
 	ID3D12Resource*				GetDepthStencil() const { return g_depthStencilBuffer.Get(); }
 	ID3D12CommandQueue*			GetCommandQueue() const { return g_commandQueue.Get(); }
-	ID3D12CommandAllocator*		GetCommandAllocator() const { return g_commandAllocators[g_frameIndex].Get(); }
+	ID3D12CommandAllocator*		GetCommandAllocator() const { return g_commandAllocators.Get(); }
 	ID3D12GraphicsCommandList*	GetCommandList() const { return g_commandList.Get(); }
 	D3D12_VIEWPORT              GetScreenViewport() const { return g_viewport; }
 	D3D12_RECT                  GetScissorRect() const { return g_scissorRect; }
@@ -54,7 +54,6 @@ public:
 	void CreateDeviceResources();
 	void CreateWindowResources();
 	void WaitForGPU();
-	void MoveToNextFrame();
 	void CreateFrameBuffer();
 	void SetMSAA();
 	
@@ -71,7 +70,7 @@ protected:
 	ComPtr<ID3D12Device> g_device;
 	ComPtr<ID3D12CommandQueue> g_commandQueue;
 	ComPtr<ID3D12GraphicsCommandList> g_commandList;
-	ComPtr<ID3D12CommandAllocator> g_commandAllocators[FrameCount];
+	ComPtr<ID3D12CommandAllocator> g_commandAllocators;
 
 	//SwapChain
 	ComPtr<IDXGIFactory6> g_dxgiFactory;
@@ -104,7 +103,7 @@ protected:
 	// Χ
 	Microsoft::WRL::Wrappers::Event g_fenceEvent;
 	ComPtr<ID3D12Fence> g_fence;
-	UINT64 g_fenceValues[FrameCount];
+	UINT64 g_fenceValues;
 
 private:
 	//TwoLevel
@@ -153,6 +152,7 @@ public:
 	std::wstring GetGameAssetPath();
 
 	void ParseCommandLineArgs(_In_reads_(argc) WCHAR* argv[], int argc);
+	void SetCustomWindowText(LPCWSTR text);
 
 protected:
 	std::wstring GetAssetFullPath(LPCWSTR assetName);

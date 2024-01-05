@@ -4,7 +4,7 @@
 #include "../GameRHI/GameRHI.h"
 #include "Material.h"
 
-
+class URenderActorInterface;
 struct ObjectConstantBuffer
 {
     Float4x4 ObjectToWorld  = ZMath::Float4x4Identity();
@@ -13,8 +13,10 @@ struct ObjectConstantBuffer
 
 class RenderActor
 {
+    friend URenderActorInterface;
 public:
     RenderActor();
+    RenderActor(RenderActor&) = default;
 
     //Function
     void SetPosition(FVector4& Pos) { Position = Pos; }
@@ -74,7 +76,7 @@ public:
     
 private:
     std::unique_ptr<StaticMesh> Mesh;
-    std::unique_ptr<UMaterial> Material;
+    std::shared_ptr<UMaterial> Material;
 
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvsrvHeap;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> PipeLineState;

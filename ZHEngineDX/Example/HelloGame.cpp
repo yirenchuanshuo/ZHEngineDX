@@ -17,6 +17,8 @@ void DebugMessage(std::wstring strToDisplay)
 
 HelloGame::HelloGame(UINT width, UINT height, const std::wstring& name):
 	GameRHI(width, height, name, DXGI_FORMAT_R8G8B8A8_UNORM),
+	g_currentFrameResourceIndex(0),
+	g_frameCounter(0),
 	g_UniformconstantBufferData{},
 	g_ResourceBufferDesc{},
 	light{Float4(1,1,1,0),FLinearColor(1,1,1,1)}
@@ -34,7 +36,22 @@ void HelloGame::OnInit()
 void HelloGame::OnUpdate(ZHEngineTimer const& timer)
 {
 	float time = float(timer.GetTotalSeconds());
-	//UpdateBackGround();
+
+	if (g_frameCounter == 500)
+	{
+		// Update window text with FPS value.
+		wchar_t fps[64];
+		swprintf_s(fps, L"%ufps", g_timer.GetFramesPerSecond());
+		SetCustomWindowText(fps);
+		g_frameCounter = 0;
+	}
+
+	g_frameCounter++;
+	
+	const UINT lastCompletedFence = g_fence->GetCompletedValue();
+
+	g_currentFrameResourceIndex = (g_currentFrameResourceIndex + 1) % FrameCount;
+
 	UpdateConstantBuffer();
 }
 
@@ -57,7 +74,8 @@ void HelloGame::OnRender()
 
 	//显示图像
 	ThrowIfFailed(g_swapChain->Present(1, 0));
-	MoveToNextFrame();
+	g_frameIndex = g_swapChain->GetCurrentBackBufferIndex();
+	WaitForGPU();
 }
 
 void HelloGame::OnDestroy()
@@ -86,9 +104,10 @@ void HelloGame::LoadPipeline()
 	//创建D3D资源
 	CreateDeviceResources();
 
-	ModeActor = std::make_unique<RenderActor>();
-	SkyActor = std::make_unique<RenderActor>();
-	GroundActor = std::make_unique<RenderActor>();
+	ModeActor = std::make_shared<RenderActor>();
+	SkyActor = std::make_shared<RenderActor>();
+	GroundActor = std::make_shared<RenderActor>();
+
 	ModeActor->Init(GetD3DDevice(), L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
 	SkyActor->Init(GetD3DDevice(), L"Shader/Sky.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
 	GroundActor->Init(GetD3DDevice(), L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
@@ -115,7 +134,7 @@ void HelloGame::LoadAsset()
 	CreatePSO();
 
 	//创建命令列表，用命令分配器给命令列表分配对象
-	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators[g_frameIndex].Get(), nullptr, IID_PPV_ARGS(&g_commandList)));
+	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators.Get(), nullptr, IID_PPV_ARGS(&g_commandList)));
 	
 
 	//准备渲染对象
@@ -138,7 +157,8 @@ void HelloGame::LoadAsset()
 	//设置围栏
 	SetFence();
 
-	
+	//CreateFrameResource();
+
 	ModeActor->RecordCommands(GetD3DDevice(),  g_samplerHeap.Get(), 0 , g_cbvsrvDescriptorSize);
 
 	SkyActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), 0 ,  g_cbvsrvDescriptorSize);
@@ -148,8 +168,8 @@ void HelloGame::LoadAsset()
 
 void HelloGame::PopulateCommandList()
 {
-	ThrowIfFailed(g_commandAllocators[g_frameIndex]->Reset());
-	ThrowIfFailed(g_commandList->Reset(g_commandAllocators[g_frameIndex].Get(), nullptr));
+	ThrowIfFailed(g_commandAllocators->Reset());
+	ThrowIfFailed(g_commandList->Reset(g_commandAllocators.Get(), nullptr));
 
 	if (g_MSAA)
 	{
@@ -441,10 +461,10 @@ void HelloGame::CreatePSO()
 	
 }
 
-void HelloGame::UpLoadVertexAndIndexToHeap(const std::unique_ptr<RenderActor>& Actor) const
+
+void HelloGame::UpLoadVertexAndIndexToHeap(std::shared_ptr<RenderActor>& Actor) const
 {
 	
-
 	const UINT vertexBufferSize = static_cast<UINT>(Actor->GetMeshVerticesByteSize());
 	const UINT indexBufferSize = static_cast<UINT>(Actor->GetMeshIndicesByteSize());
 
@@ -641,11 +661,17 @@ void HelloGame::UpdateConstantBuffer()
 
 void HelloGame::CreateFrameResource()
 {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE ModecbvSrvHandle(ModeActor->GetCbvSrvAvailableHandle());
 	for (UINT n = 0; n < FrameCount; n++)
 	{
 		UpLoadConstantBuffer(n);
+
+		ModeActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), n, g_cbvsrvDescriptorSize);
+
+		SkyActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), n, g_cbvsrvDescriptorSize);
+
+		GroundActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), n, g_cbvsrvDescriptorSize);
 	}
+
 }
 
 void HelloGame::UpdateMVP()

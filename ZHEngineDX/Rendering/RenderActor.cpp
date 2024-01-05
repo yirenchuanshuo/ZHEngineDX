@@ -17,7 +17,7 @@ RenderActor::RenderActor()
 void RenderActor::Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const char* vsout, const char* psout, EBlendMode blend)
 {
 	Mesh = std::make_unique<StaticMesh>();
-	Material = std::make_unique<UMaterial>();
+	Material = std::make_shared<UMaterial>();
 	pObjectCbvDataBegin = std::make_shared<UINT8>();
 	Material->CompileShader(shaderfile, vsout, psout, blend);
 	
