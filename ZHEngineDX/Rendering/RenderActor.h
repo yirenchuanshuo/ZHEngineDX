@@ -27,7 +27,7 @@ public:
     
 
     //RHI
-    virtual void Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const char* vsout, const char* psout, EBlendMode blend);
+    virtual void Init(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader);
     void LoadMesh(std::string filepath);
     void SetTextures(UTexture& Texture);
     void UpdateMVP(FMatrix4x4 &VP);

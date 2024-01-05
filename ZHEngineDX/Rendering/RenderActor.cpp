@@ -14,12 +14,12 @@ RenderActor::RenderActor()
 
 
 
-void RenderActor::Init(ID3D12Device* pDevice, const wchar_t* shaderfile, const char* vsout, const char* psout, EBlendMode blend)
+void RenderActor::Init(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader)
 {
 	Mesh = std::make_unique<StaticMesh>();
-	Material = std::make_shared<UMaterial>();
+	Material = std::make_shared<UMaterial>(shader);
 	pObjectCbvDataBegin = std::make_shared<UINT8>();
-	Material->CompileShader(shaderfile, vsout, psout, blend);
+	
 	
 	cbvsrvDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -53,8 +53,8 @@ void RenderActor::AddHandleOffsetNum()
 void RenderActor::SetPipleLineState(ID3D12Device* pDevice, D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc)
 {
 	PSODesc.pRootSignature = rootSignature.Get();
-	PSODesc.VS = CD3DX12_SHADER_BYTECODE(Material->shader->GetVertexShader());
-	PSODesc.PS = CD3DX12_SHADER_BYTECODE(Material->shader->GetPixelShader());
+	PSODesc.VS = CD3DX12_SHADER_BYTECODE(Material->pShader->GetVertexShader());
+	PSODesc.PS = CD3DX12_SHADER_BYTECODE(Material->pShader->GetPixelShader());
 
 	ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(&PipeLineState)));
 	NAME_D3D12_OBJECT(PipeLineState);

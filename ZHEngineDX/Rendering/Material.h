@@ -6,10 +6,11 @@
 class UMaterial
 {
 public:
-	void CompileShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend);
+	UMaterial(std::shared_ptr<UShader>& shader);
+public:
 	EBlendMode GetMateriBlendMode()const;
 public:
-	std::shared_ptr<UShader> shader;
+	std::shared_ptr<UShader> pShader;
 	std::vector<UTexture> textures;
 
 private:

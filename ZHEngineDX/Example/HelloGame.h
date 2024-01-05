@@ -42,13 +42,20 @@ public:
     bool isGAdd = true;
     bool isBAdd = true;
 
-    //Data
+    //RenderActor
     std::shared_ptr<RenderActor> ModeActor;
     std::shared_ptr<URenderActorInterface> ModeInterface;
     std::shared_ptr<RenderActor> SkyActor;
     std::shared_ptr<URenderActorInterface> SkyInterface;
     std::shared_ptr<RenderActor> GroundActor;
     std::shared_ptr<URenderActorInterface> GroundInterface;
+
+    //Shader
+    std::shared_ptr<UShader> ModeShader;
+    std::shared_ptr<UShader> SkyShader;
+
+
+    //Light
     DirectionLight light;
     float lightangle=0.0f;
 

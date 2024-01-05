@@ -26,7 +26,7 @@ EBlendMode UShader::GetBlendMode()const
 	return blendMode;
 }
 
-void UShader::CreateShader()
+void UShader::CompileShader()
 {
 	UINT compileFlags = 0;
 

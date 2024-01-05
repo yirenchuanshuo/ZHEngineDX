@@ -48,7 +48,7 @@ void HelloGame::OnUpdate(ZHEngineTimer const& timer)
 
 	g_frameCounter++;
 	
-	const UINT lastCompletedFence = g_fence->GetCompletedValue();
+	const UINT lastCompletedFence = static_cast<UINT>(g_fence->GetCompletedValue());
 
 	g_currentFrameResourceIndex = (g_currentFrameResourceIndex + 1) % FrameCount;
 
@@ -101,9 +101,12 @@ void HelloGame::LoadPipeline()
 	}
 #endif 
 
+	
+
 	//创建D3D资源
 	CreateDeviceResources();
 
+	//渲染资源加载
 	ModeActor = std::make_shared<RenderActor>();
 	SkyActor = std::make_shared<RenderActor>();
 	GroundActor = std::make_shared<RenderActor>();
@@ -112,9 +115,15 @@ void HelloGame::LoadPipeline()
 	SkyInterface = std::make_shared<URenderActorInterface>(SkyActor);
 	GroundInterface = std::make_shared<URenderActorInterface>(GroundActor);
 
-	ModeActor->Init(GetD3DDevice(), L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
-	SkyActor->Init(GetD3DDevice(), L"Shader/Sky.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
-	GroundActor->Init(GetD3DDevice(), L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
+	ModeShader = std::make_shared<UShader>(L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
+	ModeShader->CompileShader();
+	SkyShader = std::make_shared<UShader>(L"Shader/Sky.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
+	SkyShader->CompileShader();
+
+
+	ModeActor->Init(GetD3DDevice(), ModeShader);
+	SkyActor->Init(GetD3DDevice(), SkyShader);
+	GroundActor->Init(GetD3DDevice(), ModeShader);
 	FVector4 GroundPos = FVector4{ 0,-1,0,1 };
 	GroundActor->SetPosition(GroundPos);
 
@@ -131,6 +140,10 @@ void HelloGame::LoadPipeline()
 
 void HelloGame::LoadAsset()
 {
+	
+
+
+
 	//创建根签名，选择合适的版本
 	CreateRootSignature();
 
@@ -295,9 +308,11 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 {
 	LoadTexture();
 	
+	UINT UniformSrvNums = static_cast<UINT>(g_Uniformtextures.size() + 1);
+
 	//创建常量缓冲描述符堆描述
 	D3D12_DESCRIPTOR_HEAP_DESC cbvsrvHeapDesc = {};
-	cbvsrvHeapDesc.NumDescriptors = ModeActor->GetCbvSrvHeapDescriptorsNum(FrameCount, g_Uniformtextures.size() + 1, FrameCount);
+	cbvsrvHeapDesc.NumDescriptors = ModeActor->GetCbvSrvHeapDescriptorsNum(FrameCount, UniformSrvNums, FrameCount);
 	cbvsrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvsrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
@@ -307,12 +322,12 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	NAME_D3D12_OBJECT(ModeActor->GetCbvSrvHeapRef());
 
 
-	cbvsrvHeapDesc.NumDescriptors = GroundActor->GetCbvSrvHeapDescriptorsNum(FrameCount, g_Uniformtextures.size() + 1, FrameCount);
+	cbvsrvHeapDesc.NumDescriptors = GroundActor->GetCbvSrvHeapDescriptorsNum(FrameCount, UniformSrvNums, FrameCount);
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(GroundActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(GroundActor->GetCbvSrvHeapRef());
 
 
-	cbvsrvHeapDesc.NumDescriptors = SkyActor->GetCbvSrvHeapDescriptorsNum(FrameCount, g_Uniformtextures.size() + 1, FrameCount);
+	cbvsrvHeapDesc.NumDescriptors = SkyActor->GetCbvSrvHeapDescriptorsNum(FrameCount, UniformSrvNums, FrameCount);
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(SkyActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(SkyActor->GetCbvSrvHeapRef());
 

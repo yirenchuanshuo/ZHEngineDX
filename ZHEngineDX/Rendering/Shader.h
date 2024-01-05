@@ -27,5 +27,5 @@ private:
 	LPCSTR PSOutName;
 
 public:
-	void CreateShader();
+	void CompileShader();
 };

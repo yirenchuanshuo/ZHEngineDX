@@ -1,12 +1,11 @@
 #include "Material.h"
 
-void UMaterial::CompileShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend)
+UMaterial::UMaterial(std::shared_ptr<UShader>& shader):pShader(shader)
 {
-	this->shader = std::make_shared<UShader>(shaderfile, vsout, psout, EBlendMode::Opaque);
-	shader->CreateShader();
+
 }
 
 EBlendMode UMaterial::GetMateriBlendMode() const
 {
-	return shader->blendMode;
+	return pShader->blendMode;
 }
