@@ -3,7 +3,16 @@
 URenderActorInterface::URenderActorInterface(std::shared_ptr<RenderActor>& RenderActorBase)
 	:pRenderActor(RenderActorBase)
 {
-	
+
+}
+
+void URenderActorInterface::Init(ID3D12Device* pDevice)
+{
+	ThrowIfFailed(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE,
+		IID_PPV_ARGS(&g_bundleAllocator)));
+
+	ThrowIfFailed(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, g_bundleAllocator.Get(),
+		nullptr, IID_PPV_ARGS(g_bundle.ReleaseAndGetAddressOf())));
 }
 
 void URenderActorInterface::RecordCommands(ID3D12Device* pDevice, ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT frameIndex, UINT cbvSrvDescriptorSize) const

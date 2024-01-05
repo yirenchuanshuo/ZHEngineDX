@@ -108,6 +108,10 @@ void HelloGame::LoadPipeline()
 	SkyActor = std::make_shared<RenderActor>();
 	GroundActor = std::make_shared<RenderActor>();
 
+	ModeInterface = std::make_shared<URenderActorInterface>(ModeActor);
+	SkyInterface = std::make_shared<URenderActorInterface>(SkyActor);
+	GroundInterface = std::make_shared<URenderActorInterface>(GroundActor);
+
 	ModeActor->Init(GetD3DDevice(), L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
 	SkyActor->Init(GetD3DDevice(), L"Shader/Sky.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
 	GroundActor->Init(GetD3DDevice(), L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
@@ -158,12 +162,14 @@ void HelloGame::LoadAsset()
 	SetFence();
 
 	//CreateFrameResource();
+	ModeInterface->Init(GetD3DDevice());
+	ModeInterface->RecordCommands(GetD3DDevice(),  g_samplerHeap.Get(), 0 , g_cbvsrvDescriptorSize);
 
-	ModeActor->RecordCommands(GetD3DDevice(),  g_samplerHeap.Get(), 0 , g_cbvsrvDescriptorSize);
-
-	SkyActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), 0 ,  g_cbvsrvDescriptorSize);
+	SkyInterface->Init(GetD3DDevice());
+	SkyInterface->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), 0 ,  g_cbvsrvDescriptorSize);
 	
-	GroundActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), 0 , g_cbvsrvDescriptorSize);
+	GroundInterface->Init(GetD3DDevice());
+	GroundInterface->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), 0 , g_cbvsrvDescriptorSize);
 }
 
 void HelloGame::PopulateCommandList()
@@ -211,18 +217,18 @@ void HelloGame::PopulateCommandList()
 	std::vector<ID3D12DescriptorHeap*> ppHeaps = { ModeActor->GetCbvSrvHeap(),g_samplerHeap.Get() };
 	g_commandList->SetDescriptorHeaps(static_cast<UINT>(ppHeaps.size()), ppHeaps.data());
 	//Ö´ÐÐActoräÖÈ¾À¦°ó°ü
-	g_commandList->ExecuteBundle(ModeActor->GetBundle());
+	g_commandList->ExecuteBundle(ModeInterface->GetBundle());
 
 	ppHeaps = { GroundActor->GetCbvSrvHeap(),g_samplerHeap.Get() };
 	g_commandList->SetDescriptorHeaps(static_cast<UINT>(ppHeaps.size()), ppHeaps.data());
 	//Ö´ÐÐActoräÖÈ¾À¦°ó°ü
-	g_commandList->ExecuteBundle(GroundActor->GetBundle());
+	g_commandList->ExecuteBundle(GroundInterface->GetBundle());
 	
 	
 	ppHeaps = { SkyActor->GetCbvSrvHeap(),g_samplerHeap.Get() };
 	g_commandList->SetDescriptorHeaps(static_cast<UINT>(ppHeaps.size()), ppHeaps.data());
 	//Ö´ÐÐActoräÖÈ¾À¦°ó°ü
-	g_commandList->ExecuteBundle(SkyActor->GetBundle());
+	g_commandList->ExecuteBundle(SkyInterface->GetBundle());
 
 
 	if (g_MSAA)
@@ -664,12 +670,6 @@ void HelloGame::CreateFrameResource()
 	for (UINT n = 0; n < FrameCount; n++)
 	{
 		UpLoadConstantBuffer(n);
-
-		ModeActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), n, g_cbvsrvDescriptorSize);
-
-		SkyActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), n, g_cbvsrvDescriptorSize);
-
-		GroundActor->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), n, g_cbvsrvDescriptorSize);
 	}
 
 }

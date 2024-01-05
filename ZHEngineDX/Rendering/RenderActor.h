@@ -3,8 +3,11 @@
 #include "../GameHelper/GameHelper.h"
 #include "../GameRHI/GameRHI.h"
 #include "Material.h"
+#include "RenderActorInterface.h"
+
 
 class URenderActorInterface;
+
 struct ObjectConstantBuffer
 {
     Float4x4 ObjectToWorld  = ZMath::Float4x4Identity();
@@ -32,8 +35,6 @@ public:
 
 
 
-    void RecordCommands(ID3D12Device* pDevice,ID3D12DescriptorHeap* pSamplerDescriptorHeap, UINT frameIndex, UINT cbvSrvDescriptorSize) const ;
-
 
     void SetPipleLineState(ID3D12Device* pDevice,D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc);
     void SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc);
@@ -42,7 +43,7 @@ public:
     void UpLoadConstantBuffer();
 
 
-    ID3D12GraphicsCommandList* GetBundle()const { return g_bundle.Get(); }
+   
 
 
     ID3D12DescriptorHeap* GetCbvSrvHeap() { return cbvsrvHeap.Get(); }
@@ -81,8 +82,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvsrvHeap;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> PipeLineState;
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_bundle;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> g_ObjectConstantBuffer;
 

@@ -44,8 +44,11 @@ public:
 
     //Data
     std::shared_ptr<RenderActor> ModeActor;
+    std::shared_ptr<URenderActorInterface> ModeInterface;
     std::shared_ptr<RenderActor> SkyActor;
+    std::shared_ptr<URenderActorInterface> SkyInterface;
     std::shared_ptr<RenderActor> GroundActor;
+    std::shared_ptr<URenderActorInterface> GroundInterface;
     DirectionLight light;
     float lightangle=0.0f;
 
@@ -79,10 +82,7 @@ private:
     SceneConstantBuffer g_UniformconstantBufferData;
 
     //‰÷»æ◊ ‘¥
-    std::vector<UMaterial> g_materials;
-    UMaterial g_skyMaterial;
 
-    std::vector<UTexture> g_textures;
     std::vector<UTexture> g_Uniformtextures;
     UTexture g_SkyCubeMap;
     std::shared_ptr<UINT8> g_pCbvDataBegin;
