@@ -2,9 +2,10 @@
 #include "../GameRHI/GameRHI.h"
 #include "../Mesh/Light.h"
 #include "../Mesh/OBJ.h"
-#include "../Rendering/RenderActor.h"
+#include "../Rendering/FrameScene.h"
 #include "../Texture/Texture.h"
 #include "../Rendering/Material.h"
+
 
 
 
@@ -42,14 +43,17 @@ public:
     bool isGAdd = true;
     bool isBAdd = true;
 
+    //WorldScene
+    std::vector<std::shared_ptr<UFrameScene>> g_FrameScene;
+    std::shared_ptr<UFrameScene> g_pCurrentFrameScene;
+
     //RenderActor
     std::shared_ptr<RenderActor> ModeActor;
-    std::shared_ptr<URenderActorInterface> ModeInterface;
     std::shared_ptr<RenderActor> SkyActor;
-    std::shared_ptr<URenderActorInterface> SkyInterface;
     std::shared_ptr<RenderActor> GroundActor;
-    std::shared_ptr<URenderActorInterface> GroundInterface;
+    
 
+    
     //Shader
     std::shared_ptr<UShader> ModeShader;
     std::shared_ptr<UShader> SkyShader;

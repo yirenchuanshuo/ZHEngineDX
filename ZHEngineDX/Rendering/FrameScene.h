@@ -1,5 +1,5 @@
 #pragma once
-#include "RenderActor.h"
+#include "RenderActorInterface.h"
 
 class UFrameScene
 {
@@ -8,9 +8,12 @@ public:
 	~UFrameScene();
 
 public:
-	std::vector<RenderActor> SceneAcotrs;
-	ComPtr<ID3D12CommandAllocator> g_commandAllocator;
+	void RegisiterRenderInstance(std::shared_ptr<URenderActorInterface>& RenderInstance);
 
+public:
+	std::vector<std::shared_ptr<URenderActorInterface>> SceneAcotrs;
+	ComPtr<ID3D12CommandAllocator> g_commandAllocator;
+	UINT64 g_fenceValue;
 
 private:
 

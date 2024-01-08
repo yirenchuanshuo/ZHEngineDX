@@ -21,7 +21,7 @@ GameRHI::GameRHI(UINT width, UINT height,  std::wstring name,
     g_height(height),
     g_title(name),
 	g_frameIndex(0),
-	g_fenceValues{},
+	g_fenceValue{},
 	g_rtvDescriptorSize(0),
 	g_backBufferFormat(backBufferFormat),
 	g_depthstencilBufferFormat(depthBufferFormat),
@@ -67,19 +67,17 @@ void GameRHI::CreateDeviceResources()
 	}
 	
 	//创建命令分配器
-	for (UINT n = 0; n < FrameCount; n++)
-	{
-		ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(g_commandAllocators.ReleaseAndGetAddressOf())));
-	}
+	
+	ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(g_commandAllocator.ReleaseAndGetAddressOf())));
+	
 
 	//创建命令列表，用命令分配器给命令列表分配对象
-	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocators.Get(), nullptr, IID_PPV_ARGS(g_commandList.ReleaseAndGetAddressOf())));
+	ThrowIfFailed(g_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_commandAllocator.Get(), nullptr, IID_PPV_ARGS(g_commandList.ReleaseAndGetAddressOf())));
 	NAME_D3D12_OBJECT(g_commandList);
-	ThrowIfFailed(g_commandList->Close());
 
 	
-	ThrowIfFailed(g_device->CreateFence(g_fenceValues, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(g_fence.ReleaseAndGetAddressOf())));
-	g_fenceValues++;
+	ThrowIfFailed(g_device->CreateFence(g_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(g_fence.ReleaseAndGetAddressOf())));
+	g_fenceValue++;
 
 	g_fenceEvent.Attach(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
 
@@ -240,15 +238,21 @@ void GameRHI::WaitForGPU()
 {
 	if (g_commandQueue && g_fence && g_fenceEvent.IsValid())
 	{
-		UINT64 fenceValue = g_fenceValues;
+		UINT64 fenceValue = g_fenceValue;
+		const UINT64 lastCompletedFence = g_fence->GetCompletedValue();
 		//储存围栏值，移交GPU
 		ThrowIfFailed(g_commandQueue->Signal(g_fence.Get(), fenceValue));
+		g_fenceValue++;
 		//更新围栏值，用于下一帧渲染
 
 		//等待渲染完成
-		ThrowIfFailed(g_fence->SetEventOnCompletion(fenceValue, g_fenceEvent.Get()));
-		WaitForSingleObjectEx(g_fenceEvent.Get(), INFINITE, FALSE);
-		g_fenceValues++;
+		if (lastCompletedFence < fenceValue)
+		{
+			ThrowIfFailed(g_fence->SetEventOnCompletion(fenceValue, g_fenceEvent.Get()));
+			WaitForSingleObjectEx(g_fenceEvent.Get(), INFINITE, FALSE);
+		}
+		
+		
 	}
 	
 }
@@ -271,9 +275,6 @@ void GameRHI::CreateFrameBuffer()
 
 		g_device->CreateRenderTargetView(g_renderTargets[n].Get(), &rtvDesc, rtvDescriptor);
 		NAME_D3D12_OBJECT_INDEXED(g_renderTargets, n);
-
-		//创建命令分配器
-		//ThrowIfFailed(g_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_commandAllocator[n])));
 	}
 
 	
@@ -296,8 +297,8 @@ void GameRHI::SetMSAA()
 void GameRHI::SetFence()
 {
 	//创建一个围栏同步CPU与GPU
-	ThrowIfFailed(g_device->CreateFence(g_fenceValues, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
-	g_fenceValues++;
+	ThrowIfFailed(g_device->CreateFence(g_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)));
+	g_fenceValue++;
 	//g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (g_fenceEvent.Get() == nullptr)
 	{
@@ -364,7 +365,7 @@ void GameRHI::OnResize()
 {
 	assert(g_device);
 	assert(g_swapChain);
-	assert(g_commandAllocators);
+	assert(g_commandAllocator);
 	WaitForGPU();
 
 	CreateWindowResources();

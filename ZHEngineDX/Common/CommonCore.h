@@ -18,4 +18,5 @@
 #include <windows.h>
 #include <Windowsx.h>
 #include <wrl.h>
+#include <pix.h>
 

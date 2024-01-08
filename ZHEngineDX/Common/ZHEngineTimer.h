@@ -29,7 +29,7 @@ public:
 			throw std::exception("QueryPerformanceCounter");
 		}
 
-		g_MaxDelta = static_cast<uint64_t>(g_Frequency.QuadPart / 10);
+		g_MaxDelta = static_cast<uint64_t>(g_Frequency.QuadPart/10);
 	}
 
 public:
@@ -65,6 +65,7 @@ public:
 		g_SecondCounter = 0;
 	}
 
+    typedef void(*LPUPDATEFUNC) (void);
 
     template<typename TUpdate>
     void Tick(const TUpdate& update)

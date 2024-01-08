@@ -61,7 +61,7 @@ public:
     UINT GetMaterialSrvNums();
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetCbvSrvAvailableHandle();
-    CD3DX12_CPU_DESCRIPTOR_HANDLE GetFrameCbvHandle(UINT FrameIndex, UINT FrameCount, UINT UniformSrvNums);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE GetFrameCbvHandle(UINT FrameIndex, UINT FrameCount, UINT UniformSrvNums, UINT UniformCbvNums);
 
 public:
     ObjectConstantBuffer g_ObjectConstantBufferData;

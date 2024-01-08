@@ -177,10 +177,10 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetCbvSrvAvailableHandle()
 	return CbvSrvHandle;
 }
 
-CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetFrameCbvHandle(UINT FrameIndex, UINT FrameCount, UINT UniformSrvNums)
+CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetFrameCbvHandle(UINT FrameIndex, UINT FrameCount, UINT UniformSrvNums,UINT UniformCbvNums)
 {
 	UINT CbvBenginAdress =  GetMaterialSrvNums() + UniformSrvNums;
-	UINT CbvOffsetNum = CbvBenginAdress + FrameIndex % FrameCount;
+	UINT CbvOffsetNum = CbvBenginAdress + FrameIndex % FrameCount*(1+ UniformCbvNums);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(cbvsrvHeap->GetCPUDescriptorHandleForHeapStart(), CbvOffsetNum, cbvsrvDescriptorSize);
 	return CbvSrvHandle;
 }
