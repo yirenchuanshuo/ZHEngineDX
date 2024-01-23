@@ -7,6 +7,7 @@ RenderActor::RenderActor()
 	cbvsrvDescriptorSize(0),
 	OneFrameCbvSrvNums(0),
 	SrvNums(0),
+	renderInterfaceCount(0),
 	Position{0,0,0,1}
 {
 	
@@ -22,7 +23,6 @@ void RenderActor::Init(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader)
 	
 	
 	cbvsrvDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
 }
 
 void RenderActor::LoadMesh(std::string filepath)
@@ -171,6 +171,11 @@ UINT RenderActor::GetMaterialSrvNums()
 	return static_cast<UINT>(Material->textures.size());
 }
 
+UINT RenderActor::GetRenderInterfaceCount() const
+{
+	return renderInterfaceCount;
+}
+
 CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetCbvSrvAvailableHandle()
 {
 	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(cbvsrvHeap->GetCPUDescriptorHandleForHeapStart(),HandleOffsetNum,cbvsrvDescriptorSize);
@@ -183,6 +188,19 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE RenderActor::GetFrameCbvHandle(UINT FrameIndex, UI
 	UINT CbvOffsetNum = CbvBenginAdress + FrameIndex % FrameCount*(1+ UniformCbvNums);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE CbvSrvHandle(cbvsrvHeap->GetCPUDescriptorHandleForHeapStart(), CbvOffsetNum, cbvsrvDescriptorSize);
 	return CbvSrvHandle;
+}
+
+void RenderActor::AddRenderInterface()
+{
+	renderInterfaceCount++;
+}
+
+void RenderActor::RemoveRenderInterface()
+{
+	if (renderInterfaceCount > 0)
+	{
+		renderInterfaceCount--;
+	}
 }
 
 

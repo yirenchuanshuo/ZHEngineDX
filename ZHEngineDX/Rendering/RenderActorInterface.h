@@ -6,6 +6,7 @@ class URenderActorInterface
 {
 public:
 	URenderActorInterface(std::shared_ptr<RenderActor>& RenderActorBase);
+	~URenderActorInterface();
 
 public:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_bundleAllocator;

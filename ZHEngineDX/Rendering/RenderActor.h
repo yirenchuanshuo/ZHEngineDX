@@ -60,8 +60,16 @@ public:
     UINT GetCbvSrvHeapDescriptorsNum(UINT UniformCbvDataNums, UINT UniformSrvDataNums, UINT FrameCount);
     UINT GetMaterialSrvNums();
 
+    UINT GetRenderInterfaceCount()const;
+
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetCbvSrvAvailableHandle();
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetFrameCbvHandle(UINT FrameIndex, UINT FrameCount, UINT UniformSrvNums, UINT UniformCbvNums);
+
+
+private:
+    void AddRenderInterface();
+    
+    void RemoveRenderInterface();
 
 public:
     ObjectConstantBuffer g_ObjectConstantBufferData;
@@ -92,6 +100,6 @@ private:
     UINT cbvsrvDescriptorSize;
     UINT HandleOffsetNum;
 
-
+    UINT renderInterfaceCount;
     FVector4 Position;
 };

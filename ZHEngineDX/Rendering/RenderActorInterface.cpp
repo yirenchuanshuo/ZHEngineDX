@@ -3,7 +3,18 @@
 URenderActorInterface::URenderActorInterface(std::shared_ptr<RenderActor>& RenderActorBase)
 	:pRenderActor(RenderActorBase)
 {
+	if (pRenderActor)
+	{
+		pRenderActor->AddRenderInterface();
+	}
+}
 
+URenderActorInterface::~URenderActorInterface()
+{
+	if (pRenderActor)
+	{
+		pRenderActor->RemoveRenderInterface();
+	}
 }
 
 void URenderActorInterface::Init(ID3D12Device* pDevice)

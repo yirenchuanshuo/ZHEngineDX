@@ -67,6 +67,10 @@ void HelloGame::OnUpdate(ZHEngineTimer const& timer)
 void HelloGame::OnResize()
 {
 	GameRHI::OnResize();
+	if (BlurActor != nullptr)
+	{
+		//BlurActor->OnResize(g_width,g_height);
+	}
 	UpdateMVP();
 }
 
@@ -127,7 +131,7 @@ void HelloGame::LoadPipeline()
 	ModeActor = std::make_shared<RenderActor>();
 	SkyActor = std::make_shared<RenderActor>();
 	GroundActor = std::make_shared<RenderActor>();
-
+	BlurActor = std::make_unique<PostRenderActor>(GetD3DDevice(),g_width,g_height, DXGI_FORMAT_R8G8B8A8_UNORM);
 	
 
 	ModeShader = std::make_shared<UShader>(L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
@@ -330,6 +334,8 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(SkyActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(SkyActor->GetCbvSrvHeapRef());
 
+	cbvsrvHeapDesc.NumDescriptors = 4;
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc,IID_PPV_ARGS(BlurActor->GetPostCbvSrvUavHeapAddress())));
 
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -653,6 +659,8 @@ void HelloGame::UpLoadShaderResource()
 		g_device->CreateShaderResourceView(g_Uniformtextures[i].Resource.Get(), &srvDesc, SkyCbvSrvHandle);
 		
 	}
+
+	BlurActor->UpLoadShaderResource(g_cbvsrvDescriptorSize);
 
 }
 

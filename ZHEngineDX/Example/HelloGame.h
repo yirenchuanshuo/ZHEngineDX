@@ -5,6 +5,7 @@
 #include "../Rendering/FrameScene.h"
 #include "../Texture/Texture.h"
 #include "../Rendering/Material.h"
+#include "../Rendering/PostProcess.h"
 
 
 
@@ -52,6 +53,8 @@ public:
     std::shared_ptr<RenderActor> SkyActor;
     std::shared_ptr<RenderActor> GroundActor;
     
+    //PostActor
+    std::unique_ptr<PostRenderActor> BlurActor;
 
     
     //Shader
