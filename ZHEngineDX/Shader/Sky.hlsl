@@ -6,6 +6,7 @@ cbuffer ObjectConstantBuffer : register(b0)
 {
     float4x4 ObjectToWorld;
     float4x4 WorldViewProj;
+    float4x4 ObjectToWorldNormal;
 }
 
 

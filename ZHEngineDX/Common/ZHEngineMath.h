@@ -110,6 +110,18 @@ namespace ZMath
 	{
 		 return XMLoadFloat4x4(pSource);
 	}
+
+	static FMatrix4x4 TransposeMatrix(const FMatrix4x4& pSource)
+	{
+		FMatrix4x4 Transpose = DirectX::XMMatrixTranspose(pSource);
+		return Transpose;
+	}
+
+	static FMatrix4x4 InverseMatrix(const FMatrix4x4& pSource)
+	{
+		FMatrix4x4 Inverse = DirectX::XMMatrixInverse(nullptr, pSource);
+		return Inverse;
+	}
 	
 	//VectorMatrix
 	static FMatrix4x4 LookAt(FVector4 &pos,FVector4& target,FVector4 &up)

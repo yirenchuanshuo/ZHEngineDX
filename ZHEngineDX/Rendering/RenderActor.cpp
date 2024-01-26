@@ -38,9 +38,12 @@ void RenderActor::SetTextures(UTexture& Texture)
 void RenderActor::UpdateMVP(FMatrix4x4& VP)
 {
 	FMatrix4x4 m = ZMath::VectorToMatrix(Position);
+	FMatrix4x4 mInverse = ZMath::InverseMatrix(m);
+	FMatrix4x4 mInverseTranspose = ZMath::TransposeMatrix(mInverse);
 	FMatrix4x4 mvp = m * VP;
 	ZMath::MaterixToFloat4x4(&g_ObjectConstantBufferData.ObjectToWorld, m);
 	ZMath::MaterixToFloat4x4(&g_ObjectConstantBufferData.ObjectToClip, mvp);
+	ZMath::MaterixToFloat4x4(&g_ObjectConstantBufferData.ObjectToWorldNormal,mInverseTranspose);
 }
 
 void RenderActor::AddHandleOffsetNum()

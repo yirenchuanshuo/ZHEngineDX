@@ -12,6 +12,7 @@ struct ObjectConstantBuffer
 {
     Float4x4 ObjectToWorld  = ZMath::Float4x4Identity();
     Float4x4 ObjectToClip = ZMath::Float4x4Identity();
+    Float4x4 ObjectToWorldNormal = ZMath::Float4x4Identity();
 };
 
 class RenderActor

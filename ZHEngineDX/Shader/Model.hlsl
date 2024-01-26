@@ -11,6 +11,7 @@ cbuffer ObjectConstantBuffer : register(b0)
 {
     float4x4 ObjectToWorld;
     float4x4 WorldViewProj;
+    float4x4 ObjectToWorldNormal;
 }
 
 struct VertexInput
@@ -38,7 +39,7 @@ PSInput VSMain(VertexInput input)
     PSInput result;
     result.worldposition = mul(input.position,ObjectToWorld);
     result.position = mul(input.position, WorldViewProj);
-    result.normal = normalize(mul(input.normal, (float3x3) ObjectToWorld));
+    result.normal = normalize(mul(input.normal, (float3x3) ObjectToWorldNormal));
     result.tangent = normalize(mul(input.tangent, (float3x3) ObjectToWorld));
     result.texCoord = input.texCoord;
     result.color = input.color;
