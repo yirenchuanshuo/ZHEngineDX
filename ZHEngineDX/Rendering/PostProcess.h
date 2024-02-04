@@ -1,6 +1,7 @@
 #pragma once
-#include"../Common/CommonCore.h"
+#include "../Common/CommonCore.h"
 #include "../GameHelper/GameHelper.h"
+#include "Material.h"
 
 class PostRenderActor 
 {
@@ -15,11 +16,13 @@ public:
 	ID3D12DescriptorHeap** GetPostCbvSrvUavHeapAddress() { return g_PostCbvSrvUavHeap.GetAddressOf(); }
 
 	void UpLoadShaderResource(UINT DescriptorSize);
+	void SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader);
+
 
 private:
 	void BuildResources();
 	void BuildDescriptors();
-
+	
 	
 
 
@@ -29,8 +32,13 @@ private:
 	DXGI_FORMAT g_format;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> g_Device;
-
+	
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_PostCbvSrvUavHeap;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> g_PipeLineState;
+	
+
+	std::shared_ptr<UMaterial> PostMaterial;
+
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE g_Post0CpuSrvHandle;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE g_Post0CpuUavHandle;

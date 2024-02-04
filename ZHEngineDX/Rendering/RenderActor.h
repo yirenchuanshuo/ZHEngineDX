@@ -28,7 +28,7 @@ public:
     
 
     //RHI
-    virtual void Init(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader);
+    virtual void Init(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader);
     void LoadMesh(std::string filepath);
     void SetTextures(UTexture& Texture);
     void UpdateMVP(FMatrix4x4 &VP);

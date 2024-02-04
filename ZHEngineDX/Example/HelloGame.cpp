@@ -134,15 +134,18 @@ void HelloGame::LoadPipeline()
 	BlurActor = std::make_unique<PostRenderActor>(GetD3DDevice(),g_width,g_height, DXGI_FORMAT_R8G8B8A8_UNORM);
 	
 
-	ModeShader = std::make_shared<UShader>(L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
+	ModeShader = std::make_shared<UNormalShader>(L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
 	ModeShader->CompileShader();
-	SkyShader = std::make_shared<UShader>(L"Shader/Sky.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
+	SkyShader = std::make_shared<UNormalShader>(L"Shader/Sky.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
 	SkyShader->CompileShader();
+	//BlurShader = std::make_shared<UShader>();
+	//BlurShader->CompileShader();
 
 
 	ModeActor->Init(GetD3DDevice(), ModeShader);
 	SkyActor->Init(GetD3DDevice(), SkyShader);
 	GroundActor->Init(GetD3DDevice(), ModeShader);
+	//BlurActor->SetMaterial(GetD3DDevice(),BlurShader);
 	FVector4 GroundPos = FVector4{ 0,-1,0,1 };
 	GroundActor->SetPosition(GroundPos);
 
@@ -334,8 +337,8 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(SkyActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(SkyActor->GetCbvSrvHeapRef());
 
-	cbvsrvHeapDesc.NumDescriptors = 4;
-	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc,IID_PPV_ARGS(BlurActor->GetPostCbvSrvUavHeapAddress())));
+	//cbvsrvHeapDesc.NumDescriptors = 4;
+	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc,IID_PPV_ARGS(BlurActor->GetPostCbvSrvUavHeapAddress())));
 
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -660,7 +663,7 @@ void HelloGame::UpLoadShaderResource()
 		
 	}
 
-	BlurActor->UpLoadShaderResource(g_cbvsrvDescriptorSize);
+	//BlurActor->UpLoadShaderResource(g_cbvsrvDescriptorSize);
 
 }
 

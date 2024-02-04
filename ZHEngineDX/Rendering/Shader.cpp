@@ -1,32 +1,54 @@
 #include "Shader.h"
-#include "../GameHelper/GameHelper.h"
+
 
 UShader::UShader()
-	:ShaderFileName(L""), VSOutName(""), PSOutName(""), blendMode(EBlendMode::Opaque)
+	:ShaderFileName(L"")
 {
 }
 
-UShader::UShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend)
-	:ShaderFileName(shaderfile), VSOutName(vsout),PSOutName(psout),blendMode(blend)
+UShader::UShader(std::wstring shaderfile)
+	:ShaderFileName(shaderfile)
 {
 }
 
-ID3DBlob* UShader::GetVertexShader()const
+
+
+void UShader::CompileShader()
+{
+	
+}
+
+
+
+//NormalShader
+//----------------------------------------------
+UNormalShader::UNormalShader()
+	:UShader(L""), VSOutName(""), PSOutName(""), blendMode(EBlendMode::Opaque)
+{
+}
+
+UNormalShader::UNormalShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend)
+	:UShader(shaderfile), VSOutName(vsout), PSOutName(psout), blendMode(blend)
+{
+
+}
+
+ID3DBlob* UNormalShader::GetVertexShader()const
 {
 	return vertexShader.Get();
 }
 
-ID3DBlob* UShader::GetPixelShader()const
+ID3DBlob* UNormalShader::GetPixelShader()const
 {
 	return pixelShader.Get();
 }
 
-EBlendMode UShader::GetBlendMode()const
+EBlendMode UNormalShader::GetBlendMode()const
 {
 	return blendMode;
 }
 
-void UShader::CompileShader()
+void UNormalShader::CompileShader()
 {
 	UINT compileFlags = 0;
 

@@ -58,9 +58,9 @@ public:
 
     
     //Shader
-    std::shared_ptr<UShader> ModeShader;
-    std::shared_ptr<UShader> SkyShader;
-
+    std::shared_ptr<UNormalShader> ModeShader;
+    std::shared_ptr<UNormalShader> SkyShader;
+    std::shared_ptr<UShader> BlurShader;
 
     //Light
     DirectionLight light;

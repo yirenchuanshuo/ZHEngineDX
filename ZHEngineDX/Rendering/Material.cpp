@@ -1,6 +1,7 @@
 #include "Material.h"
 
-UMaterial::UMaterial(std::shared_ptr<UShader>& shader):pShader(shader)
+UMaterial::UMaterial(std::shared_ptr<UNormalShader>& shader)
+	:pShader(shader)
 {
 
 }

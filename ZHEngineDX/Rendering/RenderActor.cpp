@@ -15,7 +15,7 @@ RenderActor::RenderActor()
 
 
 
-void RenderActor::Init(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader)
+void RenderActor::Init(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader)
 {
 	Mesh = std::make_unique<StaticMesh>();
 	Material = std::make_shared<UMaterial>(shader);

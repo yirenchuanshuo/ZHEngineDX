@@ -98,3 +98,8 @@ void PostRenderActor::BuildDescriptors()
 	g_Device->CreateShaderResourceView(g_PostMap1.Get(), &srvDesc, g_Post1CpuSrvHandle);
 	g_Device->CreateUnorderedAccessView(g_PostMap1.Get(), nullptr, &uavDesc, g_Post1CpuUavHandle);
 }
+
+void PostRenderActor::SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader)
+{
+	PostMaterial = std::make_shared<UMaterial>(shader);
+}
