@@ -9,7 +9,8 @@ public:
 	PostRenderActor(ID3D12Device* pDevice,UINT width,UINT height,DXGI_FORMAT format);
 
 	void OnResize(UINT newWidth,UINT newHeight);
-
+	void ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D12PipelineState* PSO01,
+		ID3D12PipelineState* PSO02, ID3D12Resource* renderTarget,int blurCount);
 
 public:
 	ID3D12DescriptorHeap* GetPostCbvSrvUavHeap() { return g_PostCbvSrvUavHeap.Get(); }
@@ -22,7 +23,7 @@ public:
 private:
 	void BuildResources();
 	void BuildDescriptors();
-	
+	std::vector<float> CalcGaussWeights(float sigma);
 	
 
 
@@ -35,7 +36,7 @@ private:
 	
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_PostCbvSrvUavHeap;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> g_PipeLineState;
-	
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 
 	std::shared_ptr<UMaterial> PostMaterial;
 

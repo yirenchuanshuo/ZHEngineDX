@@ -21,6 +21,86 @@ void PostRenderActor::OnResize(UINT newWidth, UINT newHeight)
 	}
 }
 
+void PostRenderActor::ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D12PipelineState* PSO01, ID3D12PipelineState* PSO02, ID3D12Resource* renderTarget, int blurCount)
+{
+	auto weights = CalcGaussWeights(2.5f);
+	int blurRadius = static_cast<int>(weights.size() / 2);
+
+	cmdList->SetComputeRootSignature(rootSignature.Get());
+
+	cmdList->SetComputeRoot32BitConstants(0, 1, &blurRadius, 0);
+	cmdList->SetComputeRoot32BitConstants(0, static_cast<UINT>(weights.size()), weights.data(), 1);
+
+	CD3DX12_RESOURCE_BARRIER TargetToCopy = CD3DX12_RESOURCE_BARRIER::Transition(renderTarget,
+		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+	CD3DX12_RESOURCE_BARRIER PostMap0CommonToCopy = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap0.Get(),
+		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+
+	CD3DX12_RESOURCE_BARRIER PostMap0CopyToRead = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap0.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+	CD3DX12_RESOURCE_BARRIER PostMap1CommonToAccess = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap1.Get(),
+		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+	cmdList->ResourceBarrier(1, &TargetToCopy);
+
+	cmdList->ResourceBarrier(1, &PostMap0CommonToCopy);
+
+	cmdList->CopyResource(g_PostMap0.Get(), renderTarget);
+
+	cmdList->ResourceBarrier(1, &PostMap0CopyToRead);
+
+	cmdList->ResourceBarrier(1, &PostMap1CommonToAccess);
+
+	CD3DX12_RESOURCE_BARRIER PostMap0ReadToAccess = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap0.Get(),
+		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+	CD3DX12_RESOURCE_BARRIER PostMap1ReadToAccess = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap1.Get(),
+		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+	CD3DX12_RESOURCE_BARRIER PostMap0AccessToRead = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap0.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+	CD3DX12_RESOURCE_BARRIER PostMap1AccessToRead = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap1.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ);
+
+
+	for (int i = 0; i < blurCount; ++i)
+	{
+
+		cmdList->SetPipelineState(PSO01);
+
+		cmdList->SetComputeRootDescriptorTable(1, g_Post0GpuSrvHandle);
+		cmdList->SetComputeRootDescriptorTable(2, g_Post1GpuUavHandle);
+
+		// How many groups do we need to dispatch to cover a row of pixels, where each
+		// group covers 256 pixels (the 256 is defined in the ComputeShader).
+		UINT numGroupsX = (UINT)ceilf(g_width / 256.0f);
+		cmdList->Dispatch(numGroupsX, g_height, 1);
+
+		cmdList->ResourceBarrier(1, &PostMap0ReadToAccess);
+
+		cmdList->ResourceBarrier(1, &PostMap1AccessToRead);
+
+		
+
+		cmdList->SetPipelineState(PSO02);
+
+		cmdList->SetComputeRootDescriptorTable(1, g_Post1GpuSrvHandle);
+		cmdList->SetComputeRootDescriptorTable(2, g_Post0GpuUavHandle);
+
+		// How many groups do we need to dispatch to cover a column of pixels, where each
+		// group covers 256 pixels  (the 256 is defined in the ComputeShader).
+		UINT numGroupsY = (UINT)ceilf(g_height / 256.0f);
+		cmdList->Dispatch(g_width, numGroupsY, 1);
+
+		cmdList->ResourceBarrier(1, &PostMap0AccessToRead);
+
+		cmdList->ResourceBarrier(1, &PostMap1ReadToAccess);
+	}
+}
+
 
 void PostRenderActor::UpLoadShaderResource(UINT DescriptorSize)
 {
@@ -97,6 +177,38 @@ void PostRenderActor::BuildDescriptors()
 
 	g_Device->CreateShaderResourceView(g_PostMap1.Get(), &srvDesc, g_Post1CpuSrvHandle);
 	g_Device->CreateUnorderedAccessView(g_PostMap1.Get(), nullptr, &uavDesc, g_Post1CpuUavHandle);
+}
+
+std::vector<float> PostRenderActor::CalcGaussWeights(float sigma)
+{
+	float twoSigma2 = 2.0f * sigma * sigma;
+
+	// Estimate the blur radius based on sigma since sigma controls the "width" of the bell curve.
+	// For example, for sigma = 3, the width of the bell curve is 
+	int blurRadius = static_cast<int>(ceil(2.0f * sigma));
+
+	assert(blurRadius <= 5);
+
+	std::vector<float> weights;
+	weights.resize(2 * blurRadius + 1);
+	float weightSum = 0.0f;
+
+
+	for (int i = -blurRadius; i <= blurRadius; i++)
+	{
+		float x = static_cast<float>(i);
+
+		weights[i + blurRadius] = expf(-x*x/twoSigma2);
+		weightSum = weights[i + blurRadius];
+	}
+
+	const int n = weights.size();
+	for (int i = 0; i < n; i++)
+	{
+		weights[i] /= weightSum;
+	}
+
+	return weights;
 }
 
 void PostRenderActor::SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader)

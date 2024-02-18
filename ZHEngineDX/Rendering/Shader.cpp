@@ -59,3 +59,29 @@ void UNormalShader::CompileShader()
 	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, VSOutName, "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
 	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, PSOutName, "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 }
+
+UComputeShader::UComputeShader()
+	:UShader(L""),CSOutName("")
+{
+}
+
+UComputeShader::UComputeShader(std::wstring shaderfile, LPCSTR csout)
+	:UShader(shaderfile),CSOutName(csout)
+{
+}
+
+ID3DBlob* UComputeShader::GetComputeShader() const
+{
+	return computeShader.Get();
+}
+
+void UComputeShader::CompileShader()
+{
+	UINT compileFlags = 0;
+
+#if defined(_DEBUG)
+	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, CSOutName, "cs_5_0", compileFlags, 0, &computeShader, nullptr));
+}

@@ -48,6 +48,23 @@ private:
 
 };
 
+class UComputeShader :UShader
+{
+public:
+	UComputeShader();
+	UComputeShader(std::wstring shaderfile, LPCSTR csout);
+
+
+	[[nodiscard]] ID3DBlob* GetComputeShader() const;
+
+public:
+	void CompileShader()override;
+
+private:
+	Microsoft::WRL::ComPtr<ID3DBlob> computeShader;
+	LPCSTR CSOutName;
+};
+
 
 
 
