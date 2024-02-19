@@ -15,10 +15,10 @@ RenderActor::RenderActor()
 
 
 
-void RenderActor::Init(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader)
+void RenderActor::Init(ID3D12Device* pDevice, std::shared_ptr<UShader>& vertexshader, std::shared_ptr<UShader>& pixleshader)
 {
 	Mesh = std::make_unique<StaticMesh>();
-	Material = std::make_shared<UMaterial>(shader);
+	Material = std::make_shared<UMaterial>(vertexshader,pixleshader);
 	pObjectCbvDataBegin = std::make_shared<UINT8>();
 	
 	
@@ -56,8 +56,8 @@ void RenderActor::AddHandleOffsetNum()
 void RenderActor::SetPipleLineState(ID3D12Device* pDevice, D3D12_GRAPHICS_PIPELINE_STATE_DESC& PSODesc)
 {
 	PSODesc.pRootSignature = rootSignature.Get();
-	PSODesc.VS = CD3DX12_SHADER_BYTECODE(Material->pShader->GetVertexShader());
-	PSODesc.PS = CD3DX12_SHADER_BYTECODE(Material->pShader->GetPixelShader());
+	PSODesc.VS = CD3DX12_SHADER_BYTECODE(Material->pVertexShader->GetShader());
+	PSODesc.PS = CD3DX12_SHADER_BYTECODE(Material->pPixelShader->GetShader());
 
 	ThrowIfFailed(pDevice->CreateGraphicsPipelineState(&PSODesc, IID_PPV_ARGS(&PipeLineState)));
 	NAME_D3D12_OBJECT(PipeLineState);

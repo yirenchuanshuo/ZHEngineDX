@@ -8,62 +8,38 @@ enum class EBlendMode
 	SkyBox
 };
 
+enum class EShaderType
+{
+	Vertex,
+	Pixel,
+	Compute
+};
+
+
+
 
 class UShader
 {
 public:
 	UShader();
-	UShader(std::wstring shaderfile);
+	UShader(std::wstring shaderfile, LPCSTR outname,EShaderType ShaderType);
 
 
-protected:
+	EShaderType ShaderType;
+private:
 	std::wstring ShaderFileName;
+	LPCSTR OutName;
+	
+	Microsoft::WRL::ComPtr<ID3DBlob> Shader;
 
 public:
-	virtual void CompileShader() = 0;
+	[[nodiscard]] ID3DBlob* GetShader() const;
+	LPCSTR GetOutName()const;
+	std::wstring GetFilePath()const;
+
+	void CompileShader();
 };
 
-
-class UNormalShader :UShader
-{
-public:
-	UNormalShader();
-	UNormalShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend);
-
-	[[nodiscard]] ID3DBlob* GetVertexShader() const;
-	[[nodiscard]] ID3DBlob* GetPixelShader() const;
-	[[nodiscard]] EBlendMode GetBlendMode() const;
-
-public:
-	void CompileShader()override;
-
-	EBlendMode blendMode;
-
-private:
-	Microsoft::WRL::ComPtr<ID3DBlob> vertexShader;
-	Microsoft::WRL::ComPtr<ID3DBlob> pixelShader;
-
-	LPCSTR VSOutName;
-	LPCSTR PSOutName;
-
-};
-
-class UComputeShader :UShader
-{
-public:
-	UComputeShader();
-	UComputeShader(std::wstring shaderfile, LPCSTR csout);
-
-
-	[[nodiscard]] ID3DBlob* GetComputeShader() const;
-
-public:
-	void CompileShader()override;
-
-private:
-	Microsoft::WRL::ComPtr<ID3DBlob> computeShader;
-	LPCSTR CSOutName;
-};
 
 
 

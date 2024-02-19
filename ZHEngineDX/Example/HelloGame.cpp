@@ -134,17 +134,21 @@ void HelloGame::LoadPipeline()
 	BlurActor = std::make_unique<PostRenderActor>(GetD3DDevice(),g_width,g_height, DXGI_FORMAT_R8G8B8A8_UNORM);
 	
 
-	ModeShader = std::make_shared<UNormalShader>(L"Shader/Model.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
-	ModeShader->CompileShader();
-	SkyShader = std::make_shared<UNormalShader>(L"Shader/Sky.hlsl", "VSMain", "PSMain", EBlendMode::Opaque);
-	SkyShader->CompileShader();
+	ModeShaderVS = std::make_shared<UShader>(L"Shader/Model.hlsl", "VSMain",EShaderType::Vertex);
+	ModeShaderPS = std::make_shared<UShader>(L"Shader/Model.hlsl", "PSMain",EShaderType::Pixel);
+	ModeShaderVS->CompileShader();
+	ModeShaderPS->CompileShader();
+	SkyShaderVS = std::make_shared<UShader>(L"Shader/Sky.hlsl", "VSMain", EShaderType::Vertex);
+	SkyShaderPS = std::make_shared<UShader>(L"Shader/Sky.hlsl", "PSMain", EShaderType::Pixel);
+	SkyShaderVS->CompileShader();
+	SkyShaderPS->CompileShader();
 	//BlurShader = std::make_shared<UShader>();
 	//BlurShader->CompileShader();
 
 
-	ModeActor->Init(GetD3DDevice(), ModeShader);
-	SkyActor->Init(GetD3DDevice(), SkyShader);
-	GroundActor->Init(GetD3DDevice(), ModeShader);
+	ModeActor->Init(GetD3DDevice(), ModeShaderVS, ModeShaderPS);
+	SkyActor->Init(GetD3DDevice(), SkyShaderVS,SkyShaderPS);
+	GroundActor->Init(GetD3DDevice(), ModeShaderVS, ModeShaderPS);
 	//BlurActor->SetMaterial(GetD3DDevice(),BlurShader);
 	FVector4 GroundPos = FVector4{ 0,-1,0,1 };
 	GroundActor->SetPosition(GroundPos);

@@ -6,15 +6,16 @@
 class UMaterial
 {
 public:
-	UMaterial(std::shared_ptr<UNormalShader>& shader);
+	UMaterial(std::shared_ptr<UShader>& vertexshader, std::shared_ptr<UShader>& pixelshader);
 
 public:
 
-	EBlendMode GetMateriBlendMode()const;
-
+	//EBlendMode GetMateriBlendMode()const;
+	
 public:
 
-	std::shared_ptr<UNormalShader> pShader;
+	std::shared_ptr<UShader> pVertexShader;
+	std::shared_ptr<UShader> pPixelShader;
 	std::vector<UTexture> textures;
 
 private:

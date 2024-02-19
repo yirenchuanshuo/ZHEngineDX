@@ -28,7 +28,7 @@ public:
     
 
     //RHI
-    virtual void Init(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader);
+    virtual void Init(ID3D12Device* pDevice, std::shared_ptr<UShader>& vertexshader, std::shared_ptr<UShader>& pixleshader);
     void LoadMesh(std::string filepath);
     void SetTextures(UTexture& Texture);
     void UpdateMVP(FMatrix4x4 &VP);
@@ -56,7 +56,7 @@ public:
     size_t GetMeshIndicesByteSize() { return Mesh->GetIndicesByteSize(); }
     Vertex* GetMeshVerticesData() { return Mesh->GetVerticesData(); }
     UINT* GetMeshIndicesData() { return Mesh->GetIndicesData(); }
-    EBlendMode GetActorMaterialBlendMode() { return Material->GetMateriBlendMode(); }
+    //EBlendMode GetActorMaterialBlendMode() { return Material->GetMateriBlendMode(); }
 
     UINT GetCbvSrvHeapDescriptorsNum(UINT UniformCbvDataNums, UINT UniformSrvDataNums, UINT FrameCount);
     UINT GetMaterialSrvNums();

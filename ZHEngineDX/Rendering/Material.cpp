@@ -1,12 +1,14 @@
 #include "Material.h"
 
-UMaterial::UMaterial(std::shared_ptr<UNormalShader>& shader)
-	:pShader(shader)
+UMaterial::UMaterial(std::shared_ptr<UShader>& vertexshader, std::shared_ptr<UShader>& pixelshader)
+	:pVertexShader(vertexshader),pPixelShader(pixelshader)
 {
 
 }
 
-EBlendMode UMaterial::GetMateriBlendMode() const
+
+
+/*EBlendMode UMaterial::GetMateriBlendMode() const
 {
 	return pShader->blendMode;
-}
+}*/

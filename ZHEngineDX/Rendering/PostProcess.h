@@ -17,7 +17,7 @@ public:
 	ID3D12DescriptorHeap** GetPostCbvSrvUavHeapAddress() { return g_PostCbvSrvUavHeap.GetAddressOf(); }
 
 	void UpLoadShaderResource(UINT DescriptorSize);
-	void SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UNormalShader>& shader);
+	//void SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader);
 
 
 private:

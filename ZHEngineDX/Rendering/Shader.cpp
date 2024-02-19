@@ -2,86 +2,54 @@
 
 
 UShader::UShader()
-	:ShaderFileName(L"")
+	:ShaderFileName(L""),OutName(""),ShaderType(EShaderType::Pixel)
 {
 }
 
-UShader::UShader(std::wstring shaderfile)
-	:ShaderFileName(shaderfile)
+UShader::UShader(std::wstring shaderfile, LPCSTR outname,EShaderType ShaderType)
+	:ShaderFileName(shaderfile),OutName(outname),ShaderType(ShaderType)
 {
 }
 
+ID3DBlob* UShader::GetShader() const
+{
+	return Shader.Get();
+}
 
+LPCSTR UShader::GetOutName() const
+{
+	return OutName;
+}
+
+std::wstring UShader::GetFilePath() const
+{
+	return ShaderFileName;
+}
 
 void UShader::CompileShader()
 {
-	
-}
-
-
-
-//NormalShader
-//----------------------------------------------
-UNormalShader::UNormalShader()
-	:UShader(L""), VSOutName(""), PSOutName(""), blendMode(EBlendMode::Opaque)
-{
-}
-
-UNormalShader::UNormalShader(std::wstring shaderfile, LPCSTR vsout, LPCSTR psout, EBlendMode blend)
-	:UShader(shaderfile), VSOutName(vsout), PSOutName(psout), blendMode(blend)
-{
-
-}
-
-ID3DBlob* UNormalShader::GetVertexShader()const
-{
-	return vertexShader.Get();
-}
-
-ID3DBlob* UNormalShader::GetPixelShader()const
-{
-	return pixelShader.Get();
-}
-
-EBlendMode UNormalShader::GetBlendMode()const
-{
-	return blendMode;
-}
-
-void UNormalShader::CompileShader()
-{
 	UINT compileFlags = 0;
 
 #if defined(_DEBUG)
 	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
-	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, VSOutName, "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, PSOutName, "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	switch (ShaderType)
+	{
+	case EShaderType::Vertex:
+		ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, OutName, "vs_5_0", compileFlags, 0, &Shader, nullptr));
+		break;
+	case EShaderType::Pixel:
+		ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, OutName, "ps_5_0", compileFlags, 0, &Shader, nullptr));
+		break;
+	case EShaderType::Compute:
+		ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, OutName, "cs_5_0", compileFlags, 0, &Shader, nullptr));
+		break;
+	default:
+		break;
+	}
 }
 
-UComputeShader::UComputeShader()
-	:UShader(L""),CSOutName("")
-{
-}
 
-UComputeShader::UComputeShader(std::wstring shaderfile, LPCSTR csout)
-	:UShader(shaderfile),CSOutName(csout)
-{
-}
 
-ID3DBlob* UComputeShader::GetComputeShader() const
-{
-	return computeShader.Get();
-}
 
-void UComputeShader::CompileShader()
-{
-	UINT compileFlags = 0;
-
-#if defined(_DEBUG)
-	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-	ThrowIfFailed(D3DCompileFromFile(ShaderFileName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, CSOutName, "cs_5_0", compileFlags, 0, &computeShader, nullptr));
-}
