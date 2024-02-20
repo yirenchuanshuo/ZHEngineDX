@@ -17,7 +17,7 @@ public:
 	ID3D12DescriptorHeap** GetPostCbvSrvUavHeapAddress() { return g_PostCbvSrvUavHeap.GetAddressOf(); }
 
 	void UpLoadShaderResource(UINT DescriptorSize);
-	//void SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader);
+	void SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader);
 
 
 private:
@@ -38,7 +38,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> g_PipeLineState;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 
-	std::shared_ptr<UMaterial> PostMaterial;
+	std::shared_ptr<UComputeMaterial> PostMaterial;
 
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE g_Post0CpuSrvHandle;

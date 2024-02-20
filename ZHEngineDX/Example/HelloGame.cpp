@@ -142,8 +142,8 @@ void HelloGame::LoadPipeline()
 	SkyShaderPS = std::make_shared<UShader>(L"Shader/Sky.hlsl", "PSMain", EShaderType::Pixel);
 	SkyShaderVS->CompileShader();
 	SkyShaderPS->CompileShader();
-	//BlurShader = std::make_shared<UShader>();
-	//BlurShader->CompileShader();
+	BlurShader = std::make_shared<UShader>(L"Shader/Blur.hlsl", "HorzBlurCS",EShaderType::Compute);
+	BlurShader->CompileShader();
 
 
 	ModeActor->Init(GetD3DDevice(), ModeShaderVS, ModeShaderPS);

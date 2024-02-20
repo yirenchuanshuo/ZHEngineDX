@@ -12,3 +12,9 @@ UMaterial::UMaterial(std::shared_ptr<UShader>& vertexshader, std::shared_ptr<USh
 {
 	return pShader->blendMode;
 }*/
+
+UComputeMaterial::UComputeMaterial(std::shared_ptr<UShader>& computeshader)
+	:ComputeShader(computeshader)
+{
+
+}

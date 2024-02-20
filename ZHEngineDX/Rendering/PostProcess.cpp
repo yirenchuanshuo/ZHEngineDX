@@ -211,7 +211,7 @@ std::vector<float> PostRenderActor::CalcGaussWeights(float sigma)
 	return weights;
 }
 
-/*void PostRenderActor::SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader)
+void PostRenderActor::SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader)
 {
-	PostMaterial = std::make_shared<UMaterial>(shader);
-}*/
+	PostMaterial = std::make_shared<UComputeMaterial>(shader);
+}

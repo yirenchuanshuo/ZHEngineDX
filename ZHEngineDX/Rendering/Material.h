@@ -18,6 +18,13 @@ public:
 	std::shared_ptr<UShader> pPixelShader;
 	std::vector<UTexture> textures;
 
-private:
+};
 
+class UComputeMaterial
+{
+public:
+	UComputeMaterial(std::shared_ptr<UShader>& computeshader);
+
+public:
+	std::shared_ptr<UShader>& ComputeShader;
 };
