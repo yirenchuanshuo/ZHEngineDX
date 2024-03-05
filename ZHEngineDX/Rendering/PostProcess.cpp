@@ -1,12 +1,13 @@
 #include "PostProcess.h"
 
-PostRenderActor::PostRenderActor(ID3D12Device* pDevice, UINT width, UINT height, DXGI_FORMAT format):
+PostRenderActor::PostRenderActor(ID3D12Device* pDevice, UINT PSONums, UINT width, UINT height, DXGI_FORMAT format):
 	g_width(width),
 	g_height(height),
 	g_format(format)
 {
 	g_Device = pDevice;
 	BuildResources();
+	g_PipeLineStates.resize(PSONums);
 }
 
 void PostRenderActor::OnResize(UINT newWidth, UINT newHeight)
@@ -211,7 +212,25 @@ std::vector<float> PostRenderActor::CalcGaussWeights(float sigma)
 	return weights;
 }
 
-void PostRenderActor::SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader)
+void PostRenderActor::SetMaterial(ID3D12Device* pDevice, std::vector<std::shared_ptr<UShader>>& shaders)
 {
-	PostMaterial = std::make_shared<UComputeMaterial>(shader);
+	for (auto& shader : shaders)
+	{
+		std::shared_ptr<UComputeMaterial> TempMaterial = std::make_shared<UComputeMaterial>(shader);
+		PostMaterials.push_back(TempMaterial);
+
+	}
+}
+
+void PostRenderActor::SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC>& PSODescs)
+{
+	const int PSONums = PSODescs.size();
+	for (int i = 0; i < PSONums; i++)
+	{
+		PSODescs[i].pRootSignature = rootSignature.Get();
+		PSODescs[i].CS = CD3DX12_SHADER_BYTECODE(PostMaterials[i]->ComputeShader->GetShader());
+
+		ThrowIfFailed(pDevice->CreateComputePipelineState(&PSODescs[i], IID_PPV_ARGS(&g_PipeLineStates[i])));
+		NAME_D3D12_OBJECT(g_PipeLineStates[i]);
+	}
 }

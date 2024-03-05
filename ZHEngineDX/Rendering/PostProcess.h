@@ -6,7 +6,7 @@
 class PostRenderActor 
 {
 public:
-	PostRenderActor(ID3D12Device* pDevice,UINT width,UINT height,DXGI_FORMAT format);
+	PostRenderActor(ID3D12Device* pDevice,UINT PSONums,UINT width,UINT height,DXGI_FORMAT format);
 
 	void OnResize(UINT newWidth,UINT newHeight);
 	void ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D12PipelineState* PSO01,
@@ -17,7 +17,8 @@ public:
 	ID3D12DescriptorHeap** GetPostCbvSrvUavHeapAddress() { return g_PostCbvSrvUavHeap.GetAddressOf(); }
 
 	void UpLoadShaderResource(UINT DescriptorSize);
-	void SetMaterial(ID3D12Device* pDevice, std::shared_ptr<UShader>& shader);
+	void SetMaterial(ID3D12Device* pDevice, std::vector<std::shared_ptr<UShader>>& shaders);
+	void SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC>& PSODescs);
 
 
 private:
@@ -35,11 +36,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Device> g_Device;
 	
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_PostCbvSrvUavHeap;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> g_PipeLineState;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 
-	std::shared_ptr<UComputeMaterial> PostMaterial;
-
+	std::vector<std::shared_ptr<UComputeMaterial>> PostMaterials;
+	std::vector< Microsoft::WRL::ComPtr<ID3D12PipelineState>>g_PipeLineStates;
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE g_Post0CpuSrvHandle;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE g_Post0CpuUavHandle;
