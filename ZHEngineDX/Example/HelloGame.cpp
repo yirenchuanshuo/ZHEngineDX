@@ -147,7 +147,9 @@ void HelloGame::LoadPipeline()
 	BlurShaderVert = std::make_shared<UShader>(L"Shader/Blur.hlsl", "VertBlurCS", EShaderType::Compute);
 	BlurShaderVert->CompileShader();
 
-	std::vector<std::shared_ptr<UShader>> PostShaders = { BlurShaderHorz ,BlurShaderVert };
+	std::vector<std::shared_ptr<UShader>> PostShaders = { };
+	PostShaders.push_back(BlurShaderHorz);
+	PostShaders.push_back(BlurShaderVert);
 
 	ModeActor->Init(GetD3DDevice(), ModeShaderVS, ModeShaderPS);
 	SkyActor->Init(GetD3DDevice(), SkyShaderVS,SkyShaderPS);
@@ -344,10 +346,11 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc, IID_PPV_ARGS(SkyActor->GetCbvSrvHeapAddress())));
 	NAME_D3D12_OBJECT(SkyActor->GetCbvSrvHeapRef());
 
-	//cbvsrvHeapDesc.NumDescriptors = 4;
-	//ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc,IID_PPV_ARGS(BlurActor->GetPostCbvSrvUavHeapAddress())));
+	cbvsrvHeapDesc.NumDescriptors = 4;
+	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc,IID_PPV_ARGS(BlurActor->GetPostCbvSrvUavHeapAddress())));
 
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 
 }
 
@@ -370,7 +373,9 @@ void HelloGame::CreateRootSignature()
 	CD3DX12_DESCRIPTOR_RANGE1 samplerRanges;
 	CD3DX12_DESCRIPTOR_RANGE1 cbvRanges;
 	CD3DX12_DESCRIPTOR_RANGE1 ModecbvRanges;
-	CD3DX12_DESCRIPTOR_RANGE1 normalSrvRanges[2];
+	CD3DX12_DESCRIPTOR_RANGE1 normalSrvRanges[2] = {};
+	CD3DX12_DESCRIPTOR_RANGE1 PostSrvRange;
+	CD3DX12_DESCRIPTOR_RANGE1 PostUavRange;
 	
 	//指定该根参数为常量缓冲区视图
 	samplerRanges.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
@@ -380,7 +385,8 @@ void HelloGame::CreateRootSignature()
 	normalSrvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	EnvBRDFrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 10, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 	skyrange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 11, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	
+	PostSrvRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	PostUavRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
 	
 
 	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersNormal(7);
@@ -428,6 +434,16 @@ void HelloGame::CreateRootSignature()
 
 
 	SkyActor->SetRootSignature(GetD3DDevice(), SkyRootSignatureDesc);
+
+	std::vector<CD3DX12_ROOT_PARAMETER1> rootParametersPostBlur(3);
+	rootParametersPostBlur[0].InitAsConstants(12, 0);
+	rootParametersPostBlur[1].InitAsDescriptorTable(1, &PostSrvRange);
+	rootParametersPostBlur[2].InitAsDescriptorTable(1, &PostUavRange);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC PostBlurRootSignatureDesc;
+	PostBlurRootSignatureDesc.Init_1_1(static_cast<UINT>(rootParametersPostBlur.size()), rootParametersPostBlur.data(), 0, nullptr, rootSignatureFlags);
+	BlurActor->SetRootSignature(GetD3DDevice(), PostBlurRootSignatureDesc);
+
 }
 
 D3D12_SAMPLER_DESC HelloGame::CreateSamplerDesCribe(UINT index)
@@ -494,7 +510,18 @@ void HelloGame::CreatePSO()
 	SkypsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	SkypsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	SkyActor->SetPipleLineState(GetD3DDevice(), SkypsoDesc);
-	
+
+
+	D3D12_COMPUTE_PIPELINE_STATE_DESC HorzBlurPSO = {};
+	D3D12_COMPUTE_PIPELINE_STATE_DESC VertBlurPSO = {};
+
+	//HorzBlurPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	//VertBlurPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+	std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC> BlurPSOs(2);
+	//BlurPSOs.push_back(HorzBlurPSO);
+	//BlurPSOs.push_back(VertBlurPSO);
+	BlurActor->SetPiplineStates(GetD3DDevice(), BlurPSOs);
 }
 
 
@@ -670,7 +697,7 @@ void HelloGame::UpLoadShaderResource()
 		
 	}
 
-	//BlurActor->UpLoadShaderResource(g_cbvsrvDescriptorSize);
+	BlurActor->UpLoadShaderResource(g_cbvsrvDescriptorSize);
 
 }
 

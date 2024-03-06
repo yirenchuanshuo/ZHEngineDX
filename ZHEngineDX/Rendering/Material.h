@@ -26,5 +26,5 @@ public:
 	UComputeMaterial(std::shared_ptr<UShader>& computeshader);
 
 public:
-	std::shared_ptr<UShader>& ComputeShader;
+	std::shared_ptr<UShader> ComputeShader;
 };

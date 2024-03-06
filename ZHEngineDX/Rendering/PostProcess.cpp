@@ -7,6 +7,7 @@ PostRenderActor::PostRenderActor(ID3D12Device* pDevice, UINT PSONums, UINT width
 {
 	g_Device = pDevice;
 	BuildResources();
+	PostMaterials.resize(PSONums);
 	g_PipeLineStates.resize(PSONums);
 }
 
@@ -214,12 +215,30 @@ std::vector<float> PostRenderActor::CalcGaussWeights(float sigma)
 
 void PostRenderActor::SetMaterial(ID3D12Device* pDevice, std::vector<std::shared_ptr<UShader>>& shaders)
 {
-	for (auto& shader : shaders)
+	const int n = PostMaterials.size();
+	for (int i=0;i<n;i++)
 	{
-		std::shared_ptr<UComputeMaterial> TempMaterial = std::make_shared<UComputeMaterial>(shader);
-		PostMaterials.push_back(TempMaterial);
-
+		PostMaterials[i] = std::make_shared<UComputeMaterial>(shaders[i]);
 	}
+}
+
+void PostRenderActor::SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc)
+{
+	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+
+	featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+	if (FAILED(pDevice->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+	{
+		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+	}
+
+	//创建根签名
+	ComPtr<ID3DBlob> signature;
+	ComPtr<ID3DBlob> error;
+	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
+	ThrowIfFailed(pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+	//NAME_D3D12_OBJECT(rootSignature);
 }
 
 void PostRenderActor::SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC>& PSODescs)
@@ -232,5 +251,6 @@ void PostRenderActor::SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_
 
 		ThrowIfFailed(pDevice->CreateComputePipelineState(&PSODescs[i], IID_PPV_ARGS(&g_PipeLineStates[i])));
 		NAME_D3D12_OBJECT(g_PipeLineStates[i]);
+		
 	}
 }

@@ -18,6 +18,7 @@ public:
 
 	void UpLoadShaderResource(UINT DescriptorSize);
 	void SetMaterial(ID3D12Device* pDevice, std::vector<std::shared_ptr<UShader>>& shaders);
+	void SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc);
 	void SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC>& PSODescs);
 
 
