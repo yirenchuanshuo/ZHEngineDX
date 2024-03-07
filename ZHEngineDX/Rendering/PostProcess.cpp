@@ -1,11 +1,11 @@
 #include "PostProcess.h"
 
 PostRenderActor::PostRenderActor(ID3D12Device* pDevice, UINT PSONums, UINT width, UINT height, DXGI_FORMAT format):
+	g_Device(pDevice),
 	g_width(width),
 	g_height(height),
 	g_format(format)
 {
-	g_Device = pDevice;
 	BuildResources();
 	PostMaterials.resize(PSONums);
 	g_PipeLineStates.resize(PSONums);
@@ -23,7 +23,7 @@ void PostRenderActor::OnResize(UINT newWidth, UINT newHeight)
 	}
 }
 
-void PostRenderActor::ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D12PipelineState* PSO01, ID3D12PipelineState* PSO02, ID3D12Resource* renderTarget, int blurCount)
+void PostRenderActor::ApplyPostProcess(ID3D12GraphicsCommandList* cmdList,  ID3D12Resource* renderTarget, int blurCount)
 {
 	auto weights = CalcGaussWeights(2.5f);
 	int blurRadius = static_cast<int>(weights.size() / 2);
@@ -71,7 +71,7 @@ void PostRenderActor::ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D1
 	for (int i = 0; i < blurCount; ++i)
 	{
 
-		cmdList->SetPipelineState(PSO01);
+		cmdList->SetPipelineState(g_PipeLineStates[0].Get());
 
 		cmdList->SetComputeRootDescriptorTable(1, g_Post0GpuSrvHandle);
 		cmdList->SetComputeRootDescriptorTable(2, g_Post1GpuUavHandle);
@@ -87,7 +87,7 @@ void PostRenderActor::ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D1
 
 		
 
-		cmdList->SetPipelineState(PSO02);
+		cmdList->SetPipelineState(g_PipeLineStates[1].Get());
 
 		cmdList->SetComputeRootDescriptorTable(1, g_Post1GpuSrvHandle);
 		cmdList->SetComputeRootDescriptorTable(2, g_Post0GpuUavHandle);
@@ -101,6 +101,17 @@ void PostRenderActor::ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D1
 
 		cmdList->ResourceBarrier(1, &PostMap1ReadToAccess);
 	}
+
+	CD3DX12_RESOURCE_BARRIER PostMap1AccessToCommon = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap1.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
+
+	CD3DX12_RESOURCE_BARRIER PostMap0ReadToCommon = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap0.Get(),
+		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COMMON);
+
+	cmdList->CopyResource(renderTarget, g_PostMap0.Get());
+
+	cmdList->ResourceBarrier(1,&PostMap1AccessToCommon);
+	cmdList->ResourceBarrier(1,&PostMap0ReadToCommon);
 }
 
 
@@ -169,7 +180,6 @@ void PostRenderActor::BuildDescriptors()
 	srvDesc.Texture2D.MipLevels = 1;
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-
 	uavDesc.Format = g_format;
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 	uavDesc.Texture2D.MipSlice = 0;
@@ -248,7 +258,7 @@ void PostRenderActor::SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_
 	{
 		PSODescs[i].pRootSignature = rootSignature.Get();
 		PSODescs[i].CS = CD3DX12_SHADER_BYTECODE(PostMaterials[i]->ComputeShader->GetShader());
-
+		PSODescs[i].Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 		ThrowIfFailed(pDevice->CreateComputePipelineState(&PSODescs[i], IID_PPV_ARGS(&g_PipeLineStates[i])));
 		NAME_D3D12_OBJECT(g_PipeLineStates[i]);
 		

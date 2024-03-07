@@ -69,7 +69,7 @@ void HelloGame::OnResize()
 	GameRHI::OnResize();
 	if (BlurActor != nullptr)
 	{
-		//BlurActor->OnResize(g_width,g_height);
+		BlurActor->OnResize(g_width,g_height);
 	}
 	UpdateMVP();
 }
@@ -208,7 +208,7 @@ void HelloGame::PopulateCommandList()
 	if (g_MSAA)
 	{
 		//渲染目标转解析状态
-		D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_msaaRenderTarget.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(GetMSAARenderTarget(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		g_commandList->ResourceBarrier(1, &resBarrier);
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE msaartvHandle(g_msaaRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
@@ -258,6 +258,8 @@ void HelloGame::PopulateCommandList()
 	//执行Actor渲染捆绑包
 	g_commandList->ExecuteBundle(g_pCurrentFrameScene->SceneAcotrs[2]->GetBundle());
 
+	
+
 
 	if (g_MSAA)
 	{
@@ -265,24 +267,38 @@ void HelloGame::PopulateCommandList()
 			D3D12_RESOURCE_BARRIER barriers[2] =
 			{
 				CD3DX12_RESOURCE_BARRIER::Transition(
-					g_msaaRenderTarget.Get(),
+					GetMSAARenderTarget(),
 					D3D12_RESOURCE_STATE_RENDER_TARGET,
 					D3D12_RESOURCE_STATE_RESOLVE_SOURCE),
 				CD3DX12_RESOURCE_BARRIER::Transition(
-					g_renderTargets[g_frameIndex].Get(),
+					GetRenderTarget(),
 					D3D12_RESOURCE_STATE_PRESENT,
 					D3D12_RESOURCE_STATE_RESOLVE_DEST)
 			};
 			g_commandList->ResourceBarrier(2, barriers);
 		}
 		
-		g_commandList->ResolveSubresource(g_renderTargets[g_frameIndex].Get(), 0, g_msaaRenderTarget.Get(), 0, g_backBufferFormat);
+		g_commandList->ResolveSubresource(GetRenderTarget(), 0, GetMSAARenderTarget(), 0, g_backBufferFormat);
 	
 	}
+
+	BlurActor->ApplyPostProcess(GetCommandList(), GetRenderTarget(), 4);
+
+	//D3D12_RESOURCE_BARRIER resBarrierCopySourceToDest = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(),
+		//D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+
+	D3D12_RESOURCE_BARRIER resBarrierCopySourceToPresent = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(),
+		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PRESENT);
+
+	//g_commandList->ResourceBarrier(1, &resBarrierCopySourceToDest);
+
+	//g_commandList->CopyResource(GetRenderTarget(), BlurActor->PostProcessOutPut());
+
+	g_commandList->ResourceBarrier(1, &resBarrierCopySourceToPresent);
 	
 	//执行资源转换状态(渲染目标状态转为呈现状态)
-	D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	g_commandList->ResourceBarrier(1, &resBarrier);
+	//D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	//g_commandList->ResourceBarrier(1, &resBarrier);
 
 	//关闭命令列表，结束命令提交并开始渲染
 	ThrowIfFailed(g_commandList->Close());
@@ -515,12 +531,9 @@ void HelloGame::CreatePSO()
 	D3D12_COMPUTE_PIPELINE_STATE_DESC HorzBlurPSO = {};
 	D3D12_COMPUTE_PIPELINE_STATE_DESC VertBlurPSO = {};
 
-	//HorzBlurPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-	//VertBlurPSO.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	
 
 	std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC> BlurPSOs(2);
-	//BlurPSOs.push_back(HorzBlurPSO);
-	//BlurPSOs.push_back(VertBlurPSO);
 	BlurActor->SetPiplineStates(GetD3DDevice(), BlurPSOs);
 }
 

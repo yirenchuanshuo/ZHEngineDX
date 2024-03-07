@@ -9,12 +9,12 @@ public:
 	PostRenderActor(ID3D12Device* pDevice,UINT PSONums,UINT width,UINT height,DXGI_FORMAT format);
 
 	void OnResize(UINT newWidth,UINT newHeight);
-	void ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D12PipelineState* PSO01,
-		ID3D12PipelineState* PSO02, ID3D12Resource* renderTarget,int blurCount);
+	void ApplyPostProcess(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* renderTarget,int blurCount);
 
 public:
 	ID3D12DescriptorHeap* GetPostCbvSrvUavHeap() { return g_PostCbvSrvUavHeap.Get(); }
 	ID3D12DescriptorHeap** GetPostCbvSrvUavHeapAddress() { return g_PostCbvSrvUavHeap.GetAddressOf(); }
+	ID3D12Resource* PostProcessOutPut() { return g_PostMap0.Get(); }
 
 	void UpLoadShaderResource(UINT DescriptorSize);
 	void SetMaterial(ID3D12Device* pDevice, std::vector<std::shared_ptr<UShader>>& shaders);

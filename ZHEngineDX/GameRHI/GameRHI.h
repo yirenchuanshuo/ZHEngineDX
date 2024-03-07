@@ -24,6 +24,7 @@ public:
 	IDXGISwapChain3*			GetSwapChain() const { return g_swapChain.Get(); }
 	IDXGIFactory6*				GetDXGIFactory() const { return g_dxgiFactory.Get(); }
 	ID3D12Resource*				GetRenderTarget() const { return g_renderTargets[g_frameIndex].Get(); }
+	ID3D12Resource*				GetMSAARenderTarget() const { return g_msaaRenderTarget.Get(); }
 	ID3D12Resource*				GetDepthStencil() const { return g_depthStencilBuffer.Get(); }
 	ID3D12CommandQueue*			GetCommandQueue() const { return g_commandQueue.Get(); }
 	ID3D12CommandAllocator*		GetCommandAllocator() const { return g_commandAllocator.Get(); }
