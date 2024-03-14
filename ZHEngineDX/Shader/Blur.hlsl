@@ -2,8 +2,8 @@ cbuffer cbSettings : register(b0)
 {
 	// We cannot have an array entry in a constant buffer that gets mapped onto
 	// root constants, so list each element.  
-    int gBlurRadius;
     
+    int gBlurRadius;
 	// Support up to 11 blur weights.
     float w0;
     float w1;

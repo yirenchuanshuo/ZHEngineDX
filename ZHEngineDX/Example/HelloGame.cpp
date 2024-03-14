@@ -131,7 +131,7 @@ void HelloGame::LoadPipeline()
 	ModeActor = std::make_shared<RenderActor>();
 	SkyActor = std::make_shared<RenderActor>();
 	GroundActor = std::make_shared<RenderActor>();
-	BlurActor = std::make_unique<PostRenderActor>(GetD3DDevice(),2,g_width,g_height, DXGI_FORMAT_R8G8B8A8_UNORM);
+	BlurActor = std::make_shared<PostRenderActor>(GetD3DDevice(),2,g_width,g_height, DXGI_FORMAT_R8G8B8A8_UNORM);
 	
 
 	ModeShaderVS = std::make_shared<UShader>(L"Shader/Model.hlsl", "VSMain",EShaderType::Vertex);
@@ -143,13 +143,15 @@ void HelloGame::LoadPipeline()
 	SkyShaderVS->CompileShader();
 	SkyShaderPS->CompileShader();
 	BlurShaderHorz = std::make_shared<UShader>(L"Shader/Blur.hlsl", "HorzBlurCS",EShaderType::Compute);
-	BlurShaderHorz->CompileShader();
+	//BlurShaderHorz->CompileShader();
 	BlurShaderVert = std::make_shared<UShader>(L"Shader/Blur.hlsl", "VertBlurCS", EShaderType::Compute);
-	BlurShaderVert->CompileShader();
+	//BlurShaderVert->CompileShader();
 
 	std::vector<std::shared_ptr<UShader>> PostShaders = { };
 	PostShaders.push_back(BlurShaderHorz);
 	PostShaders.push_back(BlurShaderVert);
+	PostShaders[0]->CompileShader();
+	PostShaders[1]->CompileShader();
 
 	ModeActor->Init(GetD3DDevice(), ModeShaderVS, ModeShaderPS);
 	SkyActor->Init(GetD3DDevice(), SkyShaderVS,SkyShaderPS);
@@ -282,19 +284,19 @@ void HelloGame::PopulateCommandList()
 	
 	}
 
-	BlurActor->ApplyPostProcess(GetCommandList(), GetRenderTarget(), 4);
+	g_pCurrentFrameScene->PostActors->ApplyPostProcess(GetCommandList(), GetRenderTarget(), 4);
 
-	//D3D12_RESOURCE_BARRIER resBarrierCopySourceToDest = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(),
-		//D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+	D3D12_RESOURCE_BARRIER resBarrierCopySourceToDest = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(),
+		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
 
-	D3D12_RESOURCE_BARRIER resBarrierCopySourceToPresent = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(),
-		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PRESENT);
+	D3D12_RESOURCE_BARRIER resBarrierCopyDestToPresent = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PRESENT);
 
-	//g_commandList->ResourceBarrier(1, &resBarrierCopySourceToDest);
+	g_commandList->ResourceBarrier(1, &resBarrierCopySourceToDest);
 
-	//g_commandList->CopyResource(GetRenderTarget(), BlurActor->PostProcessOutPut());
+	g_commandList->CopyResource(GetRenderTarget(), g_pCurrentFrameScene->PostActors->PostProcessOutPut());
 
-	g_commandList->ResourceBarrier(1, &resBarrierCopySourceToPresent);
+	g_commandList->ResourceBarrier(1, &resBarrierCopyDestToPresent);
 	
 	//执行资源转换状态(渲染目标状态转为呈现状态)
 	//D3D12_RESOURCE_BARRIER resBarrier = CD3DX12_RESOURCE_BARRIER::Transition(g_renderTargets[g_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
@@ -364,9 +366,9 @@ void HelloGame::CreateConstantBufferDesCribeHeap()
 
 	cbvsrvHeapDesc.NumDescriptors = 4;
 	ThrowIfFailed(g_device->CreateDescriptorHeap(&cbvsrvHeapDesc,IID_PPV_ARGS(BlurActor->GetPostCbvSrvUavHeapAddress())));
+	NAME_D3D12_OBJECT(BlurActor->GetCbvSrvHeapRef());
 
 	g_cbvsrvDescriptorSize = g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
 
 }
 
@@ -457,7 +459,7 @@ void HelloGame::CreateRootSignature()
 	rootParametersPostBlur[2].InitAsDescriptorTable(1, &PostUavRange);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC PostBlurRootSignatureDesc;
-	PostBlurRootSignatureDesc.Init_1_1(static_cast<UINT>(rootParametersPostBlur.size()), rootParametersPostBlur.data(), 0, nullptr, rootSignatureFlags);
+	PostBlurRootSignatureDesc.Init_1_1(static_cast<UINT>(rootParametersPostBlur.size()), rootParametersPostBlur.data(), 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 	BlurActor->SetRootSignature(GetD3DDevice(), PostBlurRootSignatureDesc);
 
 }
@@ -527,14 +529,8 @@ void HelloGame::CreatePSO()
 	SkypsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	SkyActor->SetPipleLineState(GetD3DDevice(), SkypsoDesc);
 
-
-	D3D12_COMPUTE_PIPELINE_STATE_DESC HorzBlurPSO = {};
-	D3D12_COMPUTE_PIPELINE_STATE_DESC VertBlurPSO = {};
-
 	
-
-	std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC> BlurPSOs(2);
-	BlurActor->SetPiplineStates(GetD3DDevice(), BlurPSOs);
+	BlurActor->SetPiplineStates(GetD3DDevice());
 }
 
 
@@ -751,6 +747,7 @@ void HelloGame::CreateFrameResource()
 		std::shared_ptr<URenderActorInterface> ModeInterface = std::make_shared<URenderActorInterface>(ModeActor);
 		std::shared_ptr<URenderActorInterface> SkyInterface = std::make_shared<URenderActorInterface>(SkyActor);
 		std::shared_ptr<URenderActorInterface> GroundInterface = std::make_shared<URenderActorInterface>(GroundActor);
+		std::shared_ptr<UPostRenderActorInterface> BlurActorInterface = std::make_shared<UPostRenderActorInterface>(BlurActor);
 
 		ModeInterface->Init(GetD3DDevice());
 		ModeInterface->RecordCommands(GetD3DDevice(), g_samplerHeap.Get(), n, g_cbvsrvDescriptorSize);
@@ -764,6 +761,7 @@ void HelloGame::CreateFrameResource()
 		pFrameScene->RegisiterRenderInstance(ModeInterface);
 		pFrameScene->RegisiterRenderInstance(GroundInterface);
 		pFrameScene->RegisiterRenderInstance(SkyInterface);
+		pFrameScene->RegisiterRenderPostProcess(BlurActorInterface);
 
 		g_FrameScene.emplace_back(pFrameScene);
 	}

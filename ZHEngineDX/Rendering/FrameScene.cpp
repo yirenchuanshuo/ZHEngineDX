@@ -14,3 +14,8 @@ void UFrameScene::RegisiterRenderInstance(std::shared_ptr<URenderActorInterface>
 	SceneAcotrs.emplace_back(std::move(RenderInstance));
 }
 
+void UFrameScene::RegisiterRenderPostProcess(std::shared_ptr<UPostRenderActorInterface>& PostRenderInstance)
+{
+	PostActors = PostRenderInstance;
+}
+

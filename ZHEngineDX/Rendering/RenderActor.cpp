@@ -1,4 +1,6 @@
 #include "RenderActor.h"
+#include "RenderActorInterface.h"
+
 
 RenderActor::RenderActor()
 	:g_vertexBufferView{}, 

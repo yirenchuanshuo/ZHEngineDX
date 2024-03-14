@@ -3,8 +3,11 @@
 #include "../GameHelper/GameHelper.h"
 #include "Material.h"
 
+
+class UPostRenderActorInterface;
 class PostRenderActor 
 {
+	friend UPostRenderActorInterface;
 public:
 	PostRenderActor(ID3D12Device* pDevice,UINT PSONums,UINT width,UINT height,DXGI_FORMAT format);
 
@@ -14,12 +17,13 @@ public:
 public:
 	ID3D12DescriptorHeap* GetPostCbvSrvUavHeap() { return g_PostCbvSrvUavHeap.Get(); }
 	ID3D12DescriptorHeap** GetPostCbvSrvUavHeapAddress() { return g_PostCbvSrvUavHeap.GetAddressOf(); }
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& GetCbvSrvHeapRef() { return g_PostCbvSrvUavHeap; }
 	ID3D12Resource* PostProcessOutPut() { return g_PostMap0.Get(); }
 
 	void UpLoadShaderResource(UINT DescriptorSize);
 	void SetMaterial(ID3D12Device* pDevice, std::vector<std::shared_ptr<UShader>>& shaders);
 	void SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC& rootSignatureDesc);
-	void SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC>& PSODescs);
+	void SetPiplineStates(ID3D12Device* pDevice);
 
 
 private:

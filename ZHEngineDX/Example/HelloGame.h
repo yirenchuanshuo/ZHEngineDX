@@ -54,7 +54,7 @@ public:
     std::shared_ptr<RenderActor> GroundActor;
     
     //PostActor
-    std::unique_ptr<PostRenderActor> BlurActor;
+    std::shared_ptr<PostRenderActor> BlurActor;
 
     
     //Shader

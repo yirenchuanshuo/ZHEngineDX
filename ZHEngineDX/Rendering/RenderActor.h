@@ -3,7 +3,7 @@
 #include "../GameHelper/GameHelper.h"
 #include "../GameRHI/GameRHI.h"
 #include "Material.h"
-#include "RenderActorInterface.h"
+
 
 
 class URenderActorInterface;

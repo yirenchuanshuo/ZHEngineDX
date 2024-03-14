@@ -1,4 +1,5 @@
 #include "PostProcess.h"
+#include "PostRenderActorInterface.h"
 
 PostRenderActor::PostRenderActor(ID3D12Device* pDevice, UINT PSONums, UINT width, UINT height, DXGI_FORMAT format):
 	g_Device(pDevice),
@@ -101,17 +102,6 @@ void PostRenderActor::ApplyPostProcess(ID3D12GraphicsCommandList* cmdList,  ID3D
 
 		cmdList->ResourceBarrier(1, &PostMap1ReadToAccess);
 	}
-
-	CD3DX12_RESOURCE_BARRIER PostMap1AccessToCommon = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap1.Get(),
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
-
-	CD3DX12_RESOURCE_BARRIER PostMap0ReadToCommon = CD3DX12_RESOURCE_BARRIER::Transition(g_PostMap0.Get(),
-		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COMMON);
-
-	cmdList->CopyResource(renderTarget, g_PostMap0.Get());
-
-	cmdList->ResourceBarrier(1,&PostMap1AccessToCommon);
-	cmdList->ResourceBarrier(1,&PostMap0ReadToCommon);
 }
 
 
@@ -247,20 +237,20 @@ void PostRenderActor::SetRootSignature(ID3D12Device* pDevice, CD3DX12_VERSIONED_
 	ComPtr<ID3DBlob> signature;
 	ComPtr<ID3DBlob> error;
 	ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
-	ThrowIfFailed(pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
-	//NAME_D3D12_OBJECT(rootSignature);
+	ThrowIfFailed(pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(rootSignature.GetAddressOf())));
+	NAME_D3D12_OBJECT(rootSignature);
 }
 
-void PostRenderActor::SetPiplineStates(ID3D12Device* pDevice, std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC>& PSODescs)
+void PostRenderActor::SetPiplineStates(ID3D12Device* pDevice)
 {
-	const int PSONums = PSODescs.size();
+	std::vector<D3D12_COMPUTE_PIPELINE_STATE_DESC> BlurPSOs(2);
+	const int PSONums = BlurPSOs.size();
 	for (int i = 0; i < PSONums; i++)
 	{
-		PSODescs[i].pRootSignature = rootSignature.Get();
-		PSODescs[i].CS = CD3DX12_SHADER_BYTECODE(PostMaterials[i]->ComputeShader->GetShader());
-		PSODescs[i].Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-		ThrowIfFailed(pDevice->CreateComputePipelineState(&PSODescs[i], IID_PPV_ARGS(&g_PipeLineStates[i])));
+		BlurPSOs[i].pRootSignature = rootSignature.Get();
+		BlurPSOs[i].CS = CD3DX12_SHADER_BYTECODE(PostMaterials[i]->ComputeShader->GetShader());
+		BlurPSOs[i].Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		ThrowIfFailed(pDevice->CreateComputePipelineState(&BlurPSOs[i], IID_PPV_ARGS(&g_PipeLineStates[i])));
 		NAME_D3D12_OBJECT(g_PipeLineStates[i]);
-		
 	}
 }

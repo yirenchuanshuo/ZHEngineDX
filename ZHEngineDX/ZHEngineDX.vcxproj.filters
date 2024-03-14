@@ -69,6 +69,9 @@
     <ClCompile Include="Rendering\PostProcess.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\PostRenderActorInterface.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h">
@@ -144,6 +147,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\PostProcess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\PostRenderActorInterface.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
